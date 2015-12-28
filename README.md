@@ -33,7 +33,7 @@ More will be added as the API progresses.
 
 Thanks for wanting to help! This project is currently licensed under the GPLv3 license, but this may change.
 
-First, you should sign the CLA. This is for the good of everyone - contributors, distributors, and end users.
+First, you should [sign the CLA](https://www.clahub.com/agreements/samczsun/Helios). This is for the good of everyone - contributors, distributors, and end users.
 
 Here are some basic conventions you should follow. Your coding style is your own but requirements may also change.
 Please do not be surprised if you find your code has been reformatted.
