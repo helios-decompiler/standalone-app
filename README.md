@@ -31,9 +31,10 @@ More will be added as the API progresses.
 
 # Contributing
 
-Thanks for wanting to help! This project is currently licensed under the GPLv3 license, but this may change.
+Thanks for wanting to help! This project is currently licensed under the Apache 2.0 license.
 
-First, you should [sign the CLA](https://www.clahub.com/agreements/samczsun/Helios). This is for the good of everyone - contributors, distributors, and end users.
+First, you should [sign the CLA](https://www.clahub.com/agreements/samczsun/Helios).This is for the good of
+everyone - contributors, distributors, and end users.
 
 Here are some basic conventions you should follow. Your coding style is your own but requirements may also change.
 Please do not be surprised if you find your code has been reformatted.
@@ -47,6 +48,7 @@ future-proofed should we ever want to switch GUI libraries.
 If you encounter an error while downloading the dependencies, you may need to manually install the Let's Encrypt
 intermediary certificate into the Java trusted root store. You can do so using this command:
 
-`keytool -trustcacerts -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -importcert -file lets-encrypt-x1-cross-signed.pem`
+`keytool -trustcacerts -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit 
+-importcert -file lets-encrypt-x1-cross-signed.pem`
 
 The intermediary root CA has been included in the root of this project.
