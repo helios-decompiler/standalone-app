@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.samczsun</groupId>
+    <artifactId>helios</artifactId>
+    <version>1.0.0-alpha</version>
+    <!--Refer to http://semver.org-->
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <swt.version>4.5.1</swt.version>
+    </properties>
+
+    <build>
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes/swt</outputDirectory>
+                            <includeGroupIds>org.eclipse.swt</includeGroupIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.2</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.samczsun.helios.bootloader.Bootloader</mainClass>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*</exclude>
+                                        <exclude>**/*.java</exclude>
+                                        <exclude>**/*.html</exclude>
+                                        <exclude>*.txt</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fifesoft:rsyntaxtextarea</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                            <minimizeJar>true</minimizeJar>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>helios</id>
+            <name>Official Helios Repository</name>
+            <url>https://repo.samczsun.com/content/repositories/helios/</url>
+        </repository>
+        <repository>
+            <id>maven-eclipse-repo</id>
+            <url>http://maven-eclipse.github.io/maven/</url>
+        </repository>
+        <repository>
+            <id>dex2jar-repo</id>
+            <url>http://repository-dex2jar.forge.cloudbees.com/release/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!--<dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-all</artifactId>
+            <version>5.0.4</version>
+            &lt;!&ndash;Modified BSD&ndash;&gt;
+        </dependency>-->
+        <!--Removed because Maven versions are obfuscated which breaks Dex2Jar-->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>2.7.8</version>
+            <!--Modified BSD-->
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+            <!--Apache 2.0-->
+        </dependency>
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>2.5.8</version>
+            <!--Modified BSD-->
+        </dependency>
+        <dependency>
+            <groupId>org.tinyjee.jgraphx</groupId>
+            <artifactId>jgraphx</artifactId>
+            <version>2.3.0.5</version>
+            <!--Modified BSD-->
+        </dependency>
+        <dependency>
+            <groupId>org.zeroturnaround</groupId>
+            <artifactId>zt-zip</artifactId>
+            <version>1.8</version>
+            <!--Apache 2.0-->
+        </dependency>
+        <dependency>
+            <groupId>com.eclipsesource.minimal-json</groupId>
+            <artifactId>minimal-json</artifactId>
+            <version>0.9.1</version>
+            <!--MIT-->
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.strobel</groupId>
+            <artifactId>procyon</artifactId>
+            <version>0.5.30</version>
+            <!--Apache 2.0-->
+            <!--helios-->
+        </dependency>
+        <dependency>
+            <groupId>org.benf</groupId>
+            <artifactId>cfr</artifactId>
+            <version>0.110</version>
+            <!--MIT-->
+            <!--helios-->
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>java-decompiler</artifactId>
+            <version>da49161</version>
+            <!--Apache 2.0-->
+            <!--helios-->
+        </dependency>
+        <dependency>
+            <groupId>org.jf</groupId>
+            <artifactId>smali</artifactId>
+            <version>73bd8ce9</version>
+            <!--BSD + Apache 2.0-->
+            <!--helios-->
+            <!--2.1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.jf</groupId>
+            <artifactId>baksmali</artifactId>
+            <version>73bd8ce9</version>
+            <!--BSD + Apache 2.0-->
+            <!--helios-->
+            <!--2.1.0-->
+        </dependency>
+        <dependency>
+            <groupId>brut</groupId>
+            <artifactId>apktool</artifactId>
+            <version>2.0.2</version>
+            <!--Apache 2.0-->
+            <!--helios-->
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.d2j</groupId>
+            <artifactId>dex-tools</artifactId>
+            <version>2.0</version>
+            <!--Apache 2.0-->
+            <!--dex2jar-repo-->
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.swt</groupId>
+            <artifactId>org.eclipse.swt.win32.win32.x86</artifactId>
+            <version>${swt.version}</version>
+            <scope>provided</scope>
+            <!--EPL 1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.swt</groupId>
+            <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+            <version>${swt.version}</version>
+            <scope>provided</scope>
+            <!--EPL 1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.swt</groupId>
+            <artifactId>org.eclipse.swt.gtk.linux.x86</artifactId>
+            <version>${swt.version}</version>
+            <scope>provided</scope>
+            <!--EPL 1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.swt</groupId>
+            <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
+            <version>${swt.version}</version>
+            <scope>provided</scope>
+            <!--EPL 1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.swt</groupId>
+            <artifactId>org.eclipse.swt.cocoa.macosx.x86_64</artifactId>
+            <version>${swt.version}</version>
+            <scope>provided</scope>
+            <!--EPL 1.0-->
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.albireo</groupId>
+            <artifactId>core</artifactId>
+            <version>0.0.3</version>
+            <!--EPL 1.0-->
+        </dependency>
+    </dependencies>
+</project>
