@@ -52,3 +52,8 @@ intermediary certificate into the Java trusted root store. You can do so using t
 -importcert -file lets-encrypt-x1-cross-signed.pem`
 
 The intermediary root CA has been included in the root of this project.
+
+# FAQ
+
+Q: Why is JD-GUI not included? I use it all the time!
+A: JD-GUI is incompatible with this project. It's a legality issue
