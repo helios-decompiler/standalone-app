@@ -16,45 +16,28 @@
 
 package com.samczsun.helios.handler;
 
+import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ExceptionHandler {
 
     public static void handle(Throwable exception) {
         StringWriter stringWriter = new StringWriter();
         exception.printStackTrace(new PrintWriter(stringWriter));
+        Shell shell = SWTUtil.generateLongMessage("An error has occured", stringWriter.toString());
         Display display = Display.getDefault();
         display.syncExec(() -> {
-            Shell shell = new Shell(display);
-            shell.setLayout(new GridLayout());
-            shell.setText("An error has occured");
-            Text t = new Text(shell, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-            t.setLayoutData(new GridData(GridData.FILL_BOTH));
-            t.setText(stringWriter.toString());
-            t.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyReleased(KeyEvent e) {
-                    if ((e.stateMask & SWT.CTRL) == SWT.CTRL && e.keyCode == 'a') {
-                        t.selectAll();
-                    }
-                }
-            });
             Composite composite = new Composite(shell, SWT.NONE);
             composite.setLayoutData(new GridData(GridData.FILL_BOTH));
             composite.setLayout(new FillLayout());
@@ -75,7 +58,6 @@ public class ExceptionHandler {
                 }
             });
             composite.pack();
-            t.pack();
             shell.pack();
             shell.open();
         });

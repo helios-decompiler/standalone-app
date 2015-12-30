@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.samczsun</groupId>
   <artifactId>helios</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.0-alpha</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>

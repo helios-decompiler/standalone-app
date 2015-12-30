@@ -47,10 +47,7 @@ import org.eclipse.swt.widgets.Text;
 import org.objectweb.asm.tree.ClassNode;
 
 import javax.swing.UIManager;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,7 +67,6 @@ public class Helios {
     private static Boolean python2Verified = null;
     private static Boolean python3Verified = null;
     private static Boolean javaRtVerified = null;
-    private static Boolean javacVerified = null;
     private static BackgroundTaskGui backgroundTaskGui;
     private static GUI gui;
     private static Supplier<Menu> recentFilesMenu;
@@ -292,10 +288,6 @@ public class Helios {
         return ensureJavaRtSet0(false);
     }
 
-    public static boolean ensureJavacSet() {
-        return ensureJavacSet0(false);
-    }
-
     private static boolean ensurePython3Set0(boolean forceCheck) {
         String python3Location = Settings.PYTHON3_LOCATION.get().asString();
         if (python3Location.isEmpty()) {
@@ -377,31 +369,6 @@ public class Helios {
         return javaRtVerified;
     }
 
-    private static boolean ensureJavacSet0(boolean forceCheck) {
-        String javacLocation = Settings.JAVAC_LOCATION.get().asString();
-        if (javacLocation.isEmpty()) {
-            SWTUtil.showMessage("You need to set the location of the javac executable", true);
-            setLocationOf(Settings.JAVAC_LOCATION);
-            javacLocation = Settings.JAVAC_LOCATION.get().asString();
-        }
-        if (javacVerified == null || forceCheck) {
-            try {
-                Process process = new ProcessBuilder(javacLocation, "-version").start();
-                String result = IOUtils.toString(process.getInputStream());
-                String error = IOUtils.toString(process.getErrorStream());
-                javacVerified = error.startsWith("javac") || result.startsWith("javac");
-            } catch (Throwable t) {
-                StringWriter sw = new StringWriter();
-                t.printStackTrace(new PrintWriter(sw));
-                SWTUtil.showMessage(
-                        "The javac executable is invalid." + Constants.NEWLINE + Constants.NEWLINE + sw.toString());
-                t.printStackTrace();
-                javacVerified = false;
-            }
-        }
-        return javacVerified;
-    }
-
     public static void checkHotKey(Event e) {
         if (e.doit) {
             if ((e.stateMask & SWT.CTRL) == SWT.CTRL) {
@@ -478,8 +445,6 @@ public class Helios {
                 ensurePython3Set0(true);
             } else if (setting == Settings.RT_LOCATION) {
                 ensureJavaRtSet0(true);
-            } else if (setting == Settings.JAVAC_LOCATION) {
-                ensureJavacSet0(true);
             }
         }
     }

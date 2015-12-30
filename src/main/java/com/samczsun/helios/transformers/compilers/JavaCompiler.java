@@ -17,13 +17,17 @@
 package com.samczsun.helios.transformers.compilers;
 
 import com.samczsun.helios.Helios;
-import com.samczsun.helios.Settings;
 import com.samczsun.helios.handler.ExceptionHandler;
+import com.samczsun.helios.utils.SWTUtil;
 import com.samczsun.helios.utils.Utils;
+import com.sun.tools.javac.main.Main;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.swt.widgets.Shell;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 
 public class JavaCompiler extends Compiler {
@@ -34,55 +38,48 @@ public class JavaCompiler extends Compiler {
 
     @Override
     public byte[] compile(String name, String contents) {
-        if (Helios.ensureJavacSet()) {
-            try {
-                File tempdir1 = Files.createTempDirectory("javac1").toFile();
-                File tempdir2 = Files.createTempDirectory("javac2").toFile();
-                File java = new File(tempdir1, name + ".java");
-                File clazz = new File(tempdir2, name + ".class");
-                File classpath = new File(tempdir1, "classpath.jar");
+        File tmpdir = null;
+        File javaFile = null;
+        File classFile = null;
+        File classpathFile = null;
+        try {
+            tmpdir = Files.createTempDirectory("javac").toFile();
+            javaFile = new File(tmpdir, name + ".java");
+            classFile = new File(tmpdir, name + ".class");
+            classpathFile = new File(tmpdir, "classpath.jar");
+            FileUtils.write(javaFile, contents, "UTF-8", false);
+            Utils.save(classpathFile, Helios.getAllLoadedData());
 
-                try {
-                    FileUtils.write(java, contents, "UTF-8", false);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                Utils.save(classpath, Helios.getAllLoadedData());
+            StringWriter stringWriter = new StringWriter();
 
-                boolean cont = true;
-                String log = "";
-                ProcessBuilder pb;
+            com.sun.tools.javac.main.Main compiler =
+                    new com.sun.tools.javac.main.Main("javac", new PrintWriter(stringWriter));
+            int responseCode = compiler.compile(new String[]{
+                    "-d",
+                    tmpdir.getAbsolutePath(),
+                    "-classpath",
+                    buildPath(classFile),
+                    javaFile.getAbsolutePath()
+            }).exitCode;
 
-                if (Settings.PATH.get().asString().isEmpty()) {
-                    pb = new ProcessBuilder(Settings.JAVAC_LOCATION.get().asString(), "-d", tempdir2.getAbsolutePath(),
-                            "-classpath", classpath.getAbsolutePath(), java.getAbsolutePath());
-                } else {
-                    pb = new ProcessBuilder(Settings.JAVAC_LOCATION.get().asString(), "-d", tempdir2.getAbsolutePath(),
-                            "-classpath", classpath.getAbsolutePath() + ";" + Settings.PATH.get().asString(),
-                            java.getAbsolutePath());
-                }
-
-                Process process = Helios.launchProcess(pb);
-
-                log += Utils.readProcess(process);
-                System.out.println(log);
-
-                if (!clazz.exists()) throw new Exception(log);
-
-                classpath.delete();
-
-                if (cont) {
-                    try {
-                        return org.apache.commons.io.FileUtils.readFileToByteArray(clazz);
-                    } catch (IOException e) {
-                        ExceptionHandler.handle(e);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (responseCode != Main.Result.OK.exitCode) {
+                System.out.println(stringWriter.toString());
+                Shell shell = SWTUtil.generateLongMessage("Error", stringWriter.toString());
+                shell.getDisplay().syncExec(() -> {
+                    SWTUtil.center(shell);
+                    shell.open();
+                });
+            } else {
+                return FileUtils.readFileToByteArray(classFile);
             }
+        } catch (Exception e) {
+            ExceptionHandler.handle(e);
+        } finally {
+            FileUtils.deleteQuietly(javaFile);
+            FileUtils.deleteQuietly(classFile);
+            FileUtils.deleteQuietly(classpathFile);
+            FileUtils.deleteQuietly(tmpdir);
         }
         return null;
     }
-
 }

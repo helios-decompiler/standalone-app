@@ -19,13 +19,22 @@ package com.samczsun.helios.utils;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SWTUtil {
     public static boolean promptForYesNo(String question) {
@@ -52,6 +61,34 @@ public class SWTUtil {
             shell.dispose();
         });
         return result.get();
+    }
+
+    public static Shell generateLongMessage(String title, String message) {
+        Display display = Display.getDefault();
+        AtomicReference<Shell> shellReference = new AtomicReference<>();
+        display.syncExec(() -> {
+            Shell shell = new Shell(display);
+            shell.setLayout(new GridLayout());
+            shell.setText(title);
+            Font mono = new Font(display, "Courier", 10, SWT.NONE);
+            Text t = new Text(shell, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+            t.setLayoutData(new GridData(GridData.FILL_BOTH));
+            t.setFont(mono);
+            t.setText(message);
+            t.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyReleased(KeyEvent e) {
+                    if ((e.stateMask & SWT.CTRL) == SWT.CTRL && e.keyCode == 'a') {
+                        t.selectAll();
+                    }
+                }
+            });
+            shell.addDisposeListener(disposeEvent -> mono.dispose());
+            t.pack();
+            shell.pack();
+            shellReference.set(shell);
+        });
+        return shellReference.get();
     }
 
     public static void showMessage(String message) {

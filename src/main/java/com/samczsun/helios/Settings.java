@@ -34,7 +34,6 @@ public class Settings {
     public static final Settings RECENT_FILES = new Settings("recent_files").set(new JsonArray());
     public static final Settings PYTHON2_LOCATION = new Settings("python2location").set("");
     public static final Settings PYTHON3_LOCATION = new Settings("python3location").set("");
-    public static final Settings JAVAC_LOCATION = new Settings("javaclocation").set("");
     public static final Settings RT_LOCATION = new Settings("rtlocation").set("");
     public static final Settings PATH = new Settings("path").set("");
     public static final Settings MAX_RECENTFILES = new Settings("max_recentfiles").set(25);

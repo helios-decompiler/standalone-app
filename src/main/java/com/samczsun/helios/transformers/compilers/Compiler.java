@@ -16,10 +16,12 @@
 
 package com.samczsun.helios.transformers.compilers;
 
+import com.samczsun.helios.transformers.Transformer;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Compiler {
+public abstract class Compiler extends Transformer {
     private static final Map<String, Compiler> BY_ID = new HashMap<>();
 
     static {

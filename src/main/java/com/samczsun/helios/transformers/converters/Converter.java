@@ -28,7 +28,7 @@ import java.util.Map;
 
 public abstract class Converter extends Transformer {
 
-    public static final Map<String, Converter> BY_ID = new HashMap<>();
+    private static final Map<String, Converter> BY_ID = new HashMap<>();
 
     public static final Converter ENJARIFY = new Converter() {
         @Override
@@ -49,7 +49,9 @@ public abstract class Converter extends Transformer {
         @Override
         public String getId() {
             return "enjarify";
-        }        @Override
+        }
+
+        @Override
         public String getName() {
             return "Enjarify";
         }

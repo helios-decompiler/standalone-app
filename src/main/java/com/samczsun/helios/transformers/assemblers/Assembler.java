@@ -17,15 +17,19 @@
 package com.samczsun.helios.transformers.assemblers;
 
 
+import com.samczsun.helios.transformers.Transformer;
+
 import java.util.HashMap;
 import java.util.Map;
 
 
-public abstract class Assembler {
+public abstract class Assembler extends Transformer {
     private static final Map<String, Assembler> BY_ID = new HashMap<>();
 
-    public static final Assembler KRAKATAU = new KrakatauAssembler().register();
-    public static final Assembler SMALI = new SmaliAssembler().register();
+    static {
+        new KrakatauAssembler().register();
+        new SmaliAssembler().register();
+    }
 
     private final String id;
     private final String name;
