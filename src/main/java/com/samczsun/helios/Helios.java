@@ -157,7 +157,7 @@ public class Helios {
         files.clear();
         getGui().getTreeManager().reset();
         getGui().getClassManager().reset();
-        processes.forEach(Process::destroy);
+        processes.forEach(Process::destroyForcibly);
         processes.clear();
     }
 
@@ -293,6 +293,10 @@ public class Helios {
         if (python3Location.isEmpty()) {
             SWTUtil.showMessage("You need to set the location of the Python/PyPy 3.x executable", true);
             setLocationOf(Settings.PYTHON3_LOCATION);
+            python3Location = Settings.PYTHON3_LOCATION.get().asString();
+        }
+        if (python3Location.isEmpty()) {
+            return false;
         }
         if (python3Verified == null || forceCheck) {
             try {
@@ -319,6 +323,9 @@ public class Helios {
             setLocationOf(Settings.PYTHON2_LOCATION);
             python2Location = Settings.PYTHON2_LOCATION.get().asString();
         }
+        if (python2Location.isEmpty()) {
+            return false;
+        }
         if (python2Verified == null || forceCheck) {
             try {
                 Process process = new ProcessBuilder(python2Location, "-V").start();
@@ -343,6 +350,9 @@ public class Helios {
             SWTUtil.showMessage("You need to set the location of Java's rt.jar", true);
             setLocationOf(Settings.RT_LOCATION);
             javaRtLocation = Settings.RT_LOCATION.get().asString();
+        }
+        if (javaRtLocation.isEmpty()) {
+            return false;
         }
         if (javaRtVerified == null || forceCheck) {
             ZipFile zipFile = null;

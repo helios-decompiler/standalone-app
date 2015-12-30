@@ -53,9 +53,12 @@ public class TreeManager {
             @Override
             public void keyReleased(KeyEvent e) {
                 if (e.keyCode == SWT.CR || e.keyCode == 'P') { // 'P' is the code for numpad enter
-                    TreeItem item = tree.getSelection()[0];
-                    if (item.getItemCount() == 0) {
-                        click(item);
+                    TreeItem[] items = tree.getSelection();
+                    if (items.length > 0) {
+                        TreeItem item = items[0];
+                        if (item.getItemCount() == 0) {
+                            click(item);
+                        }
                     }
                 }
             }
