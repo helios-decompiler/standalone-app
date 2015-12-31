@@ -256,7 +256,7 @@ public class GUI {
     }
 
     private void setupTree(SashForm sashForm) {
-        Tree tree = new Tree(sashForm, SWT.BORDER);
+        Tree tree = new Tree(sashForm, SWT.BORDER | SWT.MULTI);
         tree.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         DropTarget dt = new DropTarget(tree, DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK);

@@ -18,6 +18,8 @@ package com.samczsun.helios;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
+import com.samczsun.helios.api.events.Events;
+import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.bootloader.BootSequence;
 import com.samczsun.helios.bootloader.Splash;
 import com.samczsun.helios.gui.BackgroundTaskGui;
@@ -237,6 +239,7 @@ public class Helios {
                     ExceptionHandler.handle(e);
                 }
             }
+            Events.callEvent(new TreeUpdateRequest());
         }
     }
 

@@ -25,8 +25,12 @@ import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
@@ -44,22 +48,36 @@ public class TreeManager {
 
     public TreeManager(Tree tree) {
         this.tree = tree;
-        tree.addListener(SWT.Selection, event -> {
-            if ((event.stateMask & SWT.BUTTON1) == SWT.BUTTON1 && ((TreeItem) event.item).getItemCount() == 0) {
-                click((TreeItem) event.item);
-            }
-        });
         tree.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                if (e.keyCode == SWT.CR || e.keyCode == 'P') { // 'P' is the code for numpad enter
+                if (e.keyCode == SWT.CR) {
                     TreeItem[] items = tree.getSelection();
-                    if (items.length > 0) {
-                        TreeItem item = items[0];
-                        if (item.getItemCount() == 0) {
-                            click(item);
+                    for (TreeItem treeItem : items) {
+                        if (treeItem.getItemCount() == 0) {
+                            click(treeItem);
                         }
                     }
+                }
+            }
+        });
+        tree.addListener(SWT.MeasureItem, event -> {
+        });
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseDown(MouseEvent e) {
+                if (e.button == 1 && e.count % 2 == 0) {
+                    TreeItem item = tree.getItem(new Point(e.x, e.y));
+                    if (item != null) {
+                        if (item.getItemCount() == 0) {
+                            click(item);
+                        } else {
+                            item.setExpanded(!item.getExpanded());
+                        }
+                    }
+                } else if (e.button == 3) {
+                    TreeItem item = tree.getItem(new Point(e.x, e.y));
+                    // Open menu for saving all selected items recursively
                 }
             }
         });
