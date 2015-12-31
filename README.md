@@ -53,7 +53,11 @@ intermediary certificate into the Java trusted root store. You can do so using t
 
 The intermediary root CA has been included in the root of this project.
 
+# Acknowledgements
+
+Icons for the tree are sourced from the "Silk" icon pack, located [here](http://famfamfam.com/lab/icons/silk/)  
+
 # FAQ
 
-Q: Why is JD-GUI not included? I use it all the time!
+Q: Why is JD-GUI not included? I use it all the time!  
 A: JD-GUI is incompatible with this project. It's a legality issue
