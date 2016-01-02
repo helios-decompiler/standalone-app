@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.eclipsesource.json.ParseException;
+import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 
@@ -32,11 +33,11 @@ public class Settings {
     private static final JsonObject INSTANCE = new JsonObject();
 
     public static final Settings RECENT_FILES = new Settings("recent_files").set(new JsonArray());
+    public static final Settings MAX_RECENTFILES = new Settings("max_recentfiles").set(25);
     public static final Settings PYTHON2_LOCATION = new Settings("python2location").set("");
     public static final Settings PYTHON3_LOCATION = new Settings("python3location").set("");
     public static final Settings RT_LOCATION = new Settings("rtlocation").set("");
     public static final Settings PATH = new Settings("path").set("");
-    public static final Settings MAX_RECENTFILES = new Settings("max_recentfiles").set(25);
     public static final Settings LAST_DIRECTORY = new Settings("last_directory").set(".");
     public static final Settings APKTOOL = new Settings("apktool").set(true);
     public static final Settings APK_CONVERSION = new Settings("apk_conversion").set(Converter.NONE.getId());
@@ -64,7 +65,7 @@ public class Settings {
             out.write(settings.toString().getBytes("UTF-8"));
             out.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            ExceptionHandler.handle(e);
         }
     }
 
@@ -86,7 +87,7 @@ public class Settings {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            ExceptionHandler.handle(e);
         }
     }
 

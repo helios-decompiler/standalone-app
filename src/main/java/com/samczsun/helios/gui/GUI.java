@@ -353,7 +353,6 @@ public class GUI {
                 try {
                     Thread.sleep(100);
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
         }).start();
@@ -362,7 +361,6 @@ public class GUI {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
             display.asyncExec(() -> {

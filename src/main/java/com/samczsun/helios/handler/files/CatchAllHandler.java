@@ -18,6 +18,7 @@ package com.samczsun.helios.handler.files;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.handler.ExceptionHandler;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -37,7 +38,7 @@ public class CatchAllHandler extends FileHandler {
         try {
             editor.open(new ByteArrayInputStream(loadedFile.getFiles().get(name)));
         } catch (IOException e1) {
-            e1.printStackTrace();
+            ExceptionHandler.handle(e1);
         }
 
         SwingControl control = new SwingControl(parent, SWT.NONE) {

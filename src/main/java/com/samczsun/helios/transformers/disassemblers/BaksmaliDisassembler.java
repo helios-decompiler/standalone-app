@@ -67,13 +67,8 @@ public class BaksmaliDisassembler extends Disassembler {
                 }
 
             }
-            try {
-                output.append(FileUtils.readFileToString(outputSmali, "UTF-8"));
-                return true;
-            } catch (Exception e) {
-                output.append(parseException(e));
-                return false;
-            }
+            output.append(FileUtils.readFileToString(outputSmali, "UTF-8"));
+            return true;
         } catch (final IOException e) {
             ExceptionHandler.handle(e);
             return false;

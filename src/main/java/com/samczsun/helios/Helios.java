@@ -37,8 +37,6 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
@@ -66,13 +64,12 @@ import java.util.zip.ZipFile;
 public class Helios {
     private static final Map<String, LoadedFile> files = new HashMap<>();
     private static final List<Process> processes = new ArrayList<>();
-    private static final List<String> recentFiles = new ArrayList<>();
     private static Boolean python2Verified = null;
     private static Boolean python3Verified = null;
     private static Boolean javaRtVerified = null;
-    private static BackgroundTaskGui backgroundTaskGui;
     private static GUI gui;
     private static BackgroundTaskHandler backgroundTaskHandler;
+    private static BackgroundTaskGui backgroundTaskGui;
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
         try {
@@ -81,17 +78,10 @@ public class Helios {
         }
         splashScreen.updateState(BootSequence.LOADING_SETTINGS);
         Settings.loadSettings();
-        for (JsonValue value : Settings.RECENT_FILES.get().asArray()) {
-            if (value.isString()) {
-                String string = value.asString();
-                if (!recentFiles.contains(string) && !string.isEmpty()) {
-                    recentFiles.add(string);
-                }
-            }
-        }
         backgroundTaskGui = new BackgroundTaskGui();
         backgroundTaskHandler = new BackgroundTaskHandler();
         splashScreen.updateState(BootSequence.LOADING_ADDONS);
+        AddonHandler.registerPreloadedAddons();
         for (File file : Constants.ADDONS_DIR.listFiles()) {
             AddonHandler
                     .getAllHandlers()
@@ -102,28 +92,16 @@ public class Helios {
                         handler.run(file);
                     });
         }
-        AddonHandler.registerPreloadedAddons();
         splashScreen.updateState(BootSequence.SETTING_UP_GUI);
         gui = new GUI(shell);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                JsonArray array = new JsonArray();
-                for (String recentFile : recentFiles) {
-                    array.add(JsonValue.valueOf(recentFile));
-                }
-                Settings.RECENT_FILES.set(array);
-                Settings.saveSettings();
-                getBackgroundTaskHandler().shutdown();
-                processes.forEach(Process::destroy);
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Settings.saveSettings();
+            getBackgroundTaskHandler().shutdown();
+            processes.forEach(Process::destroy);
+        }));
         splashScreen.updateState(BootSequence.COMPLETE);
         while (!splashScreen.isDisposed()) ;
         Display.getDefault().syncExec(() -> getGui().getShell().open());
-    }
-
-    public static void exit(int i) {
     }
 
     public static List<LoadedFile> getFilesForName(String fileName) {
@@ -186,16 +164,23 @@ public class Helios {
 
     public static void addRecentFile(File f) {
         if (!f.getAbsolutePath().isEmpty()) {
-            recentFiles.add(f.getAbsolutePath());
-            while (recentFiles.size() > Settings.MAX_RECENTFILES.get().asInt()) {
-                recentFiles.remove(0);
+            JsonArray array = Settings.RECENT_FILES.get().asArray();
+            array.add(f.getAbsolutePath());
+            while (array.size() > Settings.MAX_RECENTFILES.get().asInt()) {
+                array.remove(0);
             }
             updateRecentFiles();
         }
     }
 
     public static void updateRecentFiles() {
-        Events.callEvent(new RecentFileRequest(recentFiles));
+        Events.callEvent(new RecentFileRequest(Settings.RECENT_FILES
+                .get()
+                .asArray()
+                .values()
+                .stream()
+                .map(JsonValue::asString)
+                .collect(Collectors.toList())));
     }
 
     public static void promptForFilesToOpen() {

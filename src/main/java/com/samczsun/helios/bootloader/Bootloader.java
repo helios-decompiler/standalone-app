@@ -48,6 +48,12 @@ public class Bootloader {
                 throw new RuntimeException("Could not create addons directory");
             if (!Constants.SETTINGS_FILE.exists() && !Constants.SETTINGS_FILE.createNewFile())
                 throw new RuntimeException("Could not create settings file");
+            if (Constants.DATA_DIR.isFile())
+                throw new RuntimeException("Data directory is file");
+            if (Constants.ADDONS_DIR.isFile())
+                throw new RuntimeException("Addons directory is file");
+            if (Constants.SETTINGS_FILE.isDirectory())
+                throw new RuntimeException("Settings file is directory");
 
             loadSWTLibrary();
 
@@ -113,7 +119,7 @@ public class Bootloader {
         }
     }
 
-    private static final void loadSWTLibrary() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private static void loadSWTLibrary() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         String name = getOSName();
         if (name == null) throw new IllegalArgumentException("Cannot determine OS");
         String arch = getArch();
@@ -159,7 +165,7 @@ public class Bootloader {
         System.out.println("Loaded SWT Library");
     }
 
-    private static final void displayError(Throwable t) {
+    private static void displayError(Throwable t) {
         t.printStackTrace();
         StringWriter writer = new StringWriter();
         t.printStackTrace(new PrintWriter(writer));
@@ -167,13 +173,13 @@ public class Bootloader {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private static final String getArch() {
+    private static String getArch() {
         String arch = System.getProperty("sun.arch.data.model");
         if (arch == null) arch = System.getProperty("com.ibm.vm.bitmode");
         return "32".equals(arch) ? "x86" : "64".equals(arch) ? "x86_64" : null;
     }
 
-    private static final String getOSName() {
+    private static String getOSName() {
         String unparsedName = System.getProperty("os.name").toLowerCase();
         if (unparsedName.contains("win")) return "win32.win32";
         if (unparsedName.contains("mac")) return "cocoa.macosx";
