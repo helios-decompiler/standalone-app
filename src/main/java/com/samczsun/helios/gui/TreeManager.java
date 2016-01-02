@@ -22,22 +22,30 @@ import com.samczsun.helios.Resources;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
+import com.samczsun.helios.tasks.DecompileAndSaveTask;
+import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.javatuples.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,8 +84,51 @@ public class TreeManager {
                         }
                     }
                 } else if (e.button == 3) {
+                    TreeItem[] items = tree.getSelection();
                     TreeItem item = tree.getItem(new Point(e.x, e.y));
-                    // Open menu for saving all selected items recursively
+
+                    Display display = Display.getDefault();
+
+                    Menu menu = new Menu(Helios.getGui().getShell(), SWT.POP_UP);
+
+                    MenuItem decompileAllSelected = new MenuItem(menu, SWT.PUSH);
+                    decompileAllSelected.setText("Decompile &All Selected");
+                    decompileAllSelected.setEnabled(items.length > 0);
+                    decompileAllSelected.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e) {
+                            TreeItem[] items = tree.getSelection();
+                            List<Pair<String, String>> data = new ArrayList<>();
+                            LinkedList<TreeItem> process = new LinkedList<>();
+                            process.addAll(Arrays.asList(items));
+                            while (!process.isEmpty()) {
+                                TreeItem item = process.pop();
+                                TreeItem[] children = item.getItems();
+                                if (children.length == 0) {
+                                    data.add(getFileName(item));
+                                } else {
+                                    process.addAll(Arrays.asList(children));
+                                }
+                            }
+                            Helios.submitBackgroundTask(new DecompileAndSaveTask(data));
+                        }
+                    });
+
+                    MenuItem decompileSelected = new MenuItem(menu, SWT.PUSH);
+                    decompileSelected.setText("Decompile &Selected");
+                    decompileSelected.setEnabled(item != null);
+                    decompileSelected.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e) {
+                            if (item != null) {
+                                List<Pair<String, String>> data = Arrays.asList(getFileName(item));
+                                Helios.submitBackgroundTask(new DecompileAndSaveTask(data));
+                            }
+                        }
+                    });
+
+                    menu.setLocation(SWTUtil.getMouseLocation());
+                    menu.setVisible(true);
                 }
             }
         });
@@ -93,16 +144,22 @@ public class TreeManager {
     }
 
     public void click(TreeItem item) {
+        Pair<String, String> info = getFileName(item);
+        if (info.getValue1().length() > 0) {
+            String fileName = info.getValue1();
+            Helios.getGui().getClassManager().openFile(info.getValue0(), fileName);
+        }
+    }
+
+    public Pair<String, String> getFileName(TreeItem item) {
         TreeItem currentItem = item;
         StringBuilder name = new StringBuilder();
         while (currentItem.getParentItem() != null) {
             name.insert(0, currentItem.getText()).insert(0, "/");
             currentItem = currentItem.getParentItem();
         }
-        if (name.length() > 0) {
-            String fileName = name.substring(1); // Name is something like "/package/goes/here/classname.class"
-            Helios.getGui().getClassManager().openFile(currentItem.getText(), fileName);
-        }
+        return new Pair<>(currentItem.getText(),
+                name.toString().substring(1)); // Name is something like "/package/goes/here/classname.class"
     }
 
     private void update() {
@@ -225,8 +282,6 @@ public class TreeManager {
             type = Resources.JAVA;
         } else if (name.endsWith(".txt") || name.endsWith(".md")) {
             type = Resources.TEXT;
-        } else if (name.equals("decoded resources")) {
-            type = Resources.DECODED;
         } else if (name.endsWith(".properties") || name.endsWith(".xml") || name.endsWith(".mf") || name.endsWith(
                 ".config") || name.endsWith(".cfg")) {
             type = Resources.CONFIG;

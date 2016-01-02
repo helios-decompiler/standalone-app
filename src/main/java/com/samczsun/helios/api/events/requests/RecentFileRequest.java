@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Sam Sun <me@samczsun.com>
+ * Copyright 2016 Sam Sun <me@samczsun.com>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,21 +14,20 @@
  *    limitations under the License.
  */
 
-package com.samczsun.helios.api.events;
+package com.samczsun.helios.api.events.requests;
 
-import com.samczsun.helios.api.events.requests.RecentFileRequest;
-import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
+import java.util.Collections;
+import java.util.List;
 
-public class Listener {
-    public void handlePreDecompile(PreDecompileEvent event) {
+public class RecentFileRequest {
 
+    private List<String> files;
+
+    public RecentFileRequest(List<String> files) {
+        this.files = files == null ? Collections.emptyList() : files;
     }
 
-    public void handleTreeUpdateRequest(TreeUpdateRequest request) {
-
-    }
-
-    public void handleRecentFileRequest(RecentFileRequest request) {
-
+    public List<String> getFiles() {
+        return this.files;
     }
 }

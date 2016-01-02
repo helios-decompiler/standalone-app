@@ -17,6 +17,7 @@
 package com.samczsun.helios.bootloader;
 
 import com.samczsun.helios.Resources;
+import com.samczsun.helios.handler.ExceptionHandler;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
@@ -34,7 +35,13 @@ public class DisplayPumper implements Runnable {
         ready.set(true);
         Resources.loadAllImages();
         while (!display.isDisposed()) {
-            if (!display.readAndDispatch()) display.sleep();
+            boolean result = true;
+            try {
+                result = display.readAndDispatch();
+            } catch (Exception e) {
+                ExceptionHandler.handle(e);
+            }
+            if (!result) display.sleep();
         }
     }
 

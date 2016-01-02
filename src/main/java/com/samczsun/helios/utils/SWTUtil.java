@@ -19,11 +19,10 @@ package com.samczsun.helios.utils;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -32,11 +31,28 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import sun.awt.DefaultMouseInfoPeer;
 
+import java.awt.MouseInfo;
+import java.awt.peer.MouseInfoPeer;
+import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SWTUtil {
+    private static MouseInfoPeer peer = null;
+
+    static {
+        try {
+            Class<DefaultMouseInfoPeer> clazz = DefaultMouseInfoPeer.class;
+            Constructor<DefaultMouseInfoPeer> ctor = clazz.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            peer = ctor.newInstance();
+        } catch (Throwable t) {
+            // Ignored
+        }
+    }
+
     public static boolean promptForYesNo(String question) {
         return promptForYesNo(Constants.REPO_NAME + "- Question", question);
     }
@@ -128,5 +144,16 @@ public class SWTUtil {
         int x = bounds.x + (bounds.width - rect.width) / 2;
         int y = bounds.y + (bounds.height - rect.height) / 2;
         shell.setLocation(x, y);
+    }
+
+    public static Point getMouseLocation() {
+        java.awt.Point mousePoint;
+        if (peer != null) {
+            mousePoint = new java.awt.Point(0, 0);
+            peer.fillPointWithCoords(mousePoint);
+        } else {
+            mousePoint = MouseInfo.getPointerInfo().getLocation();
+        }
+        return new Point(mousePoint.x, mousePoint.y);
     }
 }

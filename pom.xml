@@ -193,6 +193,12 @@
             <!--Apache 2.0-->
             <!--dex2jar-repo-->
         </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+            <!--Apache 2.0-->
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.swt</groupId>

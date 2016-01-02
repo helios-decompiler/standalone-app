@@ -19,6 +19,7 @@ package com.samczsun.helios;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import com.samczsun.helios.api.events.Events;
+import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.bootloader.BootSequence;
 import com.samczsun.helios.bootloader.Splash;
@@ -32,8 +33,6 @@ import com.samczsun.helios.utils.FileChooserUtil;
 import com.samczsun.helios.utils.SWTUtil;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Image;
@@ -42,14 +41,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.objectweb.asm.tree.ClassNode;
 
 import javax.swing.UIManager;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,7 +57,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -71,7 +70,6 @@ public class Helios {
     private static Boolean javaRtVerified = null;
     private static BackgroundTaskGui backgroundTaskGui;
     private static GUI gui;
-    private static Supplier<Menu> recentFilesMenu;
     private static BackgroundTaskHandler backgroundTaskHandler;
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
@@ -93,9 +91,14 @@ public class Helios {
         backgroundTaskHandler = new BackgroundTaskHandler();
         splashScreen.updateState(BootSequence.LOADING_ADDONS);
         for (File file : Constants.ADDONS_DIR.listFiles()) {
-            AddonHandler.getAllHandlers().stream().filter(handler -> handler.accept(file)).findFirst().ifPresent(handler -> {
-                handler.run(file);
-            });
+            AddonHandler
+                    .getAllHandlers()
+                    .stream()
+                    .filter(handler -> handler.accept(file))
+                    .findFirst()
+                    .ifPresent(handler -> {
+                        handler.run(file);
+                    });
         }
         AddonHandler.registerPreloadedAddons();
         splashScreen.updateState(BootSequence.SETTING_UP_GUI);
@@ -185,32 +188,7 @@ public class Helios {
             while (recentFiles.size() > Settings.MAX_RECENTFILES.get().asInt()) {
                 recentFiles.remove(0);
             }
-            updateRecentMenus();
-        }
-    }
-
-    public static void updateRecentMenus() {
-        if (recentFilesMenu != null) {
-            Display display = Display.getDefault();
-            display.asyncExec(() -> {
-                Menu menu = recentFilesMenu.get();
-                MenuItem[] items = menu.getItems();
-                int index = 0;
-                if (items.length > 0) {
-                    String last = items[0].getText();
-                    index = recentFiles.indexOf(last) + 1;
-                }
-                for (int i = index; i < recentFiles.size(); i++) {
-                    MenuItem item = new MenuItem(menu, SWT.PUSH, 0);
-                    item.setText(recentFiles.get(i));
-                    item.addSelectionListener(new SelectionAdapter() {
-                        @Override
-                        public void widgetSelected(SelectionEvent e) {
-                            Helios.openFiles(new File[]{new File(item.getText())}, false);
-                        }
-                    });
-                }
-            });
+            Events.callEvent(new RecentFileRequest(recentFiles));
         }
     }
 
@@ -246,10 +224,9 @@ public class Helios {
     public static void promptForCustomPath() {
         Display.getDefault().asyncExec(() -> {
             Display display = Display.getDefault();
-            final Image image = new Image(display, Resources.ICON.getData());
             Shell shell = new Shell(display);
             shell.setLayout(new GridLayout());
-            shell.setImage(image);
+            shell.setImage(Resources.ICON.getImage());
             shell.setText("Set your PATH variable");
             org.eclipse.swt.graphics.Point mainLocation = getGui().getShell().getLocation();
             org.eclipse.swt.graphics.Point size = getGui().getShell().getSize();
@@ -263,7 +240,6 @@ public class Helios {
                 @Override
                 public void shellClosed(ShellEvent e) {
                     Settings.PATH.set(text.getText());
-                    image.dispose();
                 }
             });
             shell.pack();
@@ -459,12 +435,6 @@ public class Helios {
             } else if (setting == Settings.RT_LOCATION) {
                 ensureJavaRtSet0(true);
             }
-        }
-    }
-
-    public static void setRecentFilesMenu(Supplier<Menu> supplier) {
-        if (recentFilesMenu == null) {
-            recentFilesMenu = supplier;
         }
     }
 }

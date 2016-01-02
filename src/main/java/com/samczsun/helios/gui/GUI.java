@@ -21,6 +21,9 @@ import com.samczsun.helios.Helios;
 import com.samczsun.helios.Resources;
 import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.Addon;
+import com.samczsun.helios.api.events.Events;
+import com.samczsun.helios.api.events.Listener;
+import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import org.eclipse.swt.SWT;
@@ -53,6 +56,7 @@ import org.eclipse.swt.widgets.Tree;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 public class GUI {
     private final Display display = Display.getDefault();
@@ -236,10 +240,33 @@ public class GUI {
     }
 
     private void setupRecentFiles(MenuItem openRecent) {
-        Menu recentFiles = new Menu(openRecent);
-        Helios.setRecentFilesMenu(() -> recentFiles);
+        Menu recentFilesMenu = new Menu(openRecent);
+        Events.registerListener(new Listener() {
+            public void handleRecentFileRequest(RecentFileRequest request) {
+                Display display = Display.getDefault();
+                display.asyncExec(() -> {
+                    List<String> recentFiles = request.getFiles();
+                    MenuItem[] items = recentFilesMenu.getItems();
+                    int index = 0;
+                    if (items.length > 0) {
+                        String last = items[0].getText();
+                        index = recentFiles.indexOf(last) + 1;
+                    }
+                    for (int i = index; i < recentFiles.size(); i++) {
+                        MenuItem item = new MenuItem(recentFilesMenu, SWT.PUSH, 0);
+                        item.setText(recentFiles.get(i));
+                        item.addSelectionListener(new SelectionAdapter() {
+                            @Override
+                            public void widgetSelected(SelectionEvent e) {
+                                Helios.openFiles(new File[]{new File(item.getText())}, false);
+                            }
+                        });
+                    }
+                });
+            }
+        });
         Helios.updateRecentMenus();
-        openRecent.setMenu(recentFiles);
+        openRecent.setMenu(recentFilesMenu);
     }
 
     private void setupSashForm() {

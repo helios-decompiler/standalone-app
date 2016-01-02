@@ -28,7 +28,6 @@ public enum Resources {
     PACKAGE("package.png"),
     CLASS("class.png"),
     JAVA("java.png"),
-    DECODED("decoded.png"),
     ANDROID("android.png"),
     CONFIG("config.png"),
     TEXT("text.png"),
