@@ -16,6 +16,7 @@
 
 package com.samczsun.helios;
 
+import com.samczsun.helios.handler.ExceptionHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.eclipse.swt.graphics.Image;
@@ -42,17 +43,12 @@ public enum Resources {
     ZIP("zip.png"),
     FOLDER("folder.png");
 
-    private final byte[] data;
+    private final String filePath;
+    private byte[] data;
     private Image image;
 
     Resources(String path) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            IOUtils.copy(Resources.class.getResourceAsStream("/res/" + path), out);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.data = out.toByteArray();
+        this.filePath = "/res/" + path;
     }
 
     public static void loadAllImages() {
@@ -60,7 +56,12 @@ public enum Resources {
             throw new IllegalArgumentException("Wrong thread");
         }
         for (Resources resources : Resources.values()) {
-            resources.image = new Image(Display.getDefault(), resources.getData());
+            try {
+                resources.data = IOUtils.toByteArray(Resources.class.getResourceAsStream(resources.filePath));
+                resources.image = new Image(Display.getDefault(), resources.getData());
+            } catch (IOException exception) {
+                ExceptionHandler.handle(exception);
+            }
         }
     }
 

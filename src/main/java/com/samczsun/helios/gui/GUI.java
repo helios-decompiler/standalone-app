@@ -265,8 +265,8 @@ public class GUI {
                 });
             }
         });
-        Helios.updateRecentMenus();
         openRecent.setMenu(recentFilesMenu);
+        Helios.updateRecentFiles();
     }
 
     private void setupSashForm() {

@@ -33,6 +33,8 @@ import com.samczsun.helios.utils.FileChooserUtil;
 import com.samczsun.helios.utils.SWTUtil;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Image;
@@ -188,8 +190,12 @@ public class Helios {
             while (recentFiles.size() > Settings.MAX_RECENTFILES.get().asInt()) {
                 recentFiles.remove(0);
             }
-            Events.callEvent(new RecentFileRequest(recentFiles));
+            updateRecentFiles();
         }
+    }
+
+    public static void updateRecentFiles() {
+        Events.callEvent(new RecentFileRequest(recentFiles));
     }
 
     public static void promptForFilesToOpen() {
@@ -228,8 +234,6 @@ public class Helios {
             shell.setLayout(new GridLayout());
             shell.setImage(Resources.ICON.getImage());
             shell.setText("Set your PATH variable");
-            org.eclipse.swt.graphics.Point mainLocation = getGui().getShell().getLocation();
-            org.eclipse.swt.graphics.Point size = getGui().getShell().getSize();
             final Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
             text.setText(Settings.PATH.get().asString());
             GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
@@ -242,15 +246,16 @@ public class Helios {
                     Settings.PATH.set(text.getText());
                 }
             });
+            shell.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.keyCode == SWT.ESC) {
+                        shell.close();
+                    }
+                }
+            });
             shell.pack();
-
-            Rectangle bounds = new Rectangle(mainLocation.x, mainLocation.y, size.x, size.y);
-            Rectangle rect = shell.getBounds();
-
-            int x1 = bounds.x + (bounds.width - rect.width) / 2;
-            int y1 = bounds.y + (bounds.height - rect.height) / 2;
-
-            shell.setLocation(x1, y1);
+            SWTUtil.center(shell);
             shell.open();
         });
     }
