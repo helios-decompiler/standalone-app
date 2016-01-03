@@ -64,6 +64,8 @@ public class TreeManager {
                     for (TreeItem treeItem : items) {
                         if (treeItem.getItemCount() == 0) {
                             click(treeItem);
+                        } else {
+                            treeItem.setExpanded(!treeItem.getExpanded());
                         }
                     }
                 }
@@ -86,8 +88,6 @@ public class TreeManager {
                 } else if (e.button == 3) {
                     TreeItem[] items = tree.getSelection();
                     TreeItem item = tree.getItem(new Point(e.x, e.y));
-
-                    Display display = Display.getDefault();
 
                     Menu menu = new Menu(Helios.getGui().getShell(), SWT.POP_UP);
 

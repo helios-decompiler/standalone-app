@@ -109,6 +109,15 @@ public class ClassManager {
                 ((List<String>) ((Object[]) fileTab.getData())[2]).add(FileHandler.ANY.getId());
                 innerTabFolder.setSelection(nestedItem);
             });
+        } else {
+            CTabItem[] items = mainTabs.getItems();
+            for (CTabItem item : items) {
+                Object[] data = (Object[]) item.getData();
+                if (file.equals(data[0]) && name.equals(data[1])) {
+                    mainTabs.setSelection(item);
+                    return;
+                }
+            }
         }
     }
 
