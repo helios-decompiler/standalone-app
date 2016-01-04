@@ -40,19 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SWTUtil {
-    private static MouseInfoPeer peer = null;
-
-    static {
-        try {
-            Class<DefaultMouseInfoPeer> clazz = DefaultMouseInfoPeer.class;
-            Constructor<DefaultMouseInfoPeer> ctor = clazz.getDeclaredConstructor();
-            ctor.setAccessible(true);
-            peer = ctor.newInstance();
-        } catch (Throwable t) {
-            // Ignored
-        }
-    }
-
     public static boolean promptForYesNo(String question) {
         return promptForYesNo(Constants.REPO_NAME + "- Question", question);
     }
@@ -147,13 +134,7 @@ public class SWTUtil {
     }
 
     public static Point getMouseLocation() {
-        java.awt.Point mousePoint;
-        if (peer != null) {
-            mousePoint = new java.awt.Point(0, 0);
-            peer.fillPointWithCoords(mousePoint);
-        } else {
-            mousePoint = MouseInfo.getPointerInfo().getLocation();
-        }
+        java.awt.Point mousePoint = MouseInfo.getPointerInfo().getLocation(); //TODO Optimize but Mac doesn't use DefaultMouseInfoPeer
         return new Point(mousePoint.x, mousePoint.y);
     }
 }
