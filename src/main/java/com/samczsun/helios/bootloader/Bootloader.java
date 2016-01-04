@@ -64,13 +64,13 @@ public class Bootloader {
                 System.out.println("Attemting to force main thread");
                 Executor executor;
                 try {
-                    Class<?> comAppleConcurrentDispatch = Class.forName("com.apple.concurrent.Dispatch");
-                    Method getInstance = comAppleConcurrentDispatch.getMethod("getInstance", (Class<?>[]) null);
-                    Object dispatchInstance = getInstance.invoke(null, (Object[]) null);
-                    Method getNonBlockingMainQueueExecutor = dispatchInstance.getClass().getMethod("getNonBlockingMainQueueExecutor", (Class<?>[]) null);
-                    executor = (Executor) getNonBlockingMainQueueExecutor.invoke(dispatchInstance, (Object[]) null);
+                    Class<?> dispatchClass = Class.forName("com.apple.concurrent.Dispatch");
+                    Method getInstance = dispatchClass.getMethod("getInstance");
+                    Object dispatch = getInstance.invoke(null);
+                    Method getNonBlockingMainQueueExecutor = dispatch.getClass().getMethod("getNonBlockingMainQueueExecutor");
+                    executor = (Executor) getNonBlockingMainQueueExecutor.invoke(dispatch);
                 } catch (Throwable throwable) {
-                    throw new RuntimeException("Could not reflectively access Dispatch");
+                    throw new RuntimeException("Could not reflectively access Dispatch", throwable);
                 }
                 if (executor != null) {
                     executor.execute(displayPumper);
@@ -92,6 +92,9 @@ public class Bootloader {
             checkPackagedLibrary(splashScreen, "Krakatau", Constants.KRAKATAU_VERSION, BootSequence.CHECKING_KRAKATAU,
                     BootSequence.CLEANING_KRAKATAU, BootSequence.MOVING_KRAKATAU);
             Helios.main(args, shell, splashScreen);
+            while (!displayPumper.isDone()) {
+                Thread.sleep(100);
+            }
         } catch (Throwable t) {
             displayError(t);
             System.exit(1);

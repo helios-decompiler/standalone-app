@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DisplayPumper implements Runnable {
     private final AtomicBoolean ready = new AtomicBoolean(false);
+    private final AtomicBoolean done = new AtomicBoolean(false);
 
     private Display display;
     private Shell shell;
@@ -43,6 +44,7 @@ public class DisplayPumper implements Runnable {
             }
             if (!result) display.sleep();
         }
+        done.set(true);
     }
 
     public Display getDisplay() {
@@ -55,5 +57,9 @@ public class DisplayPumper implements Runnable {
 
     public boolean isReady() {
         return ready.get();
+    }
+
+    public boolean isDone() {
+        return done.get();
     }
 }
