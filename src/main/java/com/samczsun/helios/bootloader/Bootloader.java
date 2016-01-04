@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.util.concurrent.Executor;
 
 public class Bootloader {
     public static void main(String[] args) {
@@ -58,12 +59,28 @@ public class Bootloader {
             loadSWTLibrary();
 
             DisplayPumper displayPumper = new DisplayPumper();
-            Thread pumpThread = new Thread(displayPumper);
-            pumpThread.setUncaughtExceptionHandler((t, e) -> {
-                Bootloader.displayError(e);
-                System.exit(1);
-            });
-            pumpThread.start();
+
+            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                System.out.println("Attemting to force main thread");
+                Executor executor;
+                try {
+                    Class<?> comAppleConcurrentDispatch = Class.forName("com.apple.concurrent.Dispatch");
+                    Method getInstance = comAppleConcurrentDispatch.getMethod("getInstance", (Class<?>[]) null);
+                    Object dispatchInstance = getInstance.invoke(null, (Object[]) null);
+                    Method getNonBlockingMainQueueExecutor = dispatchInstance.getClass().getMethod("getNonBlockingMainQueueExecutor", (Class<?>[]) null);
+                    executor = (Executor) getNonBlockingMainQueueExecutor.invoke(dispatchInstance, (Object[]) null);
+                } catch (Throwable throwable) {
+                    throw new RuntimeException("Could not reflectively access Dispatch");
+                }
+                if (executor != null) {
+                    executor.execute(displayPumper);
+                } else {
+                    throw new RuntimeException("Could not load executor");
+                }
+            } else {
+                Thread pumpThread = new Thread(displayPumper);
+                pumpThread.start();
+            }
             while (!displayPumper.isReady()) ;
 
             Display display = displayPumper.getDisplay();
