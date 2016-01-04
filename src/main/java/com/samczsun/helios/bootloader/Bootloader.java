@@ -65,10 +65,8 @@ public class Bootloader {
                 Executor executor;
                 try {
                     Class<?> dispatchClass = Class.forName("com.apple.concurrent.Dispatch");
-                    Method getInstance = dispatchClass.getMethod("getInstance");
-                    Object dispatch = getInstance.invoke(null);
-                    Method getNonBlockingMainQueueExecutor = dispatch.getClass().getMethod("getNonBlockingMainQueueExecutor");
-                    executor = (Executor) getNonBlockingMainQueueExecutor.invoke(dispatch);
+                    Object dispatchInstance = dispatchClass.getMethod("getInstance").invoke(null);
+                    executor = (Executor) dispatchClass.getMethod("getNonBlockingMainQueueExecutor").invoke(dispatchInstance);
                 } catch (Throwable throwable) {
                     throw new RuntimeException("Could not reflectively access Dispatch", throwable);
                 }
