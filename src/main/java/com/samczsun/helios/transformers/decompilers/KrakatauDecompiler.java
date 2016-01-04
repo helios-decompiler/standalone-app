@@ -19,12 +19,9 @@ package com.samczsun.helios.transformers.decompilers;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.utils.Utils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.ClassNode;
-import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -98,31 +95,5 @@ public class KrakatauDecompiler extends Decompiler {
             output.append("You need to set the location of Python 2.x");
         }
         return false;
-    }
-
-    public void decompile(String zipName) {
-        if (Helios.ensurePython2Set()) {
-            if (Helios.ensureJavaRtSet()) {
-                try {
-                    File tempDir = Files.createTempDirectory("krakatauoutput").toFile();
-                    File tempJar = new File(tempDir, "temp.jar");
-                    Utils.saveClasses(tempJar, Helios.getAllLoadedData());
-
-                    Process process = Helios.launchProcess(
-                            new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "decompile.py",
-                                    "-skip", "-nauto", "-path",
-                                    Settings.RT_LOCATION.get().asString() + ";" + tempJar.getAbsolutePath(), "-out",
-                                    tempDir.getAbsolutePath(), tempJar.getAbsolutePath()).directory(
-                                    Constants.KRAKATAU_DIR));
-                    process.waitFor();
-
-                    tempJar.delete();
-                    ZipUtil.pack(tempDir, new File(zipName));
-                    FileUtils.deleteDirectory(tempDir);
-                } catch (Exception e) {
-                    ExceptionHandler.handle(e);
-                }
-            }
-        } //TODO Warn
     }
 }

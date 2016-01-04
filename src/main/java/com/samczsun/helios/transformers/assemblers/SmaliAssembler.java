@@ -20,6 +20,7 @@ import com.samczsun.helios.Settings;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
@@ -33,15 +34,21 @@ public class SmaliAssembler extends Assembler {
 
     @Override
     public byte[] assemble(String name, String contents) {
+        File tempDir = null;
+        File tempSmaliFolder = null;
+        File tempSmali = null;
+        File tempDex = null;
+        File tempJar = null;
+        File tempJarFolder = null;
         try {
-            File tempDir = Files.createTempDirectory("smali").toFile();
-            File tempSmaliFolder = new File(tempDir, "smalifolder");
+            tempDir = Files.createTempDirectory("smali").toFile();
+            tempSmaliFolder = new File(tempDir, "smalifolder");
             tempSmaliFolder.mkdir();
 
-            File tempSmali = new File(tempDir, "temp.smali");
-            File tempDex = new File(tempDir, "temp.dex");
-            File tempJar = new File(tempDir, "temp.jar");
-            File tempJarFolder = new File(tempDir, "temp-jar");
+            tempSmali = new File(tempDir, "temp.smali");
+            tempDex = new File(tempDir, "temp.dex");
+            tempJar = new File(tempDir, "temp.jar");
+            tempJarFolder = new File(tempDir, "temp-jar");
 
             FileUtils.write(tempSmali, contents, "UTF-8", false);
             try {
@@ -79,6 +86,13 @@ public class SmaliAssembler extends Assembler {
             }
         } catch (Exception e) {
             ExceptionHandler.handle(e);
+        } finally {
+            FileUtils.deleteQuietly(tempDir);
+            FileUtils.deleteQuietly(tempSmaliFolder);
+            FileUtils.deleteQuietly(tempSmali);
+            FileUtils.deleteQuietly(tempDex);
+            FileUtils.deleteQuietly(tempJar);
+            FileUtils.deleteQuietly(tempJarFolder);
         }
         return null;
     }

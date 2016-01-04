@@ -26,4 +26,9 @@ public class HexViewer extends Transformer {
     public String getName() {
         return "Hex";
     }
+
+    @Override
+    public Object transform(Object... args) {
+        throw new IllegalArgumentException();
+    }
 }

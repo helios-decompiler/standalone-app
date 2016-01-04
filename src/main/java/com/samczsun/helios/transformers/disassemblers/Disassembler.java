@@ -56,9 +56,11 @@ public abstract class Disassembler extends Transformer {
         return this.name;
     }
 
-    public abstract boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output);
+    public Object transform(Object... args) {
+        return disassembleClassNode((ClassNode) args[0], (byte[]) args[1], (StringBuilder) args[2]);
+    }
 
-    public abstract void disassembleToZip(String zipName);
+    public abstract boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output);
 
     public static Disassembler getById(String id) {
         return BY_ID.get(id);

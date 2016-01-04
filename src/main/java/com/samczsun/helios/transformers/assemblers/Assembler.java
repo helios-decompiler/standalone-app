@@ -50,6 +50,10 @@ public abstract class Assembler extends Transformer {
         return this;
     }
 
+    public Object transform(Object... args) {
+        return assemble((String) args[0], (String) args[1]);
+    }
+
     public abstract byte[] assemble(String name, String contents);
 
     public final String getId() {

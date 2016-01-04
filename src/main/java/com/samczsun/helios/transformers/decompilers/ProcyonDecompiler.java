@@ -29,17 +29,13 @@ package com.samczsun.helios.transformers.decompilers;
 
 import com.beust.jcommander.JCommander;
 import com.samczsun.helios.Helios;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.TransformerSettings;
-import com.samczsun.helios.utils.Utils;
 import com.strobel.assembler.InputTypeLoader;
 import com.strobel.assembler.metadata.Buffer;
 import com.strobel.assembler.metadata.ITypeLoader;
-import com.strobel.assembler.metadata.JarTypeLoader;
 import com.strobel.assembler.metadata.MetadataSystem;
 import com.strobel.assembler.metadata.TypeDefinition;
 import com.strobel.assembler.metadata.TypeReference;
-import com.strobel.core.StringUtilities;
 import com.strobel.decompiler.CommandLineOptions;
 import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
@@ -47,21 +43,8 @@ import com.strobel.decompiler.PlainTextOutput;
 import com.strobel.decompiler.languages.Languages;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 public class ProcyonDecompiler extends Decompiler {
 
@@ -118,87 +101,6 @@ public class ProcyonDecompiler extends Decompiler {
         } catch (Throwable e) {
             output.append(parseException(e));
             return false;
-        }
-    }
-
-    @Override
-    public void decompile(String zipName) {
-        try {
-            File tempZip = File.createTempFile("procyonin", ".jar");
-            Utils.save(tempZip, Helios.getAllLoadedData());
-            doSaveJarDecompiled(tempZip, new File(zipName));
-        } catch (Exception e) {
-            ExceptionHandler.handle(e);
-        }
-    }
-
-    private void doSaveJarDecompiled(File inFile, File outFile) throws Exception {
-        try (JarFile jfile = new JarFile(inFile);
-             FileOutputStream dest = new FileOutputStream(outFile);
-             BufferedOutputStream buffDest = new BufferedOutputStream(dest);
-             ZipOutputStream out = new ZipOutputStream(buffDest)) {
-            byte data[] = new byte[1024];
-            DecompilerSettings settings = getDecompilerSettings();
-            MetadataSystem metadataSystem = new MetadataSystem(new JarTypeLoader(jfile));
-
-            DecompilationOptions decompilationOptions = new DecompilationOptions();
-            decompilationOptions.setSettings(settings);
-            decompilationOptions.setFullDecompilation(true);
-
-            Enumeration<JarEntry> ent = jfile.entries();
-            Set<JarEntry> history = new HashSet<>();
-            while (ent.hasMoreElements()) {
-                JarEntry entry = ent.nextElement();
-                if (entry.getName().endsWith(".class")) {
-                    JarEntry etn = new JarEntry(entry.getName().replace(".class", ".java"));
-                    if (history.add(etn)) {
-                        out.putNextEntry(etn);
-                        try {
-                            String internalName = StringUtilities.removeRight(entry.getName(), ".class");
-                            TypeReference type = metadataSystem.lookupType(internalName);
-                            TypeDefinition resolvedType;
-                            if ((type == null) || ((resolvedType = type.resolve()) == null)) {
-                                throw new Exception("Unable to resolve type.");
-                            }
-                            Writer writer = new OutputStreamWriter(out);
-                            settings
-                                    .getLanguage()
-                                    .decompileType(resolvedType, new PlainTextOutput(writer), decompilationOptions);
-                            writer.flush();
-                        } finally {
-                            out.closeEntry();
-                        }
-                    }
-                } else {
-                    try {
-                        JarEntry etn = new JarEntry(entry.getName());
-                        if (history.add(etn)) continue;
-                        history.add(etn);
-                        out.putNextEntry(etn);
-                        try {
-                            InputStream in = jfile.getInputStream(entry);
-                            if (in != null) {
-                                try {
-                                    int count;
-                                    while ((count = in.read(data, 0, 1024)) != -1) {
-                                        out.write(data, 0, count);
-                                    }
-                                } finally {
-                                    in.close();
-                                }
-                            }
-                        } finally {
-                            out.closeEntry();
-                        }
-                    } catch (ZipException ze) {
-                        // some jar-s contain duplicate pom.xml entries: ignore
-                        // it
-                        if (!ze.getMessage().contains("duplicate")) {
-                            throw ze;
-                        }
-                    }
-                }
-            }
         }
     }
 

@@ -17,7 +17,6 @@
 package com.samczsun.helios.transformers.decompilers;
 
 import com.samczsun.helios.transformers.Transformer;
-import com.samczsun.helios.transformers.TransformerSettings;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.Collection;
@@ -27,7 +26,7 @@ import java.util.Map;
 
 public abstract class Decompiler extends Transformer {
     private static final Map<String, Decompiler> BY_ID = new HashMap<>();
-    
+
     static {
         new ProcyonDecompiler().register();
         new FernflowerDecompiler().register();
@@ -62,9 +61,11 @@ public abstract class Decompiler extends Transformer {
         return settings.size() > 0;
     }
 
-    public abstract boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output);
+    public Object transform(Object... args) {
+        return decompile((ClassNode) args[0], (byte[]) args[1], (StringBuilder) args[2]);
+    }
 
-    public abstract void decompile(String zipName);
+    public abstract boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output);
 
     public static Decompiler getById(String id) {
         return BY_ID.get(id);

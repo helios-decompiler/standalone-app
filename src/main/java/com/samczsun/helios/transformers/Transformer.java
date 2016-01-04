@@ -66,4 +66,6 @@ public abstract class Transformer {
         node.accept(writer);
         return writer.toByteArray();
     }
+
+    public abstract Object transform(Object... args);
 }

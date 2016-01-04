@@ -44,6 +44,10 @@ public abstract class Compiler extends Transformer {
         return this;
     }
 
+    public Object transform(Object... args) {
+        return compile((String) args[0], (String) args[1]);
+    }
+
     public abstract byte[] compile(String name, String contents);
 
     public final String getId() {

@@ -19,17 +19,13 @@ package com.samczsun.helios.transformers.disassemblers;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.utils.Utils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.objectweb.asm.tree.ClassNode;
-import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -41,40 +37,24 @@ public class KrakatauDisassembler extends Disassembler {
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         if (Helios.ensurePython2Set()) {
-            Path inputJar = null;
-            Path outputZip = null;
+            File inputJar = null;
+            File outputZip = null;
 
             String processLog = "";
-
             try {
-                inputJar = Files.createTempFile("kdisin", ".jar");
-                outputZip = Files.createTempFile("kdisout", ".zip");
+                inputJar = Files.createTempFile("kdisin", ".jar").toFile();
+                outputZip = Files.createTempFile("kdisout", ".zip").toFile();
 
-                Utils.saveClasses(inputJar.toAbsolutePath().toFile(), Helios.getAllLoadedData());
+                Utils.saveClasses(inputJar, Helios.getAllLoadedData());
 
                 Process process = Helios.launchProcess(
                         new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
-                                inputJar.toAbsolutePath().toString(), "-out", outputZip.toAbsolutePath().toString(),
+                                inputJar.getAbsolutePath(), "-out", outputZip.getAbsolutePath(),
                                 cn.name + ".class").directory(Constants.KRAKATAU_DIR));
 
-                //Read out dir output
-                String log = "Process:" + Constants.NEWLINE + Constants.NEWLINE;
+                processLog = Utils.readProcess(process);
 
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                IOUtils.copy(process.getInputStream(), outputStream);
-                log += new String(outputStream.toByteArray(), "UTF-8");
-
-                log += Constants.NEWLINE + Constants.NEWLINE + "Error:" + Constants.NEWLINE + Constants.NEWLINE;
-
-                outputStream = new ByteArrayOutputStream();
-                IOUtils.copy(process.getErrorStream(), outputStream);
-                log += new String(outputStream.toByteArray(), "UTF-8");
-
-                int exitValue = process.waitFor();
-                log += Constants.NEWLINE + Constants.NEWLINE + "Exit Value is " + exitValue;
-                processLog = log;
-
-                ZipFile zipFile = new ZipFile(outputZip.toFile());
+                ZipFile zipFile = new ZipFile(outputZip);
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
                 byte[] data = null;
                 while (entries.hasMoreElements()) {
@@ -90,47 +70,12 @@ public class KrakatauDisassembler extends Disassembler {
                 output.append(parseException(e)).append(processLog);
                 return false;
             } finally {
-                try {
-                    if (inputJar != null) {
-                        Files.delete(inputJar);
-                    }
-                } catch (IOException e) {
-                }
-                try {
-                    if (outputZip != null) {
-                        Files.delete(outputZip);
-                    }
-                } catch (IOException e) {
-                }
+                FileUtils.deleteQuietly(inputJar);
+                FileUtils.deleteQuietly(outputZip);
             }
         } else {
             output.append("You need to set the location of Python 2.x");
         }
         return false;
-    }
-
-    @Override
-    public void disassembleToZip(String zipName) {
-        if (Helios.ensurePython2Set()) {
-            try {
-                File tempDirectory = Files.createTempDirectory("kdout").toFile();
-                File tempJar = Files.createTempFile("kdin", ".jar").toFile();
-                Utils.saveClasses(tempJar, Helios.getAllLoadedData());
-
-                Process process = Helios.launchProcess(
-                        new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
-                                Settings.RT_LOCATION.get().asString() + ";" + tempJar.getAbsolutePath(), "-out",
-                                tempDirectory.getAbsolutePath(), tempJar.getAbsolutePath()).directory(
-                                Constants.KRAKATAU_DIR));
-                process.waitFor();
-
-                ZipUtil.pack(tempDirectory, new File(zipName));
-
-                //tempDirectory.delete();
-                tempJar.delete();
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-            }
-        }
     }
 }

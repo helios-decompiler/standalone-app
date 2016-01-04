@@ -31,20 +31,13 @@
  */
 package com.samczsun.helios.transformers.decompilers;
 
-import com.samczsun.helios.Helios;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.TransformerSettings;
-import com.samczsun.helios.utils.Utils;
-import org.apache.commons.io.FileUtils;
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
-import org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -132,23 +125,6 @@ public class FernflowerDecompiler extends Decompiler {
         }
     }
 
-    @Override
-    public void decompile(String zipName) {
-        try {
-            Path outputDir = Files.createTempDirectory("fernflower_output");
-            Path tempJar = Files.createTempFile("fernflower_input", ".jar");
-            File output = new File(zipName);
-            Utils.save(tempJar.toAbsolutePath().toFile(), Helios.getAllLoadedData());
-            ConsoleDecompiler decompiler = new ConsoleDecompiler(outputDir.toFile(), main(generateMainMethod()));
-            decompiler.addSpace(tempJar.toFile(), true);
-            decompiler.decompileContext();
-            Files.move(outputDir.toFile().listFiles()[0].toPath(), output.toPath());
-            Files.delete(tempJar);
-            FileUtils.deleteDirectory(outputDir.toFile());
-        } catch (Exception e) {
-            ExceptionHandler.handle(e);
-        }
-    }
 
     public Map<String, Object> main(String[] args) {
         HashMap<String, Object> mapOptions = new HashMap<>();

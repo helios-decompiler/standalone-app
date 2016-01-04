@@ -40,12 +40,7 @@
 
 package com.samczsun.helios.transformers.decompilers;
 
-import com.samczsun.helios.Helios;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.TransformerSettings;
-import com.samczsun.helios.utils.Utils;
-import org.apache.commons.io.FileUtils;
-import org.benf.cfr.reader.bytecode.analysis.types.JavaTypeInstance;
 import org.benf.cfr.reader.entities.ClassFile;
 import org.benf.cfr.reader.entities.Method;
 import org.benf.cfr.reader.relationship.MemberNameResolver;
@@ -53,27 +48,14 @@ import org.benf.cfr.reader.state.ClassFileSourceImpl;
 import org.benf.cfr.reader.state.DCCommonState;
 import org.benf.cfr.reader.state.TypeUsageCollector;
 import org.benf.cfr.reader.util.CannotLoadClassException;
-import org.benf.cfr.reader.util.Functional;
 import org.benf.cfr.reader.util.ListFactory;
-import org.benf.cfr.reader.util.Predicate;
 import org.benf.cfr.reader.util.bytestream.BaseByteData;
 import org.benf.cfr.reader.util.getopt.GetOptParser;
 import org.benf.cfr.reader.util.getopt.Options;
 import org.benf.cfr.reader.util.getopt.OptionsImpl;
 import org.benf.cfr.reader.util.output.Dumper;
-import org.benf.cfr.reader.util.output.FileDumper;
-import org.benf.cfr.reader.util.output.IllegalIdentifierDump;
-import org.benf.cfr.reader.util.output.NopSummaryDumper;
-import org.benf.cfr.reader.util.output.SummaryDumper;
 import org.benf.cfr.reader.util.output.ToStringDumper;
 import org.objectweb.asm.tree.ClassNode;
-import org.zeroturnaround.zip.ZipUtil;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 
 public class CFRDecompiler extends Decompiler {
 
@@ -124,52 +106,6 @@ public class CFRDecompiler extends Decompiler {
         return d.toString();
     }
 
-    public static void doJar(DCCommonState dcCommonState, Path input, Path output) {
-        SummaryDumper summaryDumper = new NopSummaryDumper();
-        Dumper d = new ToStringDumper();
-        Options options = dcCommonState.getOptions();
-        IllegalIdentifierDump illegalIdentifierDump = IllegalIdentifierDump.Factory.get(options);
-
-        final Predicate<String> e = org.benf.cfr.reader.util.MiscUtils.mkRegexFilter(options.getOption(OptionsImpl.JAR_FILTER),
-                true);
-
-        List<JavaTypeInstance> err1 = dcCommonState.explicitlyLoadJar(input.toAbsolutePath().toString());
-        err1 = Functional.filter(err1, in -> e.test(in.getRawName()));
-        if (options.getOption(OptionsImpl.RENAME_MEMBERS)) {
-            MemberNameResolver.resolveNames(dcCommonState, err1);
-        }
-
-        for (JavaTypeInstance type : err1) {
-            try {
-                ClassFile e1 = dcCommonState.getClassFile(type);
-                if (e1.isInnerClass()) {
-                    d = null;
-                } else {
-                    if (options.getOption(OptionsImpl.DECOMPILE_INNER_CLASSES).booleanValue()) {
-                        e1.loadInnerClasses(dcCommonState);
-                    }
-
-                    e1.analyseTop(dcCommonState);
-                    TypeUsageCollector collectingDumper = new TypeUsageCollector(e1);
-                    e1.collectTypeUsages(collectingDumper);
-                    d = new FileDumper(output.toAbsolutePath().toString(), e1.getClassType(), summaryDumper,
-                            collectingDumper.getTypeUsageInformation(), options, illegalIdentifierDump);
-                    e1.dump(d);
-                    d.print("\n");
-                    d.print("\n");
-                }
-            } catch (Dumper.CannotCreate var25) {
-                throw var25;
-            } catch (RuntimeException var26) {
-                d.print(var26.toString()).print("\n").print("\n").print("\n");
-            } finally {
-                if (d != null) {
-                    d.close();
-                }
-            }
-        }
-    }
-
     @Override
     public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
         try {
@@ -181,38 +117,6 @@ public class CFRDecompiler extends Decompiler {
         } catch (Exception e) {
             output.append(parseException(e));
             return false;
-        }
-    }
-
-    @Override
-    public void decompile(String zipName) {
-        try {
-            Path outputDir = Files.createTempDirectory("cfr_output");
-            Path tempJar = Files.createTempFile("cfr_input", ".jar");
-            File output = new File(zipName);
-            try {
-                Utils.save(tempJar.toAbsolutePath().toFile(), Helios.getAllLoadedData());
-                Options options = new GetOptParser().parse(generateMainMethod(), OptionsImpl.getFactory());
-                ClassFileSourceImpl classFileSource = new ClassFileSourceImpl(options);
-                DCCommonState dcCommonState = new DCCommonState(options, classFileSource);
-                doJar(dcCommonState, tempJar.toAbsolutePath(), outputDir.toAbsolutePath());
-                ZipUtil.pack(outputDir.toFile(), output);
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-            } finally {
-                try {
-                    FileUtils.deleteDirectory(outputDir.toFile());
-                } catch (IOException e) {
-                    ExceptionHandler.handle(e);
-                }
-                try {
-                    Files.delete(tempJar);
-                } catch (IOException e) {
-                    ExceptionHandler.handle(e);
-                }
-            }
-        } catch (Exception e) {
-            ExceptionHandler.handle(e);
         }
     }
 

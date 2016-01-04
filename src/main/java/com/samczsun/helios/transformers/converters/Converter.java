@@ -118,5 +118,10 @@ public abstract class Converter extends Transformer {
         }
     };
 
+    public Object transform(Object... args) {
+        convert((File) args[0], (File) args[1]);
+        return null;
+    }
+
     public abstract void convert(File in, File out);
 }

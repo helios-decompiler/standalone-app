@@ -33,12 +33,17 @@ public class BaksmaliDisassembler extends Disassembler {
     }
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
+        File tempDir = null;
+        File tempClass = null;
+        File tempZip = null;
+        File tempDex = null;
+        File tempSmali = null;
         try {
-            File tempDir = Files.createTempDirectory("smali").toFile();
-            File tempClass = new File(tempDir, "temp.class");
-            File tempZip = new File(tempDir, "temp.jar");
-            File tempDex = new File(tempDir, "temp.dex");
-            File tempSmali = new File(tempDir, "temp-smali");
+            tempDir = Files.createTempDirectory("smali").toFile();
+            tempClass = new File(tempDir, "temp.class");
+            tempZip = new File(tempDir, "temp.jar");
+            tempDex = new File(tempDir, "temp.dex");
+            tempSmali = new File(tempDir, "temp-smali");
             FileOutputStream fos = new FileOutputStream(tempClass);
             fos.write(b);
             fos.close();
@@ -72,11 +77,12 @@ public class BaksmaliDisassembler extends Disassembler {
         } catch (final IOException e) {
             ExceptionHandler.handle(e);
             return false;
+        } finally {
+            FileUtils.deleteQuietly(tempDir);
+            FileUtils.deleteQuietly(tempClass);
+            FileUtils.deleteQuietly(tempZip);
+            FileUtils.deleteQuietly(tempDex);
+            FileUtils.deleteQuietly(tempSmali);
         }
-    }
-
-    @Override
-    public void disassembleToZip(String zipName) {
-
     }
 }

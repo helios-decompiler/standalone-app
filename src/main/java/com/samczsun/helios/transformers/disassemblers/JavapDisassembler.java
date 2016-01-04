@@ -44,8 +44,4 @@ public class JavapDisassembler extends Disassembler {
         output.append(stringWriter.toString());
         return true;
     }
-
-    @Override
-    public void disassembleToZip(String zipName) {
-    }
 }
