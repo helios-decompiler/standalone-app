@@ -23,6 +23,7 @@ import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
+import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -260,8 +261,7 @@ public class ClassManager {
                         }
                     });
                 }
-                java.awt.Point mouse = MouseInfo.getPointerInfo().getLocation();
-                menu.setLocation(mouse.x, mouse.y);
+                menu.setLocation(SWTUtil.getMouseLocation());
                 menu.setVisible(true);
             }
         });
