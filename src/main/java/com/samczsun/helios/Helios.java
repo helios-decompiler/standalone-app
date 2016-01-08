@@ -73,7 +73,9 @@ public class Helios {
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            if (!System.getProperty("os.name").toLowerCase().contains("linux")) {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            }
         } catch (Exception exception) { //Not important. No point notifying the user
         }
         splashScreen.updateState(BootSequence.LOADING_SETTINGS);
