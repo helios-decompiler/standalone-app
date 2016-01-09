@@ -24,6 +24,7 @@ import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
@@ -36,7 +37,8 @@ public class Settings {
     public static final Settings MAX_RECENTFILES = new Settings("max_recentfiles").set(25);
     public static final Settings PYTHON2_LOCATION = new Settings("python2location").set("");
     public static final Settings PYTHON3_LOCATION = new Settings("python3location").set("");
-    public static final Settings RT_LOCATION = new Settings("rtlocation").set("");
+    public static final Settings RT_LOCATION = new Settings("rtlocation").set(
+            System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar");
     public static final Settings PATH = new Settings("path").set("");
     public static final Settings LAST_DIRECTORY = new Settings("last_directory").set(".");
     public static final Settings APKTOOL = new Settings("apktool").set(true);

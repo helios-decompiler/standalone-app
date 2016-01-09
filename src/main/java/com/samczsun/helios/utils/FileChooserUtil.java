@@ -46,7 +46,13 @@ public class FileChooserUtil {
             } else {
                 dialog.setFilterExtensions(new String[]{"*.*"});
             }
-            dialog.setFilterPath(startingPath);
+            File file = new File(startingPath);
+            if (file.exists()) {
+                dialog.setFilterPath(file.isDirectory() ? startingPath : file.getParent());
+                if (file.isFile()) {
+                    dialog.setFileName(file.getName());
+                }
+            }
             dialog.open();
             String[] selectedFileNames = dialog.getFileNames();
             shell.close();
