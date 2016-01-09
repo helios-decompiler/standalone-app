@@ -26,7 +26,6 @@ import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.FileChooserUtil;
 import com.samczsun.helios.utils.SWTUtil;
-import com.strobel.decompiler.DecompilerSettings;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Combo;
@@ -35,7 +34,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.javatuples.Pair;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -57,6 +55,7 @@ public class DecompileAndSaveTask implements Runnable {
     @Override
     public void run() {
         File file = FileChooserUtil.chooseSaveLocation(Settings.LAST_DIRECTORY.get().asString(), Arrays.asList("zip"));
+        if (file == null) return;
         if (file.exists()) {
             boolean delete = SWTUtil.promptForYesNo(Constants.REPO_NAME + " - Overwrite existing file",
                     "The selected file already exists. Overwrite?");
@@ -98,7 +97,8 @@ public class DecompileAndSaveTask implements Runnable {
                     byte[] bytes = loadedFile.getData().get(innerName);
                     if (bytes != null) {
                         Decompiler.getById("cfr-decompiler").decompile(null, bytes, buffer);
-                        zipOutputStream.putNextEntry(new ZipEntry(innerName.substring(0, innerName.length() - 6) + ".java"));
+                        zipOutputStream.putNextEntry(
+                                new ZipEntry(innerName.substring(0, innerName.length() - 6) + ".java"));
                         zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
                         zipOutputStream.closeEntry();
                     }
