@@ -84,7 +84,7 @@ public class ClassManager {
                 fileTab.setControl(innerTabFolder);
                 innerTabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
                     public void close(CTabFolderEvent event) {
-                        ((List<String>) ((Object[]) fileTab.getData())[2]).remove(event.item.getData());
+                        ((List<String>) ((Object[]) fileTab.getData())[2]).remove(((Transformer)event.item.getData()).getId());
                     }
                 });
 
@@ -136,7 +136,7 @@ public class ClassManager {
             CTabFolder nested = (CTabFolder) item.getControl();
             CTabItem nestedItem = nested.getSelection();
             if (nestedItem != null) {
-                ((List<String>) ((Object[]) item.getData())[2]).remove(nestedItem.getData());
+                ((List<String>) ((Object[]) item.getData())[2]).remove(((Transformer)nestedItem.getData()).getId());
                 nestedItem.dispose();
             }
         }
@@ -170,11 +170,11 @@ public class ClassManager {
                         menuItem.setText(transformer.getName());
                         menuItem.addListener(SWT.Selection, event -> {
                             List<String> open = (List<String>) data[2];
-                            if (!open.contains(transformer.getName())) {
+                            if (!open.contains(transformer.getId())) {
                                 CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
                                 decompilerTab.setText(transformer.getName());
-                                decompilerTab.setData(transformer.getName());
-                                open.add(transformer.getName());
+                                decompilerTab.setData(transformer);
+                                open.add(transformer.getId());
 
                                 if (transformer != Transformer.HEX) {
                                     RSyntaxTextArea area = new RSyntaxTextArea();
@@ -229,7 +229,7 @@ public class ClassManager {
                                 CTabItem[] items = nested.getItems();
                                 for (CTabItem innerItem : items) {
                                     Object[] innerData = (Object[]) item.getData();
-                                    if (transformer.getName().equals(innerData[1])) {
+                                    if (transformer.equals(innerData[1])) {
                                         nested.setSelection(innerItem);
                                         return;
                                     }
@@ -283,5 +283,31 @@ public class ClassManager {
                 menu.setVisible(true);
             }
         });
+    }
+
+    public void refreshCurrentView() {
+        CTabItem file = mainTabs.getSelection();
+        if (file != null) {
+            Object[] data = ((Object[]) file.getData());
+            LoadedFile loadedFile = Helios.getLoadedFile(data[0].toString());
+            CTabItem decompiler = ((CTabFolder) file.getControl()).getSelection();
+            if (decompiler != null) {
+                SwingControl control = (SwingControl) decompiler.getControl();
+                if (decompiler.getData().equals("text")) {
+                    RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
+                    RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
+                    textArea.setText(new String(loadedFile.getFiles().get(data[1].toString())));
+                } else if (decompiler.getData().equals(Transformer.HEX)) {
+                    final HexEditor editor = (HexEditor) control.getSwingComponent();
+                    try {
+                        editor.open(new ByteArrayInputStream(loadedFile.getFiles().get(data[1])));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                } else {
+
+                }
+            }
+        }
     }
 }

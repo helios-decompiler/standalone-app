@@ -375,7 +375,11 @@ public class Helios {
                 }
             } else {
                 if (e.keyCode == SWT.F5) {
-                    promptForRefresh();
+                    if ((e.stateMask & SWT.SHIFT) == SWT.SHIFT) {
+                        getGui().getClassManager().refreshCurrentView();
+                    } else {
+                        promptForRefresh();
+                    }
                     e.doit = false;
                 }
             }
