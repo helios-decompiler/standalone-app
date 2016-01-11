@@ -225,6 +225,15 @@ public class ClassManager {
                                     control.setLayout(new FillLayout());
                                     decompilerTab.setControl(control);
                                 }
+                            } else {
+                                CTabItem[] items = nested.getItems();
+                                for (CTabItem innerItem : items) {
+                                    Object[] innerData = (Object[]) item.getData();
+                                    if (transformer.getName().equals(innerData[1])) {
+                                        nested.setSelection(innerItem);
+                                        return;
+                                    }
+                                }
                             }
                         });
                     }
@@ -258,6 +267,15 @@ public class ClassManager {
                             };
                             control.setLayout(new FillLayout());
                             decompilerTab.setControl(control);
+                        } else {
+                            CTabItem[] items = nested.getItems();
+                            for (CTabItem innerItem : items) {
+                                Object[] innerData = (Object[]) item.getData();
+                                if ("text".equals(innerData[1])) {
+                                    nested.setSelection(innerItem);
+                                    return;
+                                }
+                            }
                         }
                     });
                 }
