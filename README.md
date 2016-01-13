@@ -29,6 +29,18 @@ the addons folder, where you can install new addons.
 The addon API is currently under development. There are minimal events which you are able to hook into.
 More will be added as the API progresses.
 
+# FAQ
+
+Q: Why is JD-GUI not included? I use it all the time!   
+A: JD-GUI is incompatible with this project. It's a legality issue
+
+Q: Where can I download the latest build?  
+A: You can do so [here](https://ci.samczsun.com/job/Helios/)
+
+Q: Maven can't resolve dependencies. It throws a `sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target`  
+A: You need to install the root certificate for Let's Encrypt. Please look at Contributing
+
+
 # Contributing
 
 Thanks for wanting to help! This project is currently licensed under the Apache 2.0 license.
@@ -56,11 +68,3 @@ The intermediary root CA has been included in the root of this project.
 # Acknowledgements
 
 Icons for the tree are sourced from the "Silk" icon pack, located [here](http://famfamfam.com/lab/icons/silk/)  
-
-# FAQ
-
-Q: Why is JD-GUI not included? I use it all the time!  
-A: JD-GUI is incompatible with this project. It's a legality issue
-
-Q: Where can I download the latest build?
-A: You can do so [here](https://ci.samczsun.com/job/Helios/)
