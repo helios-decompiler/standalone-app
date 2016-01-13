@@ -61,3 +61,6 @@ Icons for the tree are sourced from the "Silk" icon pack, located [here](http://
 
 Q: Why is JD-GUI not included? I use it all the time!  
 A: JD-GUI is incompatible with this project. It's a legality issue
+
+Q: Where can I download the latest build?
+A: You can do so [here](https://ci.samczsun.com/job/Helios/)
