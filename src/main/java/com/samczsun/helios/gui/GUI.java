@@ -231,7 +231,7 @@ public class GUI {
         for (Converter converter : Arrays.asList(Converter.NONE, Converter.ENJARIFY, Converter.DEX2JAR)) {
             MenuItem converterItem = new MenuItem(apkConverterMenu, SWT.RADIO);
             converterItem.setText("&" + converter.getName());
-            converterItem.setData(Converter.NONE);
+            converterItem.setData(converter);
             converterItem.addSelectionListener(selectionAdapter);
             converterItem.setSelection(Settings.APK_CONVERSION.get().asString().equals(converter.getId()));
         }
