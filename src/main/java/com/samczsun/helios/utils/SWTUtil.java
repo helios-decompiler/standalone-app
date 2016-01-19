@@ -137,4 +137,8 @@ public class SWTUtil {
         java.awt.Point mousePoint = MouseInfo.getPointerInfo().getLocation(); //TODO Optimize but Mac doesn't use DefaultMouseInfoPeer
         return new Point(mousePoint.x, mousePoint.y);
     }
+
+    public static boolean isEnter(int keyCode) {
+        return keyCode == SWT.CR || keyCode == 16777296;
+    }
 }

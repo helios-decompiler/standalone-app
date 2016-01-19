@@ -41,7 +41,6 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.JComponent;
-import java.awt.MouseInfo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,7 +83,8 @@ public class ClassManager {
                 fileTab.setControl(innerTabFolder);
                 innerTabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
                     public void close(CTabFolderEvent event) {
-                        ((List<String>) ((Object[]) fileTab.getData())[2]).remove(((Transformer)event.item.getData()).getId());
+                        ((List<String>) ((Object[]) fileTab.getData())[2]).remove(
+                                ((Transformer) event.item.getData()).getId());
                     }
                 });
 
@@ -103,11 +103,11 @@ public class ClassManager {
                     }
                 }
                 CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
-                nestedItem.setText(FileHandler.ANY.getId());
-                nestedItem.setData(FileHandler.ANY.getId());
+                nestedItem.setText(Transformer.HEX.getName());
+                nestedItem.setData(Transformer.HEX);
 
                 nestedItem.setControl(FileHandler.ANY.generateTab(innerTabFolder, file, name));
-                ((List<String>) ((Object[]) fileTab.getData())[2]).add(FileHandler.ANY.getId());
+                ((List<String>) ((Object[]) fileTab.getData())[2]).add(Transformer.HEX.getId());
                 innerTabFolder.setSelection(nestedItem);
             });
         } else {
@@ -136,7 +136,7 @@ public class ClassManager {
             CTabFolder nested = (CTabFolder) item.getControl();
             CTabItem nestedItem = nested.getSelection();
             if (nestedItem != null) {
-                ((List<String>) ((Object[]) item.getData())[2]).remove(((Transformer)nestedItem.getData()).getId());
+                ((List<String>) ((Object[]) item.getData())[2]).remove(((Transformer) nestedItem.getData()).getId());
                 nestedItem.dispose();
             }
         }
@@ -178,6 +178,7 @@ public class ClassManager {
 
                                 if (transformer != Transformer.HEX) {
                                     RSyntaxTextArea area = new RSyntaxTextArea();
+                                    area.getCaret().setSelectionVisible(true);
                                     RTextScrollPane scrollPane = new RTextScrollPane(area);
                                     scrollPane.setLineNumbersEnabled(true);
                                     scrollPane.setFoldIndicatorEnabled(true);
@@ -228,8 +229,7 @@ public class ClassManager {
                             } else {
                                 CTabItem[] items = nested.getItems();
                                 for (CTabItem innerItem : items) {
-                                    Object[] innerData = (Object[]) item.getData();
-                                    if (transformer.equals(innerData[1])) {
+                                    if (transformer.equals(innerItem.getData())) {
                                         nested.setSelection(innerItem);
                                         return;
                                     }
@@ -309,5 +309,43 @@ public class ClassManager {
                 }
             }
         }
+    }
+
+    int lastIndex = 0;
+    int lastStr = -1;
+
+    public void search(String find) {
+        CTabItem file = mainTabs.getSelection();
+        if (file != null) {
+            CTabItem decompiler = ((CTabFolder) file.getControl()).getSelection();
+            if (decompiler != null) {
+                SwingControl control = (SwingControl) decompiler.getControl();
+                if (!decompiler.getData().equals(Transformer.HEX)) {
+                    RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
+                    RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
+                    String text = textArea.getText();
+                    if (text.hashCode() != lastStr) {
+                        lastIndex = 0;
+                        lastStr = text.hashCode();
+                    }
+                    if (lastIndex > text.length()) lastIndex = 0;
+                    int index = text.substring(lastIndex).indexOf(find);
+                    System.out.println(lastIndex + ", " + text.substring(lastIndex));
+                    if (index == -1) {
+                        index = text.indexOf(find);
+                        lastIndex = 0;
+                        if (index == -1) {
+                            file.getDisplay().beep();
+                            return;
+                        }
+                    }
+                    textArea.setCaretPosition(index + lastIndex);
+                    textArea.moveCaretPosition(index + lastIndex + find.length());
+                    lastIndex += index + find.length();
+                    return;
+                }
+            }
+        }
+        mainTabs.getDisplay().beep();
     }
 }

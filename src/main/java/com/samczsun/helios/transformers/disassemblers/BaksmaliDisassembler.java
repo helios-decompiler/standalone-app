@@ -24,7 +24,6 @@ import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 
 public class BaksmaliDisassembler extends Disassembler {
@@ -52,12 +51,7 @@ public class BaksmaliDisassembler extends Disassembler {
 
             Converter.ENJARIFY.convert(tempZip, tempDex);
 
-            try {
-                org.jf.baksmali.main.main(
-                        new String[]{"-o", tempSmali.getAbsolutePath(), "-x", tempDex.getAbsolutePath()});
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-            }
+            org.jf.baksmali.main.main(new String[]{"-o", tempSmali.getAbsolutePath(), "-x", tempDex.getAbsolutePath()});
 
             File outputSmali = null;
 
@@ -74,7 +68,9 @@ public class BaksmaliDisassembler extends Disassembler {
             }
             output.append(FileUtils.readFileToString(outputSmali, "UTF-8"));
             return true;
-        } catch (final IOException e) {
+        } catch (SecurityException e) {
+            return false;
+        } catch (final Exception e) {
             ExceptionHandler.handle(e);
             return false;
         } finally {

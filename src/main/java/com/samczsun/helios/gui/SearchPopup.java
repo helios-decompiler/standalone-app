@@ -16,16 +16,20 @@
 
 package com.samczsun.helios.gui;
 
+import com.samczsun.helios.Helios;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 public class SearchPopup {
     private final Display display = Display.getDefault();
@@ -33,11 +37,23 @@ public class SearchPopup {
 
     public SearchPopup() {
         display.asyncExec(() -> {
-            shell = new Shell(display, SWT.CLOSE);
-            shell.setLayout(new GridLayout());
+            shell = new Shell(display, SWT.CLOSE | SWT.BORDER);
+            shell.setText("Find");
 
-            Combo comboDropDown = new Combo(shell, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
+            KeyAdapter adapter = new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.keyCode == SWT.ESC) {
+                        shell.setVisible(false);
+                    }
+                }
+            };
+
+            GC gc = new GC(shell);
+            Text text = new Text(shell, SWT.BORDER);
+            text.setSize(gc.getFontMetrics().getAverageCharWidth() * 50, gc.getFontMetrics().getHeight()*2);
             shell.pack();
+            gc.dispose();
 
             SWTUtil.center(shell);
 
@@ -48,12 +64,13 @@ public class SearchPopup {
                     e.doit = false;
                 }
             });
-            shell.addKeyListener(new KeyAdapter() {
+            shell.addKeyListener(adapter);
+            text.addKeyListener(adapter);
+            text.addKeyListener(new KeyAdapter() {
                 @Override
-                public void keyPressed(KeyEvent e) {
-                    System.out.println(e.keyCode);
-                    if (e.keyCode == SWT.ESC) {
-                        shell.setVisible(false);
+                public void keyReleased(KeyEvent e) {
+                    if (SWTUtil.isEnter(e.keyCode)) {
+                        Helios.getGui().getClassManager().search(text.getText());
                     }
                 }
             });

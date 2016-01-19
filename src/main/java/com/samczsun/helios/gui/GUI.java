@@ -352,7 +352,7 @@ public class GUI {
                 });
                 try {
                     Thread.sleep(100);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                 }
             }
         }).start();
@@ -360,7 +360,7 @@ public class GUI {
             while (!shell.isDisposed()) {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
+                } catch (Throwable e) {
                 }
             }
             display.asyncExec(() -> {

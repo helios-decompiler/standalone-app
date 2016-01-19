@@ -59,7 +59,7 @@ public class TreeManager {
         tree.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                if (e.keyCode == SWT.CR) {
+                if (SWTUtil.isEnter(e.keyCode)) {
                     TreeItem[] items = tree.getSelection();
                     for (TreeItem treeItem : items) {
                         if (treeItem.getItemCount() == 0) {
