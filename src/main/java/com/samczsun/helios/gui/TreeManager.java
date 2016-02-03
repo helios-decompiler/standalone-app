@@ -127,6 +127,16 @@ public class TreeManager {
                         }
                     });
 
+                    MenuItem remove = new MenuItem(menu, SWT.PUSH);
+                    remove.setText("&Remove");
+                    remove.setEnabled(item.getParentItem() == null);
+                    remove.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent selectionEvent) {
+                            item.dispose();
+                        }
+                    });
+
                     menu.setLocation(SWTUtil.getMouseLocation());
                     menu.setVisible(true);
                 }
@@ -140,8 +150,11 @@ public class TreeManager {
     }
 
     public void reset() {
+        for (TreeItem item : tree.getItems()) {
+            item.setExpanded(false);
+        }
         tree.getDisplay().syncExec(() -> dispose(tree.getItems()));
-    } //TODO: Close all expanded first
+    }
 
     public void click(TreeItem item) {
         Pair<String, String> info = getFileName(item);
@@ -163,6 +176,8 @@ public class TreeManager {
     }
 
     private void update() {
+        Display display = tree.getDisplay();
+        display.syncExec(() -> reset());
         List<SpoofedTreeItem> roots = new ArrayList<>();
         for (LoadedFile loadedFile : Helios.getAllFiles()) {
             Map<String, SpoofedTreeItem> map = new HashMap<>();
@@ -188,15 +203,8 @@ public class TreeManager {
         }
         update(roots);
         sort(roots);
-        Display display = tree.getDisplay();
         display.syncExec(() -> {
-            roots:
             for (SpoofedTreeItem root : roots) { //TODO: Update root if file changed?
-                for (TreeItem child : tree.getItems()) {
-                    if (child.getText().equals(root.name)) {
-                        continue roots;
-                    }
-                }
                 update(new TreeItem(tree, SWT.NONE), root);
             }
         });
