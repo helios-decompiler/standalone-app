@@ -584,12 +584,25 @@ public class Helios {
                     process.waitFor();
                     if (process.exitValue() == 0) {
                         File currentJarLocation = getJarLocation();
-                        process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"C:\\Program Files\\Java\\jdk_8\\bin\\javaw.exe -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
-                        process.waitFor();
-                        if (process.exitValue() == 0) {
-                            SWTUtil.showMessage("Done");
+                        if (currentJarLocation != null) {
+                            File javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw.exe");
+                            while (!javaw.exists() || !javaw.isFile()) {
+                                SWTUtil.showMessage("Could not determine location of javaw. Please select the location of the executable", true);
+                                List<File> chosen = FileChooserUtil.chooseFiles(System.getProperty("java.home"), Arrays.asList("exe"), false);
+                                if (chosen.size() == 0) {
+                                    return;
+                                }
+                                javaw = chosen.get(0);
+                            }
+                            process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"" + javaw.getAbsolutePath() + " -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
+                            process.waitFor();
+                            if (process.exitValue() == 0) {
+                                SWTUtil.showMessage("Done");
+                            } else {
+                                SWTUtil.showMessage("Failed to set context menu");
+                            }
                         } else {
-                            SWTUtil.showMessage("Failed to set context menu");
+                            SWTUtil.showMessage("Could not set context menu - unable to find Helios.jar");
                         }
                     } else {
                         SWTUtil.showMessage("Failed to set context menu");
@@ -629,7 +642,7 @@ public class Helios {
     private static File getJarLocation() throws URISyntaxException {
         File currentJarLocation = new File(Helios.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         System.out.println(currentJarLocation);
-        if (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
+        while (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
             SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
             List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
             if (chosen.size() == 0) {
