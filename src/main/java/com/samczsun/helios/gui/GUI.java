@@ -135,6 +135,17 @@ public class GUI {
 
         new MenuItem(fileMenu, SWT.SEPARATOR);
 
+        MenuItem addToContext = new MenuItem(fileMenu, SWT.PUSH);
+        addToContext.setText("Add to &Context Menu");
+        addToContext.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent) {
+                Helios.addToContextMenu();
+            }
+        });
+
+        new MenuItem(fileMenu, SWT.SEPARATOR);
+
         MenuItem exit = new MenuItem(fileMenu, SWT.PUSH);
         exit.setText("E&xit");
         exit.addSelectionListener(new SelectionAdapter() {

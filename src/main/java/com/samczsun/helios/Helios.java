@@ -52,14 +52,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -236,6 +231,19 @@ public class Helios {
         splashScreen.updateState(BootSequence.COMPLETE);
         while (!splashScreen.isDisposed()) ;
         Display.getDefault().syncExec(() -> getGui().getShell().open());
+
+        List<File> open = new ArrayList<>();
+
+        for (String name : args) {
+            File file = new File(name);
+            if (file.exists()) {
+                open.add(file);
+            }
+        }
+
+        if (open.size() > 0) {
+            openFiles(open.toArray(new File[open.size()]), true);
+        }
     }
 
     public static List<LoadedFile> getFilesForName(String fileName) {
@@ -564,5 +572,71 @@ public class Helios {
                 ensureJavaRtSet0(true);
             }
         }
+    }
+
+    public static void addToContextMenu() {
+        try {
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                Process process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /f");
+                process.waitFor();
+                if (process.exitValue() == 0) {
+                    process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios /ve /d \"Open with Helios\"");
+                    process.waitFor();
+                    if (process.exitValue() == 0) {
+                        File currentJarLocation = getJarLocation();
+                        process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"C:\\Program Files\\Java\\jdk_8\\bin\\javaw.exe -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
+                        process.waitFor();
+                        if (process.exitValue() == 0) {
+                            SWTUtil.showMessage("Done");
+                        } else {
+                            SWTUtil.showMessage("Failed to set context menu");
+                        }
+                    } else {
+                        SWTUtil.showMessage("Failed to set context menu");
+                    }
+                } else {
+                    if (SWTUtil.promptForYesNo("UAC", "Helios must be run as an administrator to do this. Relaunch as administrator?")) {
+                        relaunchAsAdmin();
+                    }
+                }
+            } else {
+                SWTUtil.showMessage("You may only do this on Windows");
+            }
+        } catch (Throwable t) {
+            ExceptionHandler.handle(t);
+        }
+    }
+
+    public static void relaunchAsAdmin() throws IOException, InterruptedException, URISyntaxException {
+        File currentJarLocation = getJarLocation();
+        File tempVBSFile = File.createTempFile("tmpvbs", ".vbs");
+        PrintWriter writer = new PrintWriter(tempVBSFile);
+        writer.println("Set objShell = CreateObject(\"Wscript.Shell\")");
+        writer.println("strPath = Wscript.ScriptFullName");
+        writer.println("Set objFSO = CreateObject(\"Scripting.FileSystemObject\")");
+        writer.println("Set objFile = objFSO.GetFile(strPath)");
+        writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
+        writer.println("Set UAC = CreateObject(\"Shell.Application\")");
+        writer.println("UAC.ShellExecute \"C:\\Program Files\\Java\\jdk_8\\bin\\javaw.exe\", \"-jar " + currentJarLocation.getAbsolutePath() + "\", strFolder, \"runas\", 1");
+        writer.println("WScript.Quit 0");
+        writer.close();
+
+        Process process = Runtime.getRuntime().exec("cscript " + tempVBSFile.getAbsolutePath());
+        process.waitFor();
+        System.exit(process.exitValue());
+    }
+
+    private static File getJarLocation() throws URISyntaxException {
+        File currentJarLocation = new File(Helios.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        System.out.println(currentJarLocation);
+        if (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
+            SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
+            List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
+            if (chosen.size() == 0) {
+                return null;
+            }
+            currentJarLocation = chosen.get(0);
+        }
+        return currentJarLocation;
     }
 }
