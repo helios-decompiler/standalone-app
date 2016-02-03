@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Sam Sun <me@samczsun.com>
+ * Copyright 2016 Sam Sun <me@samczsun.com>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,16 +13,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-/*
- * Copyright (c) 2015 Mike Strobel
- *
- *      This source code is subject to terms and conditions of the Apache License, Version 2.0.
- *      A copy of the license can be found in the License.html file at the root of this distribution.
- *      By using this source code in any fashion, you are agreeing to be bound by the terms of the
- *      Apache License, Version 2.0.
- *
- *      You must not remove this notice, or any other, from this software.
- */
+
+
 
 
 package com.samczsun.helios.transformers.decompilers;

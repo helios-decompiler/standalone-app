@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Sam Sun <me@samczsun.com>
+ * Copyright 2016 Sam Sun <me@samczsun.com>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class TreeManager {
 
     public void reset() {
         tree.getDisplay().syncExec(() -> dispose(tree.getItems()));
-    }
+    } //TODO: Close all expanded first
 
     public void click(TreeItem item) {
         Pair<String, String> info = getFileName(item);
@@ -191,7 +191,7 @@ public class TreeManager {
         Display display = tree.getDisplay();
         display.syncExec(() -> {
             roots:
-            for (SpoofedTreeItem root : roots) {
+            for (SpoofedTreeItem root : roots) { //TODO: Update root if file changed?
                 for (TreeItem child : tree.getItems()) {
                     if (child.getText().equals(root.name)) {
                         continue roots;
