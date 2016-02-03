@@ -585,21 +585,17 @@ public class Helios {
                     if (process.exitValue() == 0) {
                         File currentJarLocation = getJarLocation();
                         if (currentJarLocation != null) {
-                            File javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw.exe");
-                            while (!javaw.exists() || !javaw.isFile()) {
-                                SWTUtil.showMessage("Could not determine location of javaw. Please select the location of the executable", true);
-                                List<File> chosen = FileChooserUtil.chooseFiles(System.getProperty("java.home"), Arrays.asList("exe"), false);
-                                if (chosen.size() == 0) {
-                                    return;
+                            File javaw = getJavawLocation();
+                            if (javaw != null) {
+                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"" + javaw.getAbsolutePath() + " -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
+                                process.waitFor();
+                                if (process.exitValue() == 0) {
+                                    SWTUtil.showMessage("Done");
+                                } else {
+                                    SWTUtil.showMessage("Failed to set context menu");
                                 }
-                                javaw = chosen.get(0);
-                            }
-                            process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"" + javaw.getAbsolutePath() + " -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
-                            process.waitFor();
-                            if (process.exitValue() == 0) {
-                                SWTUtil.showMessage("Done");
                             } else {
-                                SWTUtil.showMessage("Failed to set context menu");
+                                SWTUtil.showMessage("Could not set context menu - unable to find javaw.exe");
                             }
                         } else {
                             SWTUtil.showMessage("Could not set context menu - unable to find Helios.jar");
@@ -622,6 +618,15 @@ public class Helios {
 
     public static void relaunchAsAdmin() throws IOException, InterruptedException, URISyntaxException {
         File currentJarLocation = getJarLocation();
+        File javawLocation = getJavawLocation();
+        if (currentJarLocation == null) {
+            SWTUtil.showMessage("Could not relaunch as admin - unable to find Helios.jar");
+            return;
+        }
+        if (javawLocation == null) {
+            SWTUtil.showMessage("Could not relaunch as admin - unable to find javaw.exe");
+            return;
+        }
         File tempVBSFile = File.createTempFile("tmpvbs", ".vbs");
         PrintWriter writer = new PrintWriter(tempVBSFile);
         writer.println("Set objShell = CreateObject(\"Wscript.Shell\")");
@@ -630,7 +635,7 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"C:\\Program Files\\Java\\jdk_8\\bin\\javaw.exe\", \"-jar " + currentJarLocation.getAbsolutePath() + "\", strFolder, \"runas\", 1");
+        writer.println("UAC.ShellExecute \"" + javawLocation.getAbsolutePath() + "\", \"-jar " + currentJarLocation.getAbsolutePath() + "\", strFolder, \"runas\", 1");
         writer.println("WScript.Quit 0");
         writer.close();
 
@@ -651,5 +656,18 @@ public class Helios {
             currentJarLocation = chosen.get(0);
         }
         return currentJarLocation;
+    }
+
+    private static File getJavawLocation() {
+        File javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw.exe");
+        while (!javaw.exists() || !javaw.isFile()) {
+            SWTUtil.showMessage("Could not determine location of javaw. Please select the location of the executable", true);
+            List<File> chosen = FileChooserUtil.chooseFiles(System.getProperty("java.home"), Arrays.asList("exe"), false);
+            if (chosen.size() == 0) {
+                return null;
+            }
+            javaw = chosen.get(0);
+        }
+        return javaw;
     }
 }
