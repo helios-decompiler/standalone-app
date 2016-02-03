@@ -83,6 +83,7 @@ public class SWTUtil {
                 public void keyReleased(KeyEvent e) {
                     if ((e.stateMask & SWT.CTRL) == SWT.CTRL && e.keyCode == 'a') {
                         t.selectAll();
+                        e.doit = false;
                     }
                 }
             });
