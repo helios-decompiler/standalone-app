@@ -580,14 +580,14 @@ public class Helios {
                 Process process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /f");
                 process.waitFor();
                 if (process.exitValue() == 0) {
-                    process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios /ve /d \"Open with Helios\"");
+                    process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios /ve /d \"Open with Helios\" /f");
                     process.waitFor();
                     if (process.exitValue() == 0) {
                         File currentJarLocation = getJarLocation();
                         if (currentJarLocation != null) {
                             File javaw = getJavawLocation();
                             if (javaw != null) {
-                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"" + javaw.getAbsolutePath() + " -jar " + currentJarLocation.getAbsolutePath() + " %1\" /f");
+                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" \\\"%1\\\"\" /f");
                                 process.waitFor();
                                 if (process.exitValue() == 0) {
                                     SWTUtil.showMessage("Done");
@@ -635,7 +635,7 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"" + javawLocation.getAbsolutePath() + "\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + "\"\"\", strFolder, \"runas\", 1");
+        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + "\"\"\", strFolder, \"runas\", 1");
         writer.println("WScript.Quit 0");
         writer.close();
 
