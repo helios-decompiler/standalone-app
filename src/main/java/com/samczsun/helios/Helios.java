@@ -635,7 +635,7 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"" + javawLocation.getAbsolutePath() + "\", \"-jar " + currentJarLocation.getAbsolutePath() + "\", strFolder, \"runas\", 1");
+        writer.println("UAC.ShellExecute \"" + javawLocation.getAbsolutePath() + "\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + "\"\"\", strFolder, \"runas\", 1");
         writer.println("WScript.Quit 0");
         writer.close();
 
@@ -646,7 +646,6 @@ public class Helios {
 
     private static File getJarLocation() throws URISyntaxException {
         File currentJarLocation = new File(Helios.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-        System.out.println(currentJarLocation);
         while (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
             SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
             List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
