@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
  */
 public class GenericClickListener implements MouseListener, java.awt.event.MouseListener {
 
-    enum ClickType {
+    public enum ClickType {
         LEFT, MIDDLE, RIGHT;
         private static ClickType fromButton(int button) {
             return ClickType.values()[button - 1];

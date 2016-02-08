@@ -212,6 +212,9 @@ public class ClassManager {
                                     } catch (IOException e1) {
                                         e1.printStackTrace();
                                     }
+                                    editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+                                        ClassManager.this.handleNewTabRequest();
+                                    }, GenericClickListener.ClickType.RIGHT));
 
                                     SwingControl control = new SwingControl(nested, SWT.NONE) {
                                         protected JComponent createSwingComponent() {
