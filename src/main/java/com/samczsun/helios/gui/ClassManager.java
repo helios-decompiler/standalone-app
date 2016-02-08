@@ -81,6 +81,9 @@ public class ClassManager {
 
                 CTabFolder innerTabFolder = new CTabFolder(mainTabs, SWT.BORDER);
                 fileTab.setControl(innerTabFolder);
+                innerTabFolder.addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+                    ClassManager.this.handleNewTabRequest();
+                }, GenericClickListener.ClickType.RIGHT));
                 innerTabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
                     public void close(CTabFolderEvent event) {
                         ((List<String>) ((Object[]) fileTab.getData())[2]).remove(
