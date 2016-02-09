@@ -16,26 +16,15 @@
 
 package com.samczsun.helios.tasks;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.CompilationUnit;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.PreDecompileEvent;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ANTLRFileStream;
-import org.antlr.v4.runtime.Lexer;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 
 public class DecompileTask implements Runnable {
     private final String fileName;

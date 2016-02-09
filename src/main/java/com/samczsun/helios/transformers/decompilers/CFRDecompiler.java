@@ -122,11 +122,11 @@ public class CFRDecompiler extends Decompiler {
     public String[] generateMainMethod() {
         String[] result = new String[getSettings().size() * 2 + 1];
         result[0] = "helios";
-        int index = 1;
-        for (Settings setting : Settings.values()) {
-            result[index++] = "--" + setting.getParam();
-            result[index++] = String.valueOf(getSettings().isSelected(setting));
-        }
+//        int index = 1;
+//        for (Settings setting : Settings.values()) {
+//            result[index++] = "--" + setting.getParam();
+//            result[index++] = String.valueOf(getSettings().isSelected(setting));
+//        }
         return result;
     }
 
