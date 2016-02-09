@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -47,7 +49,10 @@ public class KrakatauDecompiler extends Decompiler {
                 try {
                     inputJar = Files.createTempFile("kdein", ".jar").toFile();
                     outputJar = Files.createTempFile("kdeout", ".zip").toFile();
-                    Utils.saveClasses(inputJar, Helios.getAllLoadedData());
+                    Utils.save(inputJar, Helios.getAllLoadedData(), name -> name.endsWith(".class") && !name.equals(classNode.name + ".class"));
+                    Map<String, byte[]> d = new HashMap<>();
+                    d.put(classNode.name + ".class", bytes);
+                    Utils.saveClasses(inputJar, d);
 
                     createdProcess = Helios.launchProcess(
                             new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "decompile.py",

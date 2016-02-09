@@ -44,7 +44,7 @@ public class Utils {
 
     public static void save(File dest, Map<String, byte[]> data, Predicate<String> accept) {
         try {
-            JarOutputStream out = new JarOutputStream(new FileOutputStream(dest));
+            JarOutputStream out = new JarOutputStream(new FileOutputStream(dest, true));
             Set<String> added = new HashSet<>();
             for (Entry<String, byte[]> entry : data.entrySet()) {
                 String name = entry.getKey();

@@ -485,6 +485,9 @@ public class Helios {
                 javaRtVerified = false;
             } finally {
                 IOUtils.closeQuietly(zipFile);
+                if (javaRtVerified == null) {
+                    javaRtVerified = false;
+                }
             }
         }
         return javaRtVerified;

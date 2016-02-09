@@ -35,7 +35,11 @@ public class BackgroundTaskHandler {
             this.synchronizer.execute(() -> {
                 if (tasks.add(runnable)) {
                     executor.execute(() -> {
-                        runnable.run();
+                        try {
+                            runnable.run();
+                        } catch (Throwable t) {
+                            ExceptionHandler.handle(t);
+                        }
                         synchronizer.execute(() -> tasks.remove(runnable));
                     });
                 }
