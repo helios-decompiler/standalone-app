@@ -81,6 +81,9 @@ public class ClassManager {
 
                 CTabFolder innerTabFolder = new CTabFolder(mainTabs, SWT.BORDER);
                 fileTab.setControl(innerTabFolder);
+                innerTabFolder.addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+                    ClassManager.this.handleNewTabRequest();
+                }, GenericClickListener.ClickType.RIGHT));
                 innerTabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
                     public void close(CTabFolderEvent event) {
                         ((List<String>) ((Object[]) fileTab.getData())[2]).remove(
@@ -209,6 +212,9 @@ public class ClassManager {
                                     } catch (IOException e1) {
                                         e1.printStackTrace();
                                     }
+                                    editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+                                        ClassManager.this.handleNewTabRequest();
+                                    }, GenericClickListener.ClickType.RIGHT));
 
                                     SwingControl control = new SwingControl(nested, SWT.NONE) {
                                         protected JComponent createSwingComponent() {

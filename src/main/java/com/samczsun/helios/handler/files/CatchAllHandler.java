@@ -18,6 +18,7 @@ package com.samczsun.helios.handler.files;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.gui.GenericClickListener;
 import com.samczsun.helios.handler.ExceptionHandler;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
@@ -40,6 +41,9 @@ public class CatchAllHandler extends FileHandler {
         } catch (IOException e1) {
             ExceptionHandler.handle(e1);
         }
+        editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+            Helios.getGui().getClassManager().handleNewTabRequest();
+        }, GenericClickListener.ClickType.RIGHT));
 
         SwingControl control = new SwingControl(parent, SWT.NONE) {
             protected JComponent createSwingComponent() {
