@@ -52,6 +52,9 @@ public class CFRDecompiler extends Decompiler {
 
             @Override
             public Pair<byte[], String> getClassFileContent(String s) throws IOException {
+                if (s.equals(classNode.name + ".class")) {
+                    return Pair.make(bytes, s);
+                }
                 return Pair.make(Helios.getAllLoadedData().get(s), s);
             }
         });
