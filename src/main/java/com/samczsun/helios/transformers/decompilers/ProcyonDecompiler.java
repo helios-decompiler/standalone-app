@@ -109,7 +109,7 @@ public class ProcyonDecompiler extends Decompiler {
         int index = 0;
         for (TransformerSettings.Setting setting : Settings.values()) {
             args[index++] = "--" + setting.getParam();
-            args[index++] = String.valueOf(getSettings().isSelected(setting));
+            args[index++] = String.valueOf(setting.isEnabled());
         }
         jCommander.parse(args);
         DecompilerSettings settings = new DecompilerSettings();
@@ -153,7 +153,7 @@ public class ProcyonDecompiler extends Decompiler {
 
         private final String name;
         private final String param;
-        private final boolean on;
+        private boolean on;
 
         Settings(String param, String name) {
             this(param, name, false);
@@ -173,8 +173,12 @@ public class ProcyonDecompiler extends Decompiler {
             return name;
         }
 
-        public boolean isDefaultOn() {
+        public boolean isEnabled() {
             return on;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.on = enabled;
         }
     }
 }

@@ -139,7 +139,7 @@ public class FernflowerDecompiler extends Decompiler {
         int index = 0;
         for (Settings setting : Settings.values()) {
             result[index++] = String.format("-%s=%s", setting.getParam(),
-                    getSettings().isSelected(setting) ? "1" : "0");
+                    setting.isEnabled() ? "1" : "0");
         }
         return result;
     }
@@ -170,7 +170,7 @@ public class FernflowerDecompiler extends Decompiler {
 
         private final String name;
         private final String param;
-        private final boolean on;
+        private boolean on;
 
         Settings(String param, String name) {
             this(param, name, false);
@@ -190,8 +190,12 @@ public class FernflowerDecompiler extends Decompiler {
             return name;
         }
 
-        public boolean isDefaultOn() {
+        public boolean isEnabled() {
             return on;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.on = enabled;
         }
     }
 }
