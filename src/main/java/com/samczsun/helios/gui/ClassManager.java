@@ -30,6 +30,8 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolder2Adapter;
 import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -41,6 +43,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.JComponent;
+import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -180,7 +183,7 @@ public class ClassManager {
                                 open.add(transformer.getId());
 
                                 if (transformer != Transformer.HEX) {
-                                    RSyntaxTextArea area = new RSyntaxTextArea();
+                                    ClickableSyntaxTextArea area = new ClickableSyntaxTextArea();
                                     area.getCaret().setSelectionVisible(true);
                                     RTextScrollPane scrollPane = new RTextScrollPane(area);
                                     scrollPane.setLineNumbersEnabled(true);

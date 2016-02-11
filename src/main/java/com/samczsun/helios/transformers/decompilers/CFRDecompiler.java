@@ -108,7 +108,7 @@ public class CFRDecompiler extends Decompiler {
     @Override
     public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
         try {
-            Options options = new GetOptParser().parse(generateMainMethod(), OptionsImpl.getFactory());
+            Options options = new GetOptParser().parse(generateMainMethod(classNode.name), OptionsImpl.getFactory());
             ClassFileSourceImpl classFileSource = new ClassFileSourceImpl(options);
             DCCommonState dcCommonState = new DCCommonState(options, classFileSource);
             output.append(doClass(dcCommonState, bytes));
@@ -119,14 +119,14 @@ public class CFRDecompiler extends Decompiler {
         }
     }
 
-    public String[] generateMainMethod() {
+    public String[] generateMainMethod(String className) {
         String[] result = new String[getSettings().size() * 2 + 1];
-        result[0] = "helios";
-//        int index = 1;
-//        for (Settings setting : Settings.values()) {
-//            result[index++] = "--" + setting.getParam();
-//            result[index++] = String.valueOf(getSettings().isSelected(setting));
-//        }
+        result[0] = className;
+        int index = 1;
+        for (Settings setting : Settings.values()) {
+            result[index++] = "--" + setting.getParam();
+            result[index++] = String.valueOf(getSettings().isSelected(setting));
+        }
         return result;
     }
 
