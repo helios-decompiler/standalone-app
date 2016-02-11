@@ -14,47 +14,20 @@
  *    limitations under the License.
  */
 
-/* Sourced from The MIT License (MIT)
-
-        Copyright (c) 2011-2014 Lee Benfield - http://www.benf.org/other/cfr
-
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:
-
-        The above copyright notice and this permission notice shall be included in
-        all copies or substantial portions of the Software.
-
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-        THE SOFTWARE.
- */
-
 package com.samczsun.helios.transformers.decompilers;
 
+import com.samczsun.helios.Helios;
 import com.samczsun.helios.transformers.TransformerSettings;
-import org.benf.cfr.reader.entities.ClassFile;
-import org.benf.cfr.reader.entities.Method;
-import org.benf.cfr.reader.relationship.MemberNameResolver;
-import org.benf.cfr.reader.state.ClassFileSourceImpl;
-import org.benf.cfr.reader.state.DCCommonState;
-import org.benf.cfr.reader.state.TypeUsageCollector;
-import org.benf.cfr.reader.util.CannotLoadClassException;
-import org.benf.cfr.reader.util.ListFactory;
-import org.benf.cfr.reader.util.bytestream.BaseByteData;
-import org.benf.cfr.reader.util.getopt.GetOptParser;
-import org.benf.cfr.reader.util.getopt.Options;
-import org.benf.cfr.reader.util.getopt.OptionsImpl;
-import org.benf.cfr.reader.util.output.Dumper;
-import org.benf.cfr.reader.util.output.ToStringDumper;
+import com.samczsun.helios.utils.SWTUtil;
+import org.benf.cfr.reader.PluginRunner;
+import org.benf.cfr.reader.api.ClassFileSource;
+import org.benf.cfr.reader.bytecode.analysis.parse.utils.Pair;
 import org.objectweb.asm.tree.ClassNode;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CFRDecompiler extends Decompiler {
 
@@ -65,69 +38,35 @@ public class CFRDecompiler extends Decompiler {
         }
     }
 
-    public static String doClass(DCCommonState dcCommonState, byte[] content1) {
-        Options options = dcCommonState.getOptions();
-        Dumper d = new ToStringDumper();
-        BaseByteData data = new BaseByteData(content1);
-        ClassFile var24 = new ClassFile(data, "", dcCommonState);
-        dcCommonState.configureWith(var24);
-
-        try {
-            var24 = dcCommonState.getClassFile(var24.getClassType());
-        } catch (CannotLoadClassException var18) {
-        }
-
-        if (options.getOption(OptionsImpl.DECOMPILE_INNER_CLASSES)) {
-            var24.loadInnerClasses(dcCommonState);
-        }
-
-        if (options.getOption(OptionsImpl.RENAME_MEMBERS)) {
-            MemberNameResolver.resolveNames(dcCommonState,
-                    ListFactory.newList(dcCommonState.getClassCache().getLoadedTypes()));
-        }
-
-        var24.analyseTop(dcCommonState);
-        TypeUsageCollector var25 = new TypeUsageCollector(var24);
-        var24.collectTypeUsages(var25);
-        String var26 = options.getOption(OptionsImpl.METHODNAME);
-        if (var26 == null) {
-            var24.dump(d);
-        } else {
-            try {
-                for (Method method : var24.getMethodByName(var26)) {
-                    method.dump(d, true);
-                }
-            } catch (NoSuchMethodException var19) {
-                throw new IllegalArgumentException("No such method \'" + var26 + "\'.");
-            }
-        }
-        d.print("");
-        return d.toString();
-    }
-
     @Override
     public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
-        try {
-            Options options = new GetOptParser().parse(generateMainMethod(), OptionsImpl.getFactory());
-            ClassFileSourceImpl classFileSource = new ClassFileSourceImpl(options);
-            DCCommonState dcCommonState = new DCCommonState(options, classFileSource);
-            output.append(doClass(dcCommonState, bytes));
-            return true;
-        } catch (Exception e) {
-            output.append(parseException(e));
-            return false;
-        }
+        PluginRunner pluginRunner = new PluginRunner(generateOptions(), new ClassFileSource() {
+            @Override
+            public void informAnalysisRelativePathDetail(String s, String s1) {
+            }
+
+            @Override
+            public Collection<String> addJar(String s) {
+                throw new UnsupportedOperationException("Return paths of all classfiles in jar.");
+            }
+
+            @Override
+            public Pair<byte[], String> getClassFileContent(String s) throws IOException {
+                return Pair.make(Helios.getAllLoadedData().get(s), s);
+            }
+        });
+        output.append(pluginRunner.getDecompilationFor(classNode.name));
+        return true;
     }
 
-    public String[] generateMainMethod() {
-        String[] result = new String[getSettings().size() * 2 + 1];
-        result[0] = "helios";
-//        int index = 1;
-//        for (Settings setting : Settings.values()) {
-//            result[index++] = "--" + setting.getParam();
-//            result[index++] = String.valueOf(getSettings().isSelected(setting));
-//        }
-        return result;
+    public Map<String, String> generateOptions() {
+        Map<String, String> options = new HashMap<>();
+        for (CFRDecompiler.Settings setting : CFRDecompiler.Settings.values()) {
+            if (getSettings().isSelected(setting)) {
+                options.put(setting.getParam(), "");
+            }
+        }
+        return options;
     }
 
     public enum Settings implements TransformerSettings.Setting {
