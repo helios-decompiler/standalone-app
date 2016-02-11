@@ -18,7 +18,7 @@ package com.samczsun.helios.transformers.disassemblers;
 
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
-import com.samczsun.helios.Settings;
+import com.samczsun.helios.transformers.TransformerSettings;
 import com.samczsun.helios.utils.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -27,44 +27,51 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class KrakatauDisassembler extends Disassembler {
     public KrakatauDisassembler() {
         super("krakatau-disassembler", "Krakatau Disassembler");
+        for (Settings setting : Settings.values()) {
+            settings.registerSetting(setting);
+        }
     }
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         if (Helios.ensurePython2Set()) {
             File inputJar = null;
             File outputZip = null;
+            String processLog = null;
 
-            String processLog = "";
             try {
                 inputJar = Files.createTempFile("kdisin", ".jar").toFile();
                 outputZip = Files.createTempFile("kdisout", ".zip").toFile();
 
-                Utils.saveClasses(inputJar, Helios.getAllLoadedData());
+                Map<String, byte[]> data = Helios.getAllLoadedData();
+                data.put(cn.name + ".class", b);
+
+                Utils.saveClasses(inputJar, data);
 
                 Process process = Helios.launchProcess(
-                        new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
+                        new ProcessBuilder(com.samczsun.helios.Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
                                 inputJar.getAbsolutePath(), "-out", outputZip.getAbsolutePath(),
-                                cn.name + ".class").directory(Constants.KRAKATAU_DIR));
+                                cn.name + ".class", Settings.ROUNDTRIP.isEnabled() ? "-roundtrip" : "").directory(Constants.KRAKATAU_DIR));
 
                 processLog = Utils.readProcess(process);
 
                 ZipFile zipFile = new ZipFile(outputZip);
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                byte[] data = null;
+                byte[] disassembled = null;
                 while (entries.hasMoreElements()) {
                     ZipEntry next = entries.nextElement();
                     if (next.getName().equals(cn.name + ".j")) {
-                        data = IOUtils.toByteArray(zipFile.getInputStream(next));
+                        disassembled = IOUtils.toByteArray(zipFile.getInputStream(next));
                     }
                 }
                 zipFile.close();
-                output.append(new String(data, "UTF-8"));
+                output.append(new String(disassembled, "UTF-8"));
                 return true;
             } catch (Exception e) {
                 output.append(parseException(e)).append(processLog);
@@ -77,5 +84,39 @@ public class KrakatauDisassembler extends Disassembler {
             output.append("You need to set the location of Python 2.x");
         }
         return false;
+    }
+
+    public enum Settings implements TransformerSettings.Setting {
+        ROUNDTRIP("roundtrip", "Disassemble for roundtrip assembly");
+
+        private final String name;
+        private final String param;
+        private boolean on;
+
+        Settings(String param, String name) {
+            this(param, name, false);
+        }
+
+        Settings(String param, String name, boolean on) {
+            this.name = name;
+            this.param = param;
+            this.on = on;
+        }
+
+        public String getParam() {
+            return param;
+        }
+
+        public String getText() {
+            return name;
+        }
+
+        public boolean isEnabled() {
+            return on;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.on = enabled;
+        }
     }
 }

@@ -83,7 +83,7 @@ public class DecompileTask implements Runnable {
                         String result = output.toString();
                         result = result.replaceAll("\r*\n", "\n");
                         output = new StringBuilder(result);
-                        handle(cu, output.toString());
+//                        handle(cu, output.toString());
                     }
                 }
                 textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
@@ -164,7 +164,8 @@ public class DecompileTask implements Runnable {
 
     private void handle(ReturnStmt returnStmt, List<Integer> lineSizes) {
         System.out.println("ReturnStmt: " + returnStmt);
-        handle(returnStmt.getExpr(), lineSizes);
+        if (returnStmt.getExpr() != null)
+            handle(returnStmt.getExpr(), lineSizes);
     }
 
     private void handle(CastExpr castExpr, List<Integer> lineSizes) {
@@ -219,8 +220,14 @@ public class DecompileTask implements Runnable {
         } else if (node instanceof ObjectCreationExpr) {
             handle((ObjectCreationExpr) node, lineSizes);
         } else if (node instanceof StringLiteralExpr) {
+        } else if (node instanceof ArrayCreationExpr) {
+        } else if (node instanceof ForStmt) {
+        } else if (node instanceof InstanceOfExpr) {
+        } else if (node instanceof WhileStmt) {
+        } else if (node instanceof ConditionalExpr) {
         } else if (node instanceof CastExpr) {
             handle((CastExpr) node, lineSizes);
+        } else if (node instanceof ClassExpr) {
         } else {
             throw new IllegalArgumentException(node.getClass().getCanonicalName());
         }

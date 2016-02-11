@@ -55,8 +55,13 @@ public class CFRDecompiler extends Decompiler {
                 return Pair.make(Helios.getAllLoadedData().get(s), s);
             }
         });
-        output.append(pluginRunner.getDecompilationFor(classNode.name));
-        return true;
+        try {
+            output.append(pluginRunner.getDecompilationFor(classNode.name));
+            return true;
+        } catch (Throwable t) {
+            output.append(parseException(t));
+            return false;
+        }
     }
 
     public Map<String, String> generateOptions() {

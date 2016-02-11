@@ -43,16 +43,15 @@ public class KrakatauDecompiler extends Decompiler {
                 File inputJar = null;
                 File outputJar = null;
                 ZipFile zipFile = null;
-                Process createdProcess = null;
+                Process createdProcess;
                 String log = "";
 
                 try {
                     inputJar = Files.createTempFile("kdein", ".jar").toFile();
                     outputJar = Files.createTempFile("kdeout", ".zip").toFile();
-                    Utils.save(inputJar, Helios.getAllLoadedData(), name -> name.endsWith(".class") && !name.equals(classNode.name + ".class"));
-                    Map<String, byte[]> d = new HashMap<>();
-                    d.put(classNode.name + ".class", bytes);
-                    Utils.saveClasses(inputJar, d);
+                    Map<String, byte[]> loadedData = Helios.getAllLoadedData();
+                    loadedData.put(classNode.name + ".class", bytes);
+                    Utils.saveClasses(inputJar, loadedData);
 
                     createdProcess = Helios.launchProcess(
                             new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "decompile.py",
