@@ -62,9 +62,7 @@ public class CFRDecompiler extends Decompiler {
     public Map<String, String> generateOptions() {
         Map<String, String> options = new HashMap<>();
         for (CFRDecompiler.Settings setting : CFRDecompiler.Settings.values()) {
-            if (getSettings().isSelected(setting)) {
-                options.put(setting.getParam(), "");
-            }
+            options.put(setting.getParam(), String.valueOf(setting.isEnabled()));
         }
         return options;
     }
@@ -116,7 +114,7 @@ public class CFRDecompiler extends Decompiler {
 
         private final String name;
         private final String param;
-        private final boolean on;
+        private boolean on;
 
         Settings(String param, String name) {
             this(param, name, false);
@@ -136,8 +134,12 @@ public class CFRDecompiler extends Decompiler {
             return name;
         }
 
-        public boolean isDefaultOn() {
+        public boolean isEnabled() {
             return on;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.on = enabled;
         }
     }
 }

@@ -18,23 +18,18 @@ package com.samczsun.helios.transformers;
 
 import com.eclipsesource.json.JsonObject;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TransformerSettings {
     private final Transformer decompiler;
-    private final Set<Setting> registrationOrder = new LinkedHashSet<>();
+    private final Map<String, Setting> registrationOrder = new LinkedHashMap<>();
 
     public TransformerSettings(Transformer decompiler) {
         this.decompiler = decompiler;
     }
 
     public void registerSetting(Setting setting) {
-        if (registrationOrder.add(setting)) {
-
-        }
+        registrationOrder.put(setting.getParam(), setting);
     }
 
     public int size() {
@@ -46,6 +41,12 @@ public class TransformerSettings {
             JsonObject decompilerSection = rootSettings.get("decompilers").asObject();
             if (decompilerSection.get(decompiler.getId()) != null) {
                 JsonObject thisDecompiler = decompilerSection.get(decompiler.getId()).asObject();
+                thisDecompiler.forEach(member -> {
+                    Setting setting = registrationOrder.get(member.getName());
+                    if (setting != null) {
+                        setting.setEnabled(member.getValue().asBoolean());
+                    }
+                });
             }
         }
     }
@@ -59,14 +60,13 @@ public class TransformerSettings {
             decompilerSection.add(decompiler.getName(), new JsonObject());
         }
         JsonObject thisDecompiler = decompilerSection.get(decompiler.getName()).asObject();
-    }
-
-    public boolean isSelected(Setting setting) {
-        return setting.isDefaultOn();
+        for (Setting setting : registrationOrder.values()) {
+            thisDecompiler.set(setting.getParam(), setting.isEnabled());
+        }
     }
 
     public Collection<Setting> getRegisteredSettings() {
-        return Collections.unmodifiableSet(registrationOrder);
+        return Collections.unmodifiableCollection(registrationOrder.values());
     }
 
     public interface Setting {
@@ -74,6 +74,8 @@ public class TransformerSettings {
 
         String getText();
 
-        boolean isDefaultOn();
+        boolean isEnabled();
+
+        void setEnabled(boolean b);
     }
 }

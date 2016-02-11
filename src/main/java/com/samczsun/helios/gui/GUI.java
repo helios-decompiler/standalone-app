@@ -25,7 +25,11 @@ import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.handler.addons.AddonHandler;
+import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.TransformerSettings;
 import com.samczsun.helios.transformers.converters.Converter;
+import com.samczsun.helios.transformers.decompilers.Decompiler;
+import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.SashForm;
@@ -56,7 +60,9 @@ import org.eclipse.swt.widgets.Tree;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GUI {
     private final Display display = Display.getDefault();
@@ -212,6 +218,34 @@ public class GUI {
         setupApkConversion(apkConverters);
 
         new MenuItem(settingsMenu, SWT.SEPARATOR);
+
+        setupDecompilerSettings(settingsMenu);
+    }
+
+    private void setupDecompilerSettings(Menu settingsMenu) {
+        Set<Transformer> allTransformers = new HashSet<>(); //TODO: Allow adding own transformers
+        allTransformers.addAll(Decompiler.getAllDecompilers());
+        allTransformers.addAll(Disassembler.getAllDisassemblers());
+
+        for (Transformer transformer : allTransformers) {
+            if (transformer.hasSettings()) {
+                MenuItem transformerSettingsMenuItem = new MenuItem(settingsMenu, SWT.CASCADE);
+                transformerSettingsMenuItem.setText(transformer.getName());
+                Menu transformerSettingsMenu = new Menu(shell, SWT.DROP_DOWN);
+                transformerSettingsMenuItem.setMenu(transformerSettingsMenu);
+                for (TransformerSettings.Setting setting : transformer.getSettings().getRegisteredSettings()) {
+                    MenuItem settingItem = new MenuItem(transformerSettingsMenu, SWT.CHECK);
+                    settingItem.setText(setting.getText());
+                    settingItem.setSelection(setting.isEnabled());
+                    settingItem.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e) {
+                            setting.setEnabled(settingItem.getSelection());
+                        }
+                    });
+                }
+            }
+        }
     }
 
     private void setupAddonsBar(Menu menuBar) {
