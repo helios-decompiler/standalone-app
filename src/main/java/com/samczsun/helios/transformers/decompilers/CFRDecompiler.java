@@ -43,6 +43,7 @@ public class CFRDecompiler extends Decompiler {
         PluginRunner pluginRunner = new PluginRunner(generateOptions(), new ClassFileSource() {
             @Override
             public void informAnalysisRelativePathDetail(String s, String s1) {
+                System.out.println("Relative: " + s + " " + s1);
             }
 
             @Override

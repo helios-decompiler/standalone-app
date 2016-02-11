@@ -47,6 +47,8 @@ public class FernflowerDecompiler extends Decompiler {
 
             Map<String, Object> options = main(generateMainMethod());
 
+            Object lock = new Object();
+
             final AtomicReference<String> result = new AtomicReference<>();
             result.set(null);
 
@@ -68,6 +70,9 @@ public class FernflowerDecompiler extends Decompiler {
                 @Override
                 public void saveClassFile(String s, String s1, String s2, String s3, int[] ints) {
                     result.set(s3);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
                 }
 
                 @Override
@@ -97,9 +102,9 @@ public class FernflowerDecompiler extends Decompiler {
 
             baseDecompiler.addSpace(new File(classNode.name + ".class"), true);
             baseDecompiler.decompileContext();
-            while (true) {
-                if (result.get() != null) {
-                    break;
+            if (result.get() == null) {
+                synchronized (lock) {
+                    lock.wait();
                 }
             }
             output.append(result.get());
