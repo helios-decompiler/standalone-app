@@ -78,6 +78,7 @@ public class SWTUtil {
             t.setLayoutData(new GridData(GridData.FILL_BOTH));
             t.setFont(mono);
             t.setText(message);
+            t.setEditable(false);
             t.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyReleased(KeyEvent e) {
@@ -141,5 +142,9 @@ public class SWTUtil {
 
     public static boolean isEnter(int keyCode) {
         return keyCode == SWT.CR || keyCode == 16777296;
+    }
+
+    public static boolean isCtrl(int stateMask) {
+        return (stateMask & SWT.CTRL) != 0;
     }
 }

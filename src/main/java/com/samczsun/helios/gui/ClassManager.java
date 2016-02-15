@@ -18,6 +18,7 @@ package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.handler.files.FileHandler;
 import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.Transformer;
@@ -41,6 +42,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.fife.ui.hex.swing.HexEditor;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.fife.ui.rtextarea.SearchContext;
+import org.fife.ui.rtextarea.SearchEngine;
 
 import javax.swing.JComponent;
 import java.awt.*;
@@ -68,9 +71,9 @@ public class ClassManager {
     }
 
     public void openFile(String file, String name) {
+        Display display = Display.getDefault();
         if (!opened.containsKey(file + name)) {
             opened.put(file + name, true);
-            Display display = Display.getDefault();
             String simpleName = name;
             if (simpleName.lastIndexOf('/') != -1) {
                 simpleName = simpleName.substring(simpleName.lastIndexOf('/') + 1, simpleName.length());
@@ -117,14 +120,16 @@ public class ClassManager {
                 innerTabFolder.setSelection(nestedItem);
             });
         } else {
-            CTabItem[] items = mainTabs.getItems();
-            for (CTabItem item : items) {
-                Object[] data = (Object[]) item.getData();
-                if (file.equals(data[0]) && name.equals(data[1])) {
-                    mainTabs.setSelection(item);
-                    return;
+            display.syncExec(() -> {
+                CTabItem[] items = mainTabs.getItems();
+                for (CTabItem item : items) {
+                    Object[] data = (Object[]) item.getData();
+                    if (file.equals(data[0]) && name.equals(data[1])) {
+                        mainTabs.setSelection(item);
+                        return;
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -183,7 +188,7 @@ public class ClassManager {
                                 open.add(transformer.getId());
 
                                 if (transformer != Transformer.HEX) {
-                                    ClickableSyntaxTextArea area = new ClickableSyntaxTextArea();
+                                    ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(ClassManager.this, transformer);
                                     area.getCaret().setSelectionVisible(true);
                                     RTextScrollPane scrollPane = new RTextScrollPane(area);
                                     scrollPane.setLineNumbersEnabled(true);
@@ -207,7 +212,7 @@ public class ClassManager {
                                     area.setText("Decompiling... this may take a while");
                                     Helios.submitBackgroundTask(
                                             new DecompileTask(data[0].toString(), data[1].toString(), area,
-                                                    transformer));
+                                                    transformer, null));
                                 } else {
                                     final HexEditor editor = new HexEditor();
                                     try {
@@ -320,9 +325,6 @@ public class ClassManager {
         }
     }
 
-    int lastIndex = 0;
-    int lastStr = -1;
-
     public void search(String find) {
         CTabItem file = mainTabs.getSelection();
         if (file != null) {
@@ -332,29 +334,62 @@ public class ClassManager {
                 if (!decompiler.getData().equals(Transformer.HEX)) {
                     RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
                     RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
-                    String text = textArea.getText();
-                    if (text.hashCode() != lastStr) {
-                        lastIndex = 0;
-                        lastStr = text.hashCode();
-                    }
-                    if (lastIndex > text.length()) lastIndex = 0;
-                    int index = text.substring(lastIndex).indexOf(find);
-                    System.out.println(lastIndex + ", " + text.substring(lastIndex));
-                    if (index == -1) {
-                        index = text.indexOf(find);
-                        lastIndex = 0;
-                        if (index == -1) {
-                            file.getDisplay().beep();
+                    SearchContext context = new SearchContext();
+                    context.setSearchFor(find);
+                    context.setMatchCase(false);
+                    try {
+                        if (SearchEngine.find(textArea, context).wasFound()) {
                             return;
                         }
+                    } catch (Throwable t) {
+                        ExceptionHandler.handle(t);
                     }
-                    textArea.setCaretPosition(index + lastIndex);
-                    textArea.moveCaretPosition(index + lastIndex + find.length());
-                    lastIndex += index + find.length();
-                    return;
                 }
             }
         }
         mainTabs.getDisplay().beep();
+    }
+
+    public void openFileAndDecompile(String fileName, String className, Transformer currentTransformer, String jumpTo) {
+        System.out.println("Opening " + fileName + " " + className);
+        openFile(fileName, className);
+        mainTabs.getDisplay().syncExec(() -> { //FIXME If opening same file then duplicate occurs
+            CTabItem item = mainTabs.getSelection();
+            Object[] data = ((Object[]) item.getData());
+            LoadedFile loadedFile = Helios.getLoadedFile(data[0].toString());
+            CTabFolder nested = (CTabFolder) item.getControl();
+            Menu menu = new Menu(shell, SWT.POP_UP);
+            CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
+            decompilerTab.setText(currentTransformer.getName());
+            decompilerTab.setData(currentTransformer);
+            List<String> open = (List<String>) data[2];
+            open.add(currentTransformer.getId());
+
+            ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(ClassManager.this, currentTransformer);
+            area.getCaret().setSelectionVisible(true);
+            RTextScrollPane scrollPane = new RTextScrollPane(area);
+            scrollPane.setLineNumbersEnabled(true);
+            scrollPane.setFoldIndicatorEnabled(true);
+
+            SwingControl control = new SwingControl(nested, SWT.NONE) {
+                protected JComponent createSwingComponent() {
+                    return scrollPane;
+                }
+
+                public Composite getLayoutAncestor() {
+                    return shell;
+                }
+
+                protected void afterComponentCreatedSWTThread() {
+                    nested.setSelection(decompilerTab);
+                }
+            };
+            control.setLayout(new FillLayout());
+            decompilerTab.setControl(control);
+            area.setText("Decompiling... this may take a while");
+            Helios.submitBackgroundTask(
+                    new DecompileTask(data[0].toString(), data[1].toString(), area,
+                            currentTransformer, jumpTo));
+        });
     }
 }

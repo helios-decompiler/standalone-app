@@ -1,5 +1,7 @@
 package com.samczsun.helios.gui;
 
+import com.samczsun.helios.Helios;
+import com.samczsun.helios.transformers.Transformer;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Token;
 
@@ -15,7 +17,7 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
 
     public Set<Link> links = new HashSet<>();
 
-    public ClickableSyntaxTextArea() {
+    public ClickableSyntaxTextArea(ClassManager manager, Transformer currentTransformer) {
         MouseAdapter adapter = new MouseAdapter() {
             int lastX = -1;
             int lastY = -1;
@@ -27,7 +29,12 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
                     if (offset != -1) {
                         Link link = getLinkForOffset(offset);
                         if (link != null) {
-                            //Yes
+                            System.out.println(link.fileName + " " + link.className);
+                            if (link.fileName != null && link.className != null) {
+                                Helios.submitBackgroundTask(() -> {
+                                    manager.openFileAndDecompile(link.fileName, link.className, currentTransformer, link.jumpTo);
+                                });
+                            }
                         }
                     }
                 }
@@ -76,18 +83,46 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
     }
 
     public static class Link {
-        public String file;
+        public String fileName;
+        public String className;
+        public String jumpTo;
         public int line;
         public int column;
         public int offset;
         public int offsetEnd;
 
-        public Link(String file, int line, int column, int offset, int offsetEnd) {
-            this.file = file;
+        public Link(int line, int column, int offset, int offsetEnd) {
             this.line = line;
             this.column = column;
             this.offset = offset;
             this.offsetEnd = offsetEnd;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Link link = (Link) o;
+
+            if (line != link.line) return false;
+            if (column != link.column) return false;
+            if (offset != link.offset) return false;
+            if (offsetEnd != link.offsetEnd) return false;
+            if (fileName != null ? !fileName.equals(link.fileName) : link.fileName != null) return false;
+            return className != null ? className.equals(link.className) : link.className == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = fileName != null ? fileName.hashCode() : 0;
+            result = 31 * result + (className != null ? className.hashCode() : 0);
+            result = 31 * result + line;
+            result = 31 * result + column;
+            result = 31 * result + offset;
+            result = 31 * result + offsetEnd;
+            return result;
         }
     }
 }

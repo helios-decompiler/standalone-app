@@ -18,6 +18,7 @@ package com.samczsun.helios;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
+import com.google.common.collect.Sets;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
@@ -68,6 +69,8 @@ public class Helios {
     private static GUI gui;
     private static BackgroundTaskHandler backgroundTaskHandler;
     private static BackgroundTaskGui backgroundTaskGui;
+
+    private static volatile Map<String, LoadedFile> path = new HashMap<>();
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
         System.setSecurityManager(new SecurityManager() {
@@ -241,6 +244,25 @@ public class Helios {
             }
         }
 
+        submitBackgroundTask(() -> {
+            Map<String, LoadedFile> newPath = new HashMap<>();
+            for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
+                File file = new File(strFile);
+                if (file.exists()) {
+                    try {
+                        LoadedFile loadedFile = new LoadedFile(file);
+                        newPath.put(loadedFile.getName(), loadedFile);
+                    } catch (IOException e1) {
+                        ExceptionHandler.handle(e1);
+                    }
+                }
+            }
+            synchronized (Helios.class) {
+                path.clear();
+                path.putAll(newPath);
+            }
+        });
+
         if (open.size() > 0) {
             openFiles(open.toArray(new File[open.size()]), true);
         }
@@ -354,37 +376,79 @@ public class Helios {
         }
     }
 
+    private static volatile Shell customPathShell;
+
     public static void promptForCustomPath() {
+        synchronized (Helios.class) {
+            if (customPathShell != null) {
+                customPathShell.setFocus();
+                return;
+            }
+        }
         Display.getDefault().asyncExec(() -> {
-            Display display = Display.getDefault();
-            Shell shell = new Shell(display);
-            shell.setLayout(new GridLayout());
-            shell.setImage(Resources.ICON.getImage());
-            shell.setText("Set your PATH variable");
-            final Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
-            text.setText(Settings.PATH.get().asString());
-            GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
-            gridData.heightHint = text.getLineHeight();
-            gridData.widthHint = 512;
-            text.setLayoutData(gridData);
-            shell.addShellListener(new ShellAdapter() {
-                @Override
-                public void shellClosed(ShellEvent e) {
-                    Settings.PATH.set(text.getText());
-                }
-            });
-            shell.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    if (e.keyCode == SWT.ESC) {
-                        shell.close();
+            synchronized(Helios.class) {
+                Display display = Display.getDefault();
+                Shell shell = new Shell(display);
+                shell.setLayout(new GridLayout());
+                shell.setImage(Resources.ICON.getImage());
+                shell.setText("Set your PATH variable");
+                final Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
+                text.setText(Settings.PATH.get().asString());
+                GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
+                gridData.heightHint = text.getLineHeight();
+                gridData.widthHint = 512;
+                text.setLayoutData(gridData);
+                shell.addShellListener(new ShellAdapter() {
+                    @Override
+                    public void shellClosed(ShellEvent e) {
+                        synchronized (Helios.class) {
+                            customPathShell = null;
+                        }
+                        String oldPath = Settings.PATH.get().asString();
+                        if (!oldPath.equals(text.getText())) {
+                            Settings.PATH.set(text.getText());
+                            submitBackgroundTask(() -> {
+                                Map<String, LoadedFile> newPath = new HashMap<>();
+                                for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
+                                    File file = new File(strFile);
+                                    if (file.exists()) {
+                                        try {
+                                            LoadedFile loadedFile = new LoadedFile(file);
+                                            newPath.put(loadedFile.getName(), loadedFile);
+                                        } catch (IOException e1) {
+                                            ExceptionHandler.handle(e1);
+                                        }
+                                    }
+                                }
+                                synchronized (Helios.class) {
+                                    path.clear();
+                                    path.putAll(newPath);
+                                }
+                            });
+                        }
                     }
-                }
-            });
-            shell.pack();
-            SWTUtil.center(shell);
-            shell.open();
+                });
+                text.addKeyListener(new KeyAdapter() {
+                    @Override
+                    public void keyPressed(KeyEvent e) {
+                        if (e.keyCode == SWT.ESC || SWTUtil.isEnter(e.keyCode)) {
+                            shell.close();
+                        } else if (e.keyCode == 'a' && SWTUtil.isCtrl(e.stateMask)) {
+                            text.selectAll();
+                            e.doit = false;
+                        }
+                    }
+                });
+                shell.pack();
+                SWTUtil.center(shell);
+                shell.open();
+                customPathShell = shell;
+            }
         });
+    }
+
+    public static synchronized Map<String, LoadedFile> getPathFiles() {
+        return path;
     }
 
     public static boolean ensurePython3Set() {
@@ -530,7 +594,7 @@ public class Helios {
     }
 
     public static LoadedFile getLoadedFile(String file) {
-        return files.get(file);
+        return files.containsKey(file) ? files.get(file) : getPathFiles().get(file);
     }
 
     public static void submitBackgroundTask(Runnable runnable) {
@@ -544,6 +608,9 @@ public class Helios {
     public static Map<String, byte[]> getAllLoadedData() {
         Map<String, byte[]> data = new HashMap<>();
         for (LoadedFile loadedFile : files.values()) {
+            data.putAll(loadedFile.getData());
+        }
+        for (LoadedFile loadedFile : path.values()) {
             data.putAll(loadedFile.getData());
         }
         return data;

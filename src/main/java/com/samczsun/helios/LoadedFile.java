@@ -21,10 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -39,6 +36,7 @@ public class LoadedFile {
     private final String name; /* The name of the file. No directory */
     private final Map<String, byte[]> files = new HashMap<>(); /* Map of ZIP-style path with extension to byte */
     private final Map<String, WrappedClassNode> classes = new HashMap<>(); /* Map of internal class name with ClassNode */
+    private final Map<String, WrappedClassNode> emptyClasses = new HashMap<>(); /* Map of classnodes without code */
 
     public LoadedFile(File file) throws IOException {
         this.file = file;
@@ -80,31 +78,14 @@ public class LoadedFile {
             while (enumeration.hasMoreElements()) {
                 ZipEntry zipEntry = enumeration.nextElement();
                 if (!zipEntry.isDirectory()) {
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    IOUtils.copy(zipFile.getInputStream(zipEntry), outputStream);
-                    if (!files.containsKey(zipEntry.getName())) {
-                        files.put(zipEntry.getName(), outputStream.toByteArray());
-                    } else {
-                        System.out.println("Uh oh. Duplicate file...");
-                    }
+                    load(zipEntry.getName(), zipFile.getInputStream(zipEntry));
                 }
             }
         } catch (ZipException e) { //Probably not a ZIP file
             FileInputStream inputStream = null;
             try {
                 inputStream = new FileInputStream(file);
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                IOUtils.copy(inputStream, outputStream);
-                this.files.put(this.name, outputStream.toByteArray());
-                if (this.name.endsWith(".class")) {
-                    try {
-                        ClassReader reader = new ClassReader(outputStream.toByteArray());
-                        ClassNode classNode = new ClassNode();
-                        reader.accept(classNode, ClassReader.EXPAND_FRAMES);
-                        classes.put(classNode.name, new WrappedClassNode(this, classNode));
-                    } catch (Exception exception) { //Malformed class
-                    }
-                }
+                load(this.name, inputStream);
             } finally {
                 if (inputStream != null) {
                     inputStream.close();
@@ -117,6 +98,25 @@ public class LoadedFile {
                 } catch (IOException e) {
                 }
             }
+        }
+    }
+
+    private void load(String entryName, InputStream inputStream) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        IOUtils.copy(inputStream, outputStream);
+        if (entryName.endsWith(".class")) {
+            try {
+                ClassReader reader = new ClassReader(outputStream.toByteArray());
+                ClassNode classNode = new ClassNode();
+                reader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                emptyClasses.put(classNode.name, new WrappedClassNode(this, classNode));
+            } catch (Exception e) { //Malformed class
+            }
+        }
+        if (!files.containsKey(entryName)) {
+            files.put(entryName, outputStream.toByteArray());
+        } else {
+            System.out.println("Uh oh. Duplicate file...");
         }
     }
 
@@ -138,5 +138,9 @@ public class LoadedFile {
 
     public String getName() {
         return name;
+    }
+
+    public Map<String, WrappedClassNode> getEmptyClasses() {
+        return emptyClasses;
     }
 }

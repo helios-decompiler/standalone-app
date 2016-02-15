@@ -16,15 +16,19 @@
 
 package com.samczsun.helios.transformers.decompilers;
 
+import com.samczsun.helios.Helios;
+import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.TransformerSettings;
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InnerClassNode;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.Manifest;
 
@@ -45,6 +49,33 @@ public class FernflowerDecompiler extends Decompiler {
             }
             final byte[] bytesToUse = bytes;
 
+            Map<String, byte[]> importantClasses = new HashMap<>();
+            importantClasses.put(classNode.name + ".class", bytesToUse);
+            Set<LoadedFile> files = new HashSet<>();
+            files.addAll(Helios.getAllFiles());
+            files.addAll(Helios.getPathFiles().values());
+            if (classNode.innerClasses != null) {
+                Set<String> innerClasses = new HashSet<>();
+                LinkedList<String> list = new LinkedList<>();
+                list.add(classNode.name);
+                while (!list.isEmpty()) {
+                    String className = list.poll();
+                    if (innerClasses.add(className)) {
+                        for (LoadedFile file : files) {
+                            if (file.getClassNode(className) != null) {
+                                if (!importantClasses.containsKey(className + ".class")) {
+                                    importantClasses.put(className + ".class", file.getData().get(className + ".class"));
+                                }
+                                ClassNode node = file.getClassNode(className);
+                                if (node.innerClasses != null) {
+                                    node.innerClasses.forEach(icn -> list.add(icn.name));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Map<String, Object> options = main(generateMainMethod());
 
             Object lock = new Object();
@@ -53,8 +84,9 @@ public class FernflowerDecompiler extends Decompiler {
             result.set(null);
 
             BaseDecompiler baseDecompiler = new BaseDecompiler((s, s1) -> {
-                byte[] clone = new byte[bytesToUse.length];
-                System.arraycopy(bytesToUse, 0, clone, 0, bytesToUse.length);
+                byte[] b = importantClasses.get(s.substring(s.lastIndexOf("FERNFLOWER ") + "FERNFLOWER ".length(), s.length()).replace('\\', '/'));
+                byte[] clone = new byte[b.length];
+                System.arraycopy(b, 0, clone, 0, b.length);
                 return clone;
             }, new IResultSaver() {
                 @Override
@@ -69,9 +101,11 @@ public class FernflowerDecompiler extends Decompiler {
 
                 @Override
                 public void saveClassFile(String s, String s1, String s2, String s3, int[] ints) {
-                    result.set(s3);
-                    synchronized (lock) {
-                        lock.notify();
+                    if (s1.equals(classNode.name)) {
+                        result.set(s3);
+                        synchronized (lock) {
+                            lock.notify();
+                        }
                     }
                 }
 
@@ -100,7 +134,14 @@ public class FernflowerDecompiler extends Decompiler {
                 }
             }, options, new PrintStreamLogger(System.out));
 
-            baseDecompiler.addSpace(new File(classNode.name + ".class"), true);
+            System.out.println("Decompiling");
+            importantClasses.forEach((str, barr) -> {
+                try {
+                    baseDecompiler.addSpace(new File("FERNFLOWER " + str), true);
+                } catch (IOException e) {
+                    ExceptionHandler.handle(e);
+                }
+            });
             baseDecompiler.decompileContext();
             if (result.get() == null) {
                 synchronized (lock) {
