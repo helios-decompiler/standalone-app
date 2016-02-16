@@ -28,7 +28,7 @@ public class Constants {
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
     public static final String SWT_VERSION = "4.5.1";
-    public static final String KRAKATAU_VERSION = "b6f6d906e36212a8df4d4957f4001992e7025ffc";
+    public static final String KRAKATAU_VERSION = "17eaeec107e824aebc75df36f3161a2a5874f12f";
     public static final String ENJARIFY_VERSION = "bf9033b96e5c1695c4838a8edeb53195fa92a831";
 
     public static final int MB = 1024 * 1024;
