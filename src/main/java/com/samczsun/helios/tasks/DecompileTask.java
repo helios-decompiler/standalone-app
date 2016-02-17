@@ -18,6 +18,7 @@ package com.samczsun.helios.tasks;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
+import com.github.javaparser.TokenMgrError;
 import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.BlockComment;
@@ -82,7 +83,7 @@ public class DecompileTask implements Runnable {
                     // parse the file
                     cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)));
                     this.compilationUnit = cu;
-                } catch (ParseException e) {
+                } catch (ParseException | TokenMgrError e) {
                     ExceptionHandler.handle(e);
                 } finally {
                     if (cu != null) {

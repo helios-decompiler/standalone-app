@@ -152,7 +152,7 @@
         <dependency>
             <groupId>org.benf</groupId>
             <artifactId>cfr</artifactId>
-            <version>0.111</version>
+            <version>0.113</version>
             <!--MIT-->
             <!--helios-->
         </dependency>
