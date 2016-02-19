@@ -129,7 +129,7 @@ public class TreeManager {
 
                     MenuItem remove = new MenuItem(menu, SWT.PUSH);
                     remove.setText("&Remove");
-                    remove.setEnabled(item.getParentItem() == null);
+                    remove.setEnabled(item != null && item.getParentItem() == null);
                     remove.addSelectionListener(new SelectionAdapter() {
                         @Override
                         public void widgetSelected(SelectionEvent selectionEvent) {
