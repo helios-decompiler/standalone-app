@@ -35,6 +35,11 @@ public class KrakatauAssembler extends Assembler {
     }
 
     @Override
+    public boolean isApplicable(String className) {
+        return true;
+    }
+
+    @Override
     public byte[] assemble(String name, String contents) {
         if (Helios.ensurePython2Set()) {
             File tempFolder = null;

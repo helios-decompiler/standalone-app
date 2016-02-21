@@ -2,12 +2,17 @@ package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.decompilers.Decompiler;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Token;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +22,13 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
 
     public Set<Link> links = new HashSet<>();
 
-    public ClickableSyntaxTextArea(ClassManager manager, Transformer currentTransformer) {
+    private final String fileName;
+
+    private final String className;
+
+    public ClickableSyntaxTextArea(ClassManager manager, Transformer currentTransformer, String fileName, String className) {
+        this.fileName = fileName;
+        this.className = className;
         MouseAdapter adapter = new MouseAdapter() {
             int lastX = -1;
             int lastY = -1;
@@ -63,6 +74,23 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
         };
         addMouseListener(adapter);
         addMouseMotionListener(adapter);
+    }
+
+    @Override
+    protected JPopupMenu createPopupMenu() {
+        JPopupMenu menu = super.createPopupMenu();
+        menu.addSeparator();
+        JMenu decompileWith = new JMenu("Decompile with");
+        for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
+            JMenuItem decomp = new JMenuItem(decompiler.getName());
+            decomp.setEnabled(true);
+            decomp.addActionListener(e -> {
+                Helios.getGui().getClassManager().openFileAndDecompile(this.fileName, this.className, decompiler, null);
+            });
+            decompileWith.add(decomp);
+        }
+        menu.add(decompileWith);
+        return menu;
     }
 
     public boolean getUnderlineForToken(Token t) {

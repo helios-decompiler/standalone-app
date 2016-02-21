@@ -37,6 +37,11 @@ public class JavaCompiler extends Compiler {
     }
 
     @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".java");
+    }
+
+    @Override
     public byte[] compile(String name, String contents) {
         File tmpdir = null;
         File javaFile = null;

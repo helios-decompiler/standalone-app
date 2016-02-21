@@ -17,17 +17,27 @@
 package com.samczsun.helios.transformers;
 
 import com.samczsun.helios.Constants;
+import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
+import com.samczsun.helios.gui.ClassData;
+import com.samczsun.helios.gui.ClassManager;
+import com.samczsun.helios.gui.ClickableSyntaxTextArea;
+import com.samczsun.helios.tasks.DecompileTask;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 
 public abstract class Transformer {
     public static final Transformer HEX = new HexViewer();
+
+    public static final Transformer TEXT = new TextViewer();
 
     protected final TransformerSettings settings = new TransformerSettings(this);
 
@@ -42,6 +52,8 @@ public abstract class Transformer {
     public abstract String getId();
 
     public abstract String getName();
+
+    public abstract boolean isApplicable(String className);
 
     protected String buildPath(File inputJar) {
         return Settings.RT_LOCATION.get().asString() + ";" + inputJar.getAbsolutePath() + (Settings.PATH
@@ -68,4 +80,25 @@ public abstract class Transformer {
     }
 
     public abstract Object transform(Object... args);
+
+    public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
+        ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(cm, this, data.getFileName(), data.getClassName());
+        area.getCaret().setSelectionVisible(true);
+        area.setText("Decompiling... this may take a while");
+        Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), area, this, jumpTo));
+        RTextScrollPane scrollPane = new RTextScrollPane(area);
+        scrollPane.setLineNumbersEnabled(true);
+        scrollPane.setFoldIndicatorEnabled(true);
+        return scrollPane;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.getId());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return !(obj == null || obj.getClass() != this.getClass()) && Objects.equals(this.getId(), ((Transformer) obj).getId());
+    }
 }

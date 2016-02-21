@@ -177,7 +177,7 @@ public class TreeManager {
 
     private void update() {
         Display display = tree.getDisplay();
-        display.syncExec(() -> reset());
+        display.syncExec(this::reset);
         List<SpoofedTreeItem> roots = new ArrayList<>();
         for (LoadedFile loadedFile : Helios.getAllFiles()) {
             Map<String, SpoofedTreeItem> map = new HashMap<>();

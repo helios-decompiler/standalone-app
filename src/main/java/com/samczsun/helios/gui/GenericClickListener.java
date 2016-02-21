@@ -5,9 +5,6 @@ import org.eclipse.swt.events.MouseListener;
 
 import java.util.function.BiConsumer;
 
-/**
- * @author DarkSeraphim.
- */
 public class GenericClickListener implements MouseListener, java.awt.event.MouseListener {
 
     public enum ClickType {
