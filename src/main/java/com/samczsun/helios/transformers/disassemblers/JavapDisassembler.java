@@ -27,6 +27,11 @@ public class JavapDisassembler extends Disassembler {
         super("javap-disassembler", "javap Disassembler");
     }
 
+    @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".jar") || className.endsWith(".class");
+    }
+
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);

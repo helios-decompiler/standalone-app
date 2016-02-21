@@ -57,6 +57,11 @@ public abstract class Decompiler extends Transformer {
         return this.name;
     }
 
+    @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".class");
+    }
+
     public boolean hasSettings() {
         return settings.size() > 0;
     }

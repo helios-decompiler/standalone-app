@@ -19,22 +19,25 @@ package com.samczsun.helios.transformers;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.gui.ClassData;
 import com.samczsun.helios.gui.ClassManager;
-import com.samczsun.helios.gui.GenericClickListener;
-import org.fife.ui.hex.swing.HexEditor;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
-public class HexViewer extends Transformer {
+public class TextViewer extends Transformer {
     @Override
     public String getId() {
-        return "hex";
+        return "text";
     }
 
     @Override
     public String getName() {
-        return "Hex";
+        return "Text";
+    }
+
+    @Override
+    public boolean isApplicable(String className) {
+        return !className.endsWith(".class");
     }
 
     @Override
@@ -43,21 +46,9 @@ public class HexViewer extends Transformer {
     }
 
     @Override
-    public boolean isApplicable(String className) {
-        return className.endsWith(".class");
-    }
-
-    @Override
     public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
-        final HexEditor editor = new HexEditor();
-        try {
-            editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
-        editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
-            cm.handleNewTabRequest();
-        }, GenericClickListener.ClickType.RIGHT));
-        return editor;
+        RSyntaxTextArea area = new RSyntaxTextArea();
+        area.setText(new String(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));
+        return new RTextScrollPane(area);
     }
 }

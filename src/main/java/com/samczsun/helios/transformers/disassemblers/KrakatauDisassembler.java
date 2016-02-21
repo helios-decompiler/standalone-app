@@ -39,6 +39,11 @@ public class KrakatauDisassembler extends Disassembler {
         }
     }
 
+    @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".class");
+    }
+
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         if (Helios.ensurePython2Set()) {
             File inputJar = null;

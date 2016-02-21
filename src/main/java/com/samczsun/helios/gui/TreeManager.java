@@ -129,7 +129,7 @@ public class TreeManager {
 
                     MenuItem remove = new MenuItem(menu, SWT.PUSH);
                     remove.setText("&Remove");
-                    remove.setEnabled(item.getParentItem() == null);
+                    remove.setEnabled(item != null && item.getParentItem() == null);
                     remove.addSelectionListener(new SelectionAdapter() {
                         @Override
                         public void widgetSelected(SelectionEvent selectionEvent) {
@@ -177,7 +177,7 @@ public class TreeManager {
 
     private void update() {
         Display display = tree.getDisplay();
-        display.syncExec(() -> reset());
+        display.syncExec(this::reset);
         List<SpoofedTreeItem> roots = new ArrayList<>();
         for (LoadedFile loadedFile : Helios.getAllFiles()) {
             Map<String, SpoofedTreeItem> map = new HashMap<>();

@@ -33,6 +33,11 @@ public class SmaliAssembler extends Assembler {
     }
 
     @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".smali");
+    }
+
+    @Override
     public byte[] assemble(String name, String contents) {
         File tempDir = null;
         File tempSmaliFolder = null;

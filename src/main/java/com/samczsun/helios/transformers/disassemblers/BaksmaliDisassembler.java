@@ -31,6 +31,11 @@ public class BaksmaliDisassembler extends Disassembler {
         super("baksmali-disassembler", "Baksmali Disassembler");
     }
 
+    @Override
+    public boolean isApplicable(String className) {
+        return className.endsWith(".apk");
+    }
+
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         File tempDir = null;
         File tempClass = null;

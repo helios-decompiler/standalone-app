@@ -56,7 +56,10 @@ public abstract class Converter extends Transformer {
             return "Enjarify";
         }
 
-
+        @Override
+        public boolean isApplicable(String className) {
+            return true;
+        }
     };
 
     public static final Converter DEX2JAR = new Converter() {
@@ -79,6 +82,11 @@ public abstract class Converter extends Transformer {
         public String getId() {
             return "dex2jar";
         }
+
+        @Override
+        public boolean isApplicable(String className) {
+            return className.endsWith(".dex");
+        }
     };
 
     public static final Converter JAR2DEX = new Converter() {
@@ -100,6 +108,11 @@ public abstract class Converter extends Transformer {
         public String getId() {
             return "jar2dex";
         }
+
+        @Override
+        public boolean isApplicable(String className) {
+            return className.endsWith(".jar");
+        }
     };
 
     public static final Converter NONE = new Converter() {
@@ -115,6 +128,11 @@ public abstract class Converter extends Transformer {
         @Override
         public String getId() {
             return "none";
+        }
+
+        @Override
+        public boolean isApplicable(String className) {
+            return false;
         }
     };
 
