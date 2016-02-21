@@ -19,7 +19,6 @@ package com.samczsun.helios.gui;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
 import com.samczsun.helios.handler.ExceptionHandler;
-import com.samczsun.helios.handler.files.FileHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
@@ -90,29 +89,40 @@ public class ClassManager {
 
             mainTabs.setSelection(fileTab);
 
-            /*for (FileHandler handler : FileHandler.getAllHandlers()) {
-                if (handler.accept(name)) {
-                    CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
-                    nestedItem.setData(handler.getId());
-                    nestedItem.setText(handler.getId());
-
-                    nestedItem.setControl(handler.generateTab(innerTabFolder, file, name));
-                    innerTabFolder.setSelection(nestedItem);
-                    ((ClassData) fileTab.getData()).open(handler);
-                    return;
-                }
-            }*/
-
             ClassTransformationData transformationData = classData.open(Transformer.HEX);
             CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
             nestedItem.setText(Transformer.HEX.getName());
             nestedItem.setData(Transformer.HEX);
             transformationData.setTransformerTab(nestedItem);
-
-            nestedItem.setControl(FileHandler.ANY.generateTab(innerTabFolder, file, name));
+            nestedItem.setControl(generateTab(innerTabFolder, file, name));
             innerTabFolder.setSelection(nestedItem);
         });
 
+    }
+
+    private Control generateTab(CTabFolder parent, String file, String name) {
+        LoadedFile loadedFile = Helios.getLoadedFile(file);
+        final HexEditor editor = new HexEditor();
+        try {
+            editor.open(new ByteArrayInputStream(loadedFile.getFiles().get(name)));
+        } catch (IOException e1) {
+            ExceptionHandler.handle(e1);
+        }
+        editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
+            Helios.getGui().getClassManager().handleNewTabRequest();
+        }, GenericClickListener.ClickType.RIGHT));
+
+        SwingControl control = new SwingControl(parent, SWT.NONE) {
+            protected JComponent createSwingComponent() {
+                return editor;
+            }
+
+            public Composite getLayoutAncestor() {
+                return parent;
+            }
+        };
+        while (parent.getDisplay().readAndDispatch()) ;
+        return control;
     }
 
     public void closeCurrentTab() {
@@ -177,20 +187,16 @@ public class ClassManager {
                     transformerData.setTransformerTab(decompilerTab);
 
                     JComponent component = transformer.open(this, data, null);
-                    SwingControl control = new SwingControl(nested, SWT.NONE)
-                    {
-                        protected JComponent createSwingComponent()
-                        {
+                    SwingControl control = new SwingControl(nested, SWT.NONE) {
+                        protected JComponent createSwingComponent() {
                             return component;
                         }
 
-                        public Composite getLayoutAncestor()
-                        {
+                        public Composite getLayoutAncestor() {
                             return shell;
                         }
 
-                        protected void afterComponentCreatedSWTThread()
-                        {
+                        protected void afterComponentCreatedSWTThread() {
                             nested.setSelection(decompilerTab);
                         }
                     };
