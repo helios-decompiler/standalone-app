@@ -386,7 +386,7 @@ public class Helios {
             }
         }
         Display.getDefault().asyncExec(() -> {
-            synchronized(Helios.class) {
+            synchronized (Helios.class) {
                 Display display = Display.getDefault();
                 Shell shell = new Shell(display);
                 shell.setLayout(new GridLayout());

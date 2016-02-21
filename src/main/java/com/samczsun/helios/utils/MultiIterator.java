@@ -24,7 +24,7 @@ public class MultiIterator<T> implements Iterator<T> {
 
     @Override
     public boolean hasNext() {
-        if(!this.current.hasNext()) {
+        if (!this.current.hasNext()) {
             while (this.index + 1 < this.iterables.length && !this.current.hasNext()) {
                 this.current = this.iterables[++this.index].iterator();
             }
@@ -42,7 +42,7 @@ public class MultiIterator<T> implements Iterator<T> {
     }
 
     @SafeVarargs
-    public static <T> MultiIterator<? extends T> of(Iterable<? extends T>...iterables) {
+    public static <T> MultiIterator<? extends T> of(Iterable<? extends T>... iterables) {
         return new MultiIterator<T>(iterables);
     }
 }

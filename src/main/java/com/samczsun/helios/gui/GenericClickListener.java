@@ -9,6 +9,7 @@ public class GenericClickListener implements MouseListener, java.awt.event.Mouse
 
     public enum ClickType {
         LEFT, MIDDLE, RIGHT;
+
         private static ClickType fromButton(int button) {
             return ClickType.values()[button - 1];
         }
@@ -20,11 +21,11 @@ public class GenericClickListener implements MouseListener, java.awt.event.Mouse
 
     private final boolean doubleClick;
 
-    public GenericClickListener(BiConsumer<ClickType, Boolean> handler, ClickType type, ClickType...others) {
+    public GenericClickListener(BiConsumer<ClickType, Boolean> handler, ClickType type, ClickType... others) {
         this(handler, false, type, others);
     }
 
-    public GenericClickListener(BiConsumer<ClickType, Boolean> handler, boolean doubleClick, ClickType type, ClickType...others) {
+    public GenericClickListener(BiConsumer<ClickType, Boolean> handler, boolean doubleClick, ClickType type, ClickType... others) {
         this.handler = handler;
         this.doubleClick = doubleClick;
         int buttons = 1 << type.ordinal();

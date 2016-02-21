@@ -51,7 +51,7 @@ public class SearchPopup {
 
             GC gc = new GC(shell);
             Text text = new Text(shell, SWT.BORDER);
-            text.setSize(gc.getFontMetrics().getAverageCharWidth() * 50, gc.getFontMetrics().getHeight()*2);
+            text.setSize(gc.getFontMetrics().getAverageCharWidth() * 50, gc.getFontMetrics().getHeight() * 2);
             shell.pack();
             gc.dispose();
 
