@@ -39,6 +39,7 @@ import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
+import com.sun.org.apache.bcel.internal.classfile.Unknown;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
@@ -49,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DecompileTask implements Runnable {
     private final String fileName;
@@ -119,133 +121,111 @@ public class DecompileTask implements Runnable {
                 new VoidVisitorAdapter<Node>() {
                     @Override
                     public void visit(CompilationUnit n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(PackageDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ImportDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(TypeParameter n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(LineComment n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(BlockComment n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ClassOrInterfaceDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EnumDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EmptyTypeDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EnumConstantDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(AnnotationDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(AnnotationMemberDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(FieldDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(VariableDeclarator n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(VariableDeclaratorId n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ConstructorDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(MethodDeclaration n, Node arg) {
-                        System.out.println("METHOD: " + n.getType() + " " + n.getType().getClass());
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(Parameter n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(MultiTypeParameter n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EmptyMemberDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(InitializerDeclaration n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(JavadocComment n, Node arg) {
-
                         super.visit(n, n);
                     }
 
@@ -257,7 +237,6 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(PrimitiveType n, Node arg) {
-
                         super.visit(n, n);
                     }
 
@@ -268,139 +247,116 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(VoidType n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(WildcardType n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(UnknownType n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ArrayAccessExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ArrayCreationExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ArrayInitializerExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(AssignExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(BinaryExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(CastExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ClassExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ConditionalExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EnclosedExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(FieldAccessExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(InstanceOfExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(StringLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(IntegerLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(LongLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(IntegerLiteralMinValueExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(LongLiteralMinValueExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(CharLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(DoubleLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(BooleanLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(NullLiteralExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
@@ -427,199 +383,166 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(QualifiedNameExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ThisExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(SuperExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(UnaryExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(VariableDeclarationExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(MarkerAnnotationExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(SingleMemberAnnotationExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(NormalAnnotationExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(MemberValuePair n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ExplicitConstructorInvocationStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(TypeDeclarationStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(AssertStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(BlockStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(LabeledStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(EmptyStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ExpressionStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(SwitchStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(SwitchEntryStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(BreakStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ReturnStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(IfStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(WhileStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ContinueStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(DoStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ForeachStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ForStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(ThrowStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(SynchronizedStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(TryStmt n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(CatchClause n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(LambdaExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(MethodReferenceExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
 
                     @Override
                     public void visit(TypeExpr n, Node arg) {
-
                         super.visit(n, n);
                     }
                 }, null);
@@ -631,7 +554,7 @@ public class DecompileTask implements Runnable {
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, nameExpr);
         ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(nameExpr.getBeginLine(), nameExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
         String className = null;
-        System.out.println("Scope is " + (methodCallExpr.getScope() == null ? null : methodCallExpr.getScope().getClass()));
+        System.out.println("Scope is " + (methodCallExpr.getScope() == null ? null : methodCallExpr.getScope().getClass()) + " " + methodCallExpr.getScope());
         if (methodCallExpr.getScope() instanceof NameExpr) {
             for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
                 if (importDeclaration.getName().getName().equals(methodCallExpr.getScope().toString())) {
@@ -648,7 +571,76 @@ public class DecompileTask implements Runnable {
                 if (((NameExpr) methodCallExpr.getScope()).getName().equals(thisClassName)) {
                     className = this.className.replace('/', '.').replace(".class", "");
                 } else {
-                    className = "java.lang." + methodCallExpr.getScope().toString();
+                    Node node = methodCallExpr.getParentNode();
+                    AtomicReference<com.github.javaparser.ast.type.Type> ref = new AtomicReference<>();
+                    while (ref.get() == null && node != null) {
+                        System.out.println("Trying to find it in " + node.getClass());
+                        node.accept(
+                                new VoidVisitorAdapter<Node>() {
+
+                                    @Override
+                                    public void visit(ClassOrInterfaceType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+
+                                    @Override
+                                    public void visit(PrimitiveType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+
+                                    @Override
+                                    public void visit(UnknownType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+
+                                    @Override
+                                    public void visit(WildcardType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+
+                                    @Override
+                                    public void visit(VoidType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+
+                                    @Override
+                                    public void visit(ReferenceType n, Node arg) {
+                                        System.out.println("FOUND ONE: " + n);
+                                        ref.set(n);
+                                        super.visit(n, n);
+                                    }
+                                }, null);
+                        node = node.getParentNode();
+                    }
+                    com.github.javaparser.ast.type.Type type = ref.get();
+                    if (type != null) {
+                        if (type instanceof ClassOrInterfaceType) {
+                            className = recursivelyHandleNameExpr(new MethodCallExpr(new NameExpr(((ClassOrInterfaceType) type).getName()), methodCallExpr.getName()), nameExpr);
+                            if (className != null) {
+                                offsets = getOffsets(lineSizes, type);
+                                link = new ClickableSyntaxTextArea.Link(type.getBeginLine(), type.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+                                link.fileName = fileName;
+                                String fileName = thisClassName.replace('.', '/') + ".class";
+                                link.className = fileName;
+                                link.jumpTo = " " + methodCallExpr.getScope().toString();
+                                textArea.links.add(link);
+                            }
+                        }
+
+                        return className;
+                    } else {
+                        className = "java.lang." + methodCallExpr.getScope().toString();
+                    }
                 }
             }
         } else if (methodCallExpr.getScope() instanceof MethodCallExpr) {

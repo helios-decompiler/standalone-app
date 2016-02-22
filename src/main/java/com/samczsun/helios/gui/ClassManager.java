@@ -98,7 +98,6 @@ public class ClassManager {
             nestedItem.setControl(generateTab(innerTabFolder, file, name));
             innerTabFolder.setSelection(nestedItem);
         });
-
     }
 
     private Control generateTab(CTabFolder parent, String file, String name) {
