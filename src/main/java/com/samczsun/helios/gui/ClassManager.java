@@ -22,7 +22,6 @@ import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
-import com.samczsun.helios.utils.MultiIterator;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
@@ -43,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class ClassManager {
 
@@ -165,46 +165,44 @@ public class ClassManager {
             ClassData data = (ClassData) item.getData();
             CTabFolder nested = (CTabFolder) item.getControl();
             Menu menu = new Menu(shell, SWT.POP_UP);
-            Iterable<? extends Transformer> transformers = MultiIterator.of(Decompiler.getAllDecompilers(),
-                    Disassembler.getAllDisassemblers(),
-                    Arrays.asList(Transformer.HEX, Transformer.TEXT))
-                    .toIterable();
-            for (Transformer transformer : transformers) {
-                if (!transformer.isApplicable(data.getClassName())) {
-                    continue;
-                }
-                MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
-                menuItem.setText(transformer.getName());
-                menuItem.addListener(SWT.Selection, event -> {
-                    ClassTransformationData transformerData = data.open(transformer);
-                    if (transformerData.isInitialized()) {
-                        nested.setSelection(transformerData.getTransformerTab());
-                        return;
-                    }
-                    CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
-                    decompilerTab.setText(transformer.getName());
-                    decompilerTab.setData(transformer);
-                    transformerData.setTransformerTab(decompilerTab);
-
-                    JComponent component = transformer.open(this, data, null);
-                    SwingControl control = new SwingControl(nested, SWT.NONE) {
-                        protected JComponent createSwingComponent() {
-                            return component;
+            Stream.of(Decompiler.getAllDecompilers(), Disassembler.getAllDisassemblers(), Arrays.asList(Transformer.HEX, Transformer.TEXT))
+                    .flatMap(collection -> collection.stream())
+                    .forEach(transformer -> {
+                        if (!transformer.isApplicable(data.getClassName())) {
+                            return;
                         }
+                        MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
+                        menuItem.setText(transformer.getName());
+                        menuItem.addListener(SWT.Selection, event -> {
+                            ClassTransformationData transformerData = data.open(transformer);
+                            if (transformerData.isInitialized()) {
+                                nested.setSelection(transformerData.getTransformerTab());
+                                return;
+                            }
+                            CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
+                            decompilerTab.setText(transformer.getName());
+                            decompilerTab.setData(transformer);
+                            transformerData.setTransformerTab(decompilerTab);
 
-                        public Composite getLayoutAncestor() {
-                            return shell;
-                        }
+                            JComponent component = transformer.open(this, data, null);
+                            SwingControl control = new SwingControl(nested, SWT.NONE) {
+                                protected JComponent createSwingComponent() {
+                                    return component;
+                                }
 
-                        protected void afterComponentCreatedSWTThread() {
-                            nested.setSelection(decompilerTab);
-                        }
-                    };
-                    control.setLayout(new FillLayout());
-                    decompilerTab.setControl(control);
+                                public Composite getLayoutAncestor() {
+                                    return shell;
+                                }
 
-                });
-            }
+                                protected void afterComponentCreatedSWTThread() {
+                                    nested.setSelection(decompilerTab);
+                                }
+                            };
+                            control.setLayout(new FillLayout());
+                            decompilerTab.setControl(control);
+
+                        });
+                    });
             menu.setLocation(SWTUtil.getMouseLocation());
             menu.setVisible(true);
         });

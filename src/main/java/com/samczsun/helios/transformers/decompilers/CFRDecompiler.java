@@ -119,7 +119,8 @@ public class CFRDecompiler extends Decompiler {
         RECOVER_TYPE_CLASH("recovertypeclash", "Recover Type Clash", true),
         RECOVER_TYPE_HINTS("recovertypehints", "Recover Type Hints", true),
         FORCE_RETURNING_IFS("forcereturningifs", "Force Returning Ifs", true),
-        FOR_LOOP_AGG_CAPTURE("forloopaggcapture", "For Loop Aggressive Capture", true);
+        FOR_LOOP_AGG_CAPTURE("forloopaggcapture", "For Loop Aggressive Capture", true),
+        RENAME_ILLEGAL_IDENTIFIERS("renameillegalidents", "Rename illegal identifiers", false);
 
         private final String name;
         private final String param;

@@ -17,8 +17,6 @@
 package com.samczsun.helios.gui;
 
 public class BackgroundTaskGui {
-
-
     public void open() {
 
     }
