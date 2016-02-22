@@ -41,6 +41,7 @@ import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -166,7 +167,7 @@ public class ClassManager {
             CTabFolder nested = (CTabFolder) item.getControl();
             Menu menu = new Menu(shell, SWT.POP_UP);
             Stream.of(Decompiler.getAllDecompilers(), Disassembler.getAllDisassemblers(), Arrays.asList(Transformer.HEX, Transformer.TEXT))
-                    .flatMap(collection -> collection.stream())
+                    .flatMap(Collection::stream)
                     .forEach(transformer -> {
                         if (!transformer.isApplicable(data.getClassName())) {
                             return;

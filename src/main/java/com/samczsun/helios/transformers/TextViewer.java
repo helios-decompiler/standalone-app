@@ -23,6 +23,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import java.nio.charset.StandardCharsets;
 
 public class TextViewer extends Transformer {
     @Override
@@ -48,7 +49,7 @@ public class TextViewer extends Transformer {
     @Override
     public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
         RSyntaxTextArea area = new RSyntaxTextArea();
-        area.setText(new String(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));
+        area.setText(new String(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName()), StandardCharsets.UTF_8));
         return new RTextScrollPane(area);
     }
 }
