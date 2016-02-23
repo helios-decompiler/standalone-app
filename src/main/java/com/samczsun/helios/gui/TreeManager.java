@@ -23,6 +23,9 @@ import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.tasks.DecompileAndSaveTask;
+import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.decompilers.Decompiler;
+import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -116,7 +119,7 @@ public class TreeManager {
 
                     MenuItem decompileSelected = new MenuItem(menu, SWT.PUSH);
                     decompileSelected.setText("Decompile &Selected");
-                    decompileSelected.setEnabled(item != null);
+                    decompileSelected.setEnabled(item != null && item.getText().endsWith(".class"));
                     decompileSelected.addSelectionListener(new SelectionAdapter() {
                         @Override
                         public void widgetSelected(SelectionEvent e) {
@@ -126,6 +129,56 @@ public class TreeManager {
                             }
                         }
                     });
+
+                    MenuItem decompilerMenuLabel = new MenuItem(menu, SWT.CASCADE);
+                    decompilerMenuLabel.setText("Decompile With");
+                    decompilerMenuLabel.setEnabled(item != null && item.getText().endsWith(".class"));
+                    Menu decompilerMenu = new Menu(menu.getShell(), SWT.DROP_DOWN);
+                    decompilerMenuLabel.setMenu(decompilerMenu);
+
+                    for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
+                        MenuItem decompilerItem = new MenuItem(decompilerMenu, SWT.CASCADE);
+                        decompilerItem.setText(decompiler.getName());
+                        decompilerItem.addSelectionListener(new SelectionAdapter() {
+                            @Override
+                            public void widgetSelected(SelectionEvent e) {
+                                if (item != null) {
+                                    Pair<String, String> info = getFileName(item);
+                                    if (info.getValue1().length() > 0) {
+                                        System.out.printf("Decompiling %s with %s%n", info.getValue1(), decompiler.getName());
+                                        Helios.getGui().getClassManager().openFileAndDecompile(info.getValue0(), info.getValue1(), decompiler, null);
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    new MenuItem(menu, SWT.SEPARATOR);
+                    
+                    MenuItem disassembleMenuLabel = new MenuItem(menu, SWT.CASCADE);
+                    disassembleMenuLabel.setText("Disassemble With");
+                    disassembleMenuLabel.setEnabled(item != null && item.getText().endsWith(".class"));
+                    Menu disassembleMenu = new Menu(menu.getShell(), SWT.DROP_DOWN);
+                    disassembleMenuLabel.setMenu(disassembleMenu);
+
+                    for (Transformer transformer : Disassembler.getAllDisassemblers()) {
+                        MenuItem disassemblerItem = new MenuItem(disassembleMenu, SWT.CASCADE);
+                        disassemblerItem.setText(transformer.getName());
+                        disassemblerItem.addSelectionListener(new SelectionAdapter() {
+                            @Override
+                            public void widgetSelected(SelectionEvent e) {
+                                if (item != null) {
+                                    Pair<String, String> info = getFileName(item);
+                                    if (info.getValue1().length() > 0) {
+                                        System.out.printf("Disassembling %s with %s%n", info.getValue1(), transformer.getName());
+                                        Helios.getGui().getClassManager().openFileAndDecompile(info.getValue0(), info.getValue1(), transformer, null);
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    new MenuItem(menu, SWT.SEPARATOR);
 
                     MenuItem remove = new MenuItem(menu, SWT.PUSH);
                     remove.setText("&Remove");
