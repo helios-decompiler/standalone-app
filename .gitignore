@@ -1,5 +1,7 @@
-/target
-.idea/
-.git/
-*.iml
+dependengy-reduced-pom.xml
 snippits/
+target/
+.idea/
+*.iml
+*.ipr
+*.iws
