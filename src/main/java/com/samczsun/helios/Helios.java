@@ -74,6 +74,8 @@ public class Helios {
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
         System.setSecurityManager(new SecurityManager() {
+            private final Package pkg = Helios.class.getPackage();
+
             @Override
             public void checkPermission(Permission perm) {
             }
@@ -96,7 +98,8 @@ public class Helios {
 
             @Override
             public void checkExit(int status) {
-                if (!getClassContext()[3].getCanonicalName().startsWith("com.samczsun")) {
+                Class[] context = getClassContext();
+                if (context.length >= 4 && context[3] != null && !context[3].getPackage().getName().startsWith(pkg.getName())) {
                     throw new SecurityException(); //Baksmali
                 }
             }
