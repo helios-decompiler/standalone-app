@@ -18,6 +18,9 @@ package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.api.events.*;
+import com.samczsun.helios.api.events.Listener;
+import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
@@ -59,6 +62,11 @@ public class ClassManager {
             public void close(CTabFolderEvent event) {
                 ClassData data = (ClassData) event.item.getData();
                 opened.remove(data.getFileName() + data.getClassName());
+            }
+        });
+        Events.registerListener(new Listener() {
+            public void handleSearchRequest(SearchRequest request) {
+                shell.getDisplay().asyncExec(() -> search(request.getText()));
             }
         });
     }
@@ -258,8 +266,6 @@ public class ClassManager {
                 ExceptionHandler.handle(t);
             }
         }
-
-        // Why?
         mainTabs.getDisplay().beep();
     }
 

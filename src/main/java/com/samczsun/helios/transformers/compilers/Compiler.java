@@ -18,6 +18,8 @@ package com.samczsun.helios.transformers.compilers;
 
 import com.samczsun.helios.transformers.Transformer;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,5 +62,9 @@ public abstract class Compiler extends Transformer {
 
     public static Compiler getById(String id) {
         return BY_ID.get(id);
+    }
+
+    public static Collection<Compiler> getAllCompilers() {
+        return Collections.unmodifiableCollection(BY_ID.values());
     }
 }

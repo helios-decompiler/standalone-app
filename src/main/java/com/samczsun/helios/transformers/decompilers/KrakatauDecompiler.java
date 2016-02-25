@@ -20,6 +20,7 @@ import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
 import com.samczsun.helios.utils.Utils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.ClassNode;
 
@@ -54,10 +55,18 @@ public class KrakatauDecompiler extends Decompiler {
                     Utils.saveClasses(inputJar, loadedData);
 
                     createdProcess = Helios.launchProcess(
-                            new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "decompile.py",
-                                    "-skip", "-nauto", "-path", buildPath(inputJar), "-out",
-                                    outputJar.getAbsolutePath(), classNode.name + ".class").directory(
-                                    Constants.KRAKATAU_DIR));
+                            new ProcessBuilder(
+                                    Settings.PYTHON2_LOCATION.get().asString(),
+                                    "-O",
+                                    "decompile.py",
+                                    "-skip",
+                                    "-nauto",
+                                    "-path",
+                                    buildPath(inputJar),
+                                    "-out",
+                                    outputJar.getAbsolutePath(),
+                                    classNode.name + ".class"
+                            ).directory(Constants.KRAKATAU_DIR));
 
                     log = Utils.readProcess(createdProcess);
 
@@ -75,22 +84,9 @@ public class KrakatauDecompiler extends Decompiler {
                     output.append(parseException(e)).append("\n").append(log);
                     return false;
                 } finally {
-                    if (zipFile != null) {
-                        try {
-                            zipFile.close();
-                        } catch (IOException e) {
-                        }
-                    }
-                    if (inputJar != null) {
-                        if (!inputJar.delete()) {
-                            inputJar.deleteOnExit();
-                        }
-                    }
-                    if (outputJar != null) {
-                        if (!outputJar.delete()) {
-                            outputJar.deleteOnExit();
-                        }
-                    }
+                    IOUtils.closeQuietly(zipFile);
+                    FileUtils.deleteQuietly(inputJar);
+                    FileUtils.deleteQuietly(outputJar);
                 }
             } else {
                 output.append("You need to set the location of rt.jar");

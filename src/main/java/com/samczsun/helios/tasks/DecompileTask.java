@@ -27,19 +27,18 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
-import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
 import com.samczsun.helios.WrappedClassNode;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.PreDecompileEvent;
+import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
-import com.sun.org.apache.bcel.internal.classfile.Unknown;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
@@ -74,7 +73,7 @@ public class DecompileTask implements Runnable {
     public void run() {
         LoadedFile loadedFile = Helios.getLoadedFile(fileName);
         byte[] classFile = loadedFile.getFiles().get(className);
-        PreDecompileEvent event = new PreDecompileEvent(classFile);
+        PreDecompileEvent event = new PreDecompileEvent(transformer, classFile);
         Events.callEvent(event);
         classFile = event.getBytes();
         StringBuilder output = new StringBuilder();
@@ -82,7 +81,6 @@ public class DecompileTask implements Runnable {
             if (((Decompiler) transformer).decompile(loadedFile.getClassNode(className), classFile, output)) {
                 CompilationUnit cu = null;
                 try {
-                    // parse the file
                     cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)));
                     this.compilationUnit = cu;
                 } catch (ParseException | TokenMgrError e) {
@@ -99,10 +97,9 @@ public class DecompileTask implements Runnable {
                 textArea.setCodeFoldingEnabled(true);
             }
             textArea.setText(output.toString());
-            if (jumpTo != null)
-                Helios.getGui().getShell().getDisplay().asyncExec(() -> {
-                    Helios.getGui().getClassManager().search(jumpTo);
-                });
+            if (jumpTo != null) {
+                Events.callEvent(new SearchRequest(jumpTo));
+            }
         } else if (transformer instanceof Disassembler) {
             if (((Disassembler) transformer).disassembleClassNode(loadedFile.getClassNode(className), classFile,
                     output)) {

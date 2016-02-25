@@ -16,10 +16,14 @@
 
 package com.samczsun.helios.api.events;
 
+import com.samczsun.helios.transformers.Transformer;
+
 public class PreDecompileEvent {
+    private Transformer transformer;
     private byte[] classBytes;
 
-    public PreDecompileEvent(byte[] bytes) {
+    public PreDecompileEvent(Transformer transformer, byte[] bytes) {
+        this.transformer = transformer;
         this.classBytes = bytes;
     }
 
@@ -29,5 +33,9 @@ public class PreDecompileEvent {
 
     public void setBytes(byte[] bytes) {
         this.classBytes = bytes;
+    }
+
+    public Transformer getTransformer() {
+        return this.transformer;
     }
 }

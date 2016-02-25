@@ -19,6 +19,8 @@ package com.samczsun.helios.transformers.assemblers;
 
 import com.samczsun.helios.transformers.Transformer;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,5 +64,9 @@ public abstract class Assembler extends Transformer {
 
     public final String getName() {
         return this.name;
+    }
+
+    public static Collection<Assembler> getAllAssemblers() {
+        return Collections.unmodifiableCollection(BY_ID.values());
     }
 }

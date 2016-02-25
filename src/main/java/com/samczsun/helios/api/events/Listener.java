@@ -17,6 +17,7 @@
 package com.samczsun.helios.api.events;
 
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
+import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 
 public class Listener {
@@ -29,6 +30,10 @@ public class Listener {
     }
 
     public void handleRecentFileRequest(RecentFileRequest request) {
+
+    }
+
+    public void handleSearchRequest(SearchRequest request) {
 
     }
 }

@@ -2,19 +2,21 @@ package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.assemblers.Assembler;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
+import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Token;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.samczsun.helios.transformers.compilers.Compiler;
+
 
 public class ClickableSyntaxTextArea extends RSyntaxTextArea {
     protected static final Cursor DEFAULT_CURSOR = Cursor.getDefaultCursor();
@@ -25,10 +27,13 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
     private final String fileName;
 
     private final String className;
+    private final Transformer currentTransformer;
+
 
     public ClickableSyntaxTextArea(ClassManager manager, Transformer currentTransformer, String fileName, String className) {
         this.fileName = fileName;
         this.className = className;
+        this.currentTransformer = currentTransformer;
         MouseAdapter adapter = new MouseAdapter() {
             int lastX = -1;
             int lastY = -1;
@@ -84,12 +89,28 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
         for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
             JMenuItem decomp = new JMenuItem(decompiler.getName());
             decomp.setEnabled(true);
-            decomp.addActionListener(e -> {
-                Helios.getGui().getClassManager().openFileAndDecompile(this.fileName, this.className, decompiler, null);
-            });
+            decomp.addActionListener(e -> Helios.getGui().getClassManager().openFileAndDecompile(this.fileName, this.className, decompiler, null));
             decompileWith.add(decomp);
         }
         menu.add(decompileWith);
+        menu.addSeparator();
+        if (currentTransformer instanceof Decompiler) {
+            JMenu compileMenu = new JMenu("Compile with");
+            for (Compiler compiler : Compiler.getAllCompilers()) {
+                JMenuItem compileOption = new JMenuItem(compiler.getName());
+                compileOption.setEnabled(true);
+                compileMenu.add(compileOption);
+            }
+            menu.add(compileMenu);
+        } else if (currentTransformer instanceof Disassembler) {
+            JMenu assembleMenu = new JMenu("Assemble with");
+            for (Assembler assembler : Assembler.getAllAssemblers()) {
+                JMenuItem assembleOption = new JMenuItem(assembler.getName());
+                assembleOption.setEnabled(true);
+                assembleMenu.add(assembleOption);
+            }
+            menu.add(assembleMenu);
+        }
         return menu;
     }
 

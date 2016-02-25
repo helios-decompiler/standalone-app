@@ -28,7 +28,7 @@ public class Constants {
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
     public static final String SWT_VERSION = "4.5.1";
-    public static final String KRAKATAU_VERSION = "17eaeec107e824aebc75df36f3161a2a5874f12f";
+    public static final String KRAKATAU_VERSION = "1b7b4c4d53619ea72e1015b0f01744be00c609d4";
     public static final String ENJARIFY_VERSION = "bf9033b96e5c1695c4838a8edeb53195fa92a831";
 
     public static final int MB = 1024 * 1024;
@@ -40,7 +40,7 @@ public class Constants {
             "enjarify" + File.separator + Constants.ENJARIFY_VERSION);
     public static final File ADDONS_DIR = new File(DATA_DIR, "addons");
     public static final File SETTINGS_FILE = new File(DATA_DIR, "settings.json");
-    public static final String NEWLINE = System.getProperty("line.separator");
+    public static final String NEWLINE = System.lineSeparator();
     private static final Runtime RUNTIME = Runtime.getRuntime();
     public static final Supplier<Integer> USED_MEMORY = () -> (int) ((RUNTIME.totalMemory() - RUNTIME.freeMemory()) / MB);
     public static final Supplier<Integer> TOTAL_MEMORY = () -> (int) (RUNTIME.maxMemory() / MB);
