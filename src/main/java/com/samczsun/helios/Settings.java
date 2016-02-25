@@ -16,18 +16,21 @@
 
 package com.samczsun.helios;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.eclipsesource.json.ParseException;
+import com.eclipsesource.json.WriterConfig;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
 public class Settings {
@@ -51,7 +54,7 @@ public class Settings {
     }
 
     public static void saveSettings() {
-        try {
+        try (Writer writer = new FileWriter(Constants.SETTINGS_FILE)){
             JsonObject settings = new JsonObject();
             for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
                 decompiler.getSettings().saveTo(settings);
@@ -63,21 +66,18 @@ public class Settings {
             for (JsonObject.Member val : INSTANCE) {
                 rootSettings.set(val.getName(), val.getValue());
             }
-            FileOutputStream out = new FileOutputStream(Constants.SETTINGS_FILE);
-            out.write(settings.toString().getBytes("UTF-8"));
-            out.close();
+            settings.writeTo(writer, WriterConfig.PRETTY_PRINT);
         } catch (Exception e) {
             ExceptionHandler.handle(e);
         }
     }
 
     public static void loadSettings() {
-        try {
+        try (FileInputStream input = new FileInputStream(Constants.SETTINGS_FILE); InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)){
             JsonObject settings = new JsonObject();
             try {
-                settings = JsonObject.readFrom(
-                        new InputStreamReader(new FileInputStream(Constants.SETTINGS_FILE), StandardCharsets.UTF_8));
-            } catch (ParseException | UnsupportedOperationException e) {
+                settings = Json.parse(reader).asObject();
+            } catch (ParseException | UnsupportedOperationException ignored) {
             }
             for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
                 decompiler.getSettings().loadFrom(settings);
