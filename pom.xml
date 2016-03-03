@@ -152,7 +152,7 @@
         <dependency>
             <groupId>org.benf</groupId>
             <artifactId>cfr</artifactId>
-            <version>0.113</version>
+            <version>0.114</version>
             <!--MIT-->
             <!--helios-->
         </dependency>
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>org.jf</groupId>
             <artifactId>smali</artifactId>
-            <version>73bd8ce9</version>
+            <version>87d10dac</version>
             <!--BSD + Apache 2.0-->
             <!--helios-->
             <!--2.1.0-->
@@ -174,7 +174,7 @@
         <dependency>
             <groupId>org.jf</groupId>
             <artifactId>baksmali</artifactId>
-            <version>73bd8ce9</version>
+            <version>87d10dac</version>
             <!--BSD + Apache 2.0-->
             <!--helios-->
             <!--2.1.0-->
@@ -182,7 +182,7 @@
         <dependency>
             <groupId>brut</groupId>
             <artifactId>apktool</artifactId>
-            <version>2.0.2</version>
+            <version>5c77023</version>
             <!--Apache 2.0-->
             <!--helios-->
         </dependency>
