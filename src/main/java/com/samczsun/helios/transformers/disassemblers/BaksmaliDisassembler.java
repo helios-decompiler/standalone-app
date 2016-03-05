@@ -16,6 +16,8 @@
 
 package com.samczsun.helios.transformers.disassemblers;
 
+import com.android.dx.dex.DexFormat;
+import com.android.dx.dex.DexOptions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.samczsun.helios.handler.ExceptionHandler;
@@ -23,6 +25,8 @@ import com.samczsun.helios.transformers.converters.Converter;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.StringBuilderWriter;
+import org.jf.baksmali.Adaptors.ClassDefinition;
 import org.jf.baksmali.baksmaliOptions;
 import org.jf.baksmali.main;
 import org.jf.dexlib2.DexFileFactory;
@@ -31,14 +35,14 @@ import org.jf.dexlib2.analysis.ClassPath;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.dexbacked.DexBackedOdexFile;
 import org.jf.dexlib2.iface.DexFile;
+import org.jf.util.IndentingWriter;
 import org.objectweb.asm.tree.ClassNode;
 import org.zeroturnaround.zip.ZipUtil;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Locale;
@@ -54,61 +58,33 @@ public class BaksmaliDisassembler extends Disassembler {
     }
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
-        File tempDir = null;
-        File tempClass = null;
-        File tempZip = null;
-        File tempDex = null;
-        File tempSmali = null;
         try {
-            tempDir = Files.createTempDirectory("smali").toFile();
-            tempClass = new File(tempDir, "temp.class");
-            tempZip = new File(tempDir, "temp.jar");
-            tempDex = new File(tempDir, "temp.dex");
-            tempSmali = new File(tempDir, "temp-smali");
-            FileOutputStream fos = new FileOutputStream(tempClass);
-            fos.write(b);
-            fos.close();
-
-            ZipUtil.packEntry(tempClass, tempZip);
-
-            Converter.JAR2DEX.convert(tempZip, tempDex);
-
             baksmaliOptions options = new baksmaliOptions();
-            options.outputDirectory = tempSmali.getAbsolutePath();
             options.deodex = true;
 
-            DexFile file = DexFileFactory.loadDexFile(tempDex, options.dexEntry, options.apiLevel, options.experimental);
+            Class<?> clazz = com.android.dx.command.dexer.Main.class;
+            Field outputDex = clazz.getDeclaredField("outputDex");
+            outputDex.setAccessible(true);
+            DexOptions dexOptions = new DexOptions();
+            dexOptions.targetApiLevel = DexFormat.API_NO_EXTENDED_OPCODES;
+            outputDex.set(null, new com.android.dx.dex.file.DexFile(dexOptions));
 
-            //org.jf.baksmali.main.run(options, file)
+            Method processFileBytes = clazz.getDeclaredMethod("processFileBytes", String.class, long.class, byte[].class);
+            processFileBytes.setAccessible(true);
+            processFileBytes.invoke(null, "Helios.class", System.currentTimeMillis(), b);
+            Method writeDex = clazz.getDeclaredMethod("writeDex");
+            writeDex.setAccessible(true);
+            byte[] bytes = (byte[]) writeDex.invoke(null);
 
-            org.jf.baksmali.main.main(new String[]{"-o", tempSmali.getAbsolutePath(), "-x", tempDex.getAbsolutePath()});
+            outputDex.set(null, null);
 
-            File outputSmali = null;
-
-            boolean found = false;
-            File current = tempSmali;
-            while (!found) {
-                File f = current.listFiles()[0];
-                if (f.isDirectory()) current = f;
-                else {
-                    outputSmali = f;
-                    found = true;
-                }
-
-            }
-            output.append(FileUtils.readFileToString(outputSmali, "UTF-8"));
+            DexFile file = new DexBackedDexFile(Opcodes.forApi(options.apiLevel), bytes);
+            ClassDefinition classDefinition = new ClassDefinition(options, file.getClasses().iterator().next());
+            classDefinition.writeTo(new IndentingWriter(new StringBuilderWriter(output)));
             return true;
-        } catch (SecurityException e) {
-            return false;
         } catch (final Exception e) {
             ExceptionHandler.handle(e);
             return false;
-        } finally {
-//            FileUtils.deleteQuietly(tempClass);
-//            FileUtils.deleteQuietly(tempZip);
-//            FileUtils.deleteQuietly(tempDex);
-//            FileUtils.deleteQuietly(tempSmali);
-//            FileUtils.deleteQuietly(tempDir);
         }
     }
 }
