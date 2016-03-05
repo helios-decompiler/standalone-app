@@ -255,18 +255,23 @@ public class ClassManager {
         if (!decompiler.getData().equals(Transformer.HEX)) {
             RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
             RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
-            SearchContext context = new SearchContext();
-            context.setSearchFor(find);
-            context.setMatchCase(false);
-            try {
-                if (SearchEngine.find(textArea, context).wasFound()) {
-                    return;
+            SwingUtilities.invokeLater(() -> {
+                SearchContext context = new SearchContext();
+                context.setSearchFor(find);
+                context.setMatchCase(false);
+                try {
+                    if (!SearchEngine.find(textArea, context).wasFound()) {
+                        shell.getDisplay().asyncExec(() -> {
+                            mainTabs.getDisplay().beep();
+                        });
+                    }
+                } catch (Throwable t) {
+                    ExceptionHandler.handle(t);
                 }
-            } catch (Throwable t) {
-                ExceptionHandler.handle(t);
-            }
+            });
+        } else {
+            mainTabs.getDisplay().beep();
         }
-        mainTabs.getDisplay().beep();
     }
 
     public void openFileAndDecompile(String fileName, String className, Transformer currentTransformer, String jumpTo) {
