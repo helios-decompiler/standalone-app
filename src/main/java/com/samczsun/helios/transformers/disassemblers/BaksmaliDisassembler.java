@@ -16,6 +16,7 @@
 
 package com.samczsun.helios.transformers.disassemblers;
 
+import com.android.dx.command.dexer.Main;
 import com.android.dx.dex.DexFormat;
 import com.android.dx.dex.DexOptions;
 import com.google.common.collect.Iterables;
@@ -48,36 +49,54 @@ import java.util.List;
 import java.util.Locale;
 
 public class BaksmaliDisassembler extends Disassembler {
+    private static final Class<?> DEXER;
+    private static final Field OUTPUT_DEX;
+    private static final Field ARGS;
+    private static final Method PROCESS_FILE_BYTES;
+    private static final Method WRITE_DEX;
+
+    static {
+        DEXER = com.android.dx.command.dexer.Main.class;
+        try {
+            OUTPUT_DEX = DEXER.getDeclaredField("outputDex");
+            OUTPUT_DEX.setAccessible(true);
+            ARGS = DEXER.getDeclaredField("args");
+            ARGS.setAccessible(true);
+            PROCESS_FILE_BYTES = DEXER.getDeclaredMethod("processFileBytes", String.class, long.class, byte[].class);
+            PROCESS_FILE_BYTES.setAccessible(true);
+            WRITE_DEX = DEXER.getDeclaredMethod("writeDex");
+            WRITE_DEX.setAccessible(true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public BaksmaliDisassembler() {
         super("baksmali-disassembler", "Baksmali Disassembler");
     }
 
     @Override
     public boolean isApplicable(String className) {
-        return className.endsWith(".apk") || true;
+        return className.endsWith(".class");
     }
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         try {
-            baksmaliOptions options = new baksmaliOptions();
-            options.deodex = true;
-
-            Class<?> clazz = com.android.dx.command.dexer.Main.class;
-            Field outputDex = clazz.getDeclaredField("outputDex");
-            outputDex.setAccessible(true);
             DexOptions dexOptions = new DexOptions();
             dexOptions.targetApiLevel = DexFormat.API_NO_EXTENDED_OPCODES;
-            outputDex.set(null, new com.android.dx.dex.file.DexFile(dexOptions));
+            OUTPUT_DEX.set(null, new com.android.dx.dex.file.DexFile(dexOptions));
+            Main.Arguments args = new Main.Arguments();
+            args.parse(new String[] {"--no-strict", "Helios.class"});
+            ARGS.set(null, args);
 
-            Method processFileBytes = clazz.getDeclaredMethod("processFileBytes", String.class, long.class, byte[].class);
-            processFileBytes.setAccessible(true);
-            processFileBytes.invoke(null, "Helios.class", System.currentTimeMillis(), b);
-            Method writeDex = clazz.getDeclaredMethod("writeDex");
-            writeDex.setAccessible(true);
-            byte[] bytes = (byte[]) writeDex.invoke(null);
+            PROCESS_FILE_BYTES.invoke(null, "Helios.class", System.currentTimeMillis(), b);
+            byte[] bytes = (byte[]) WRITE_DEX.invoke(null);
 
-            outputDex.set(null, null);
+            OUTPUT_DEX.set(null, null);
+            ARGS.set(null, null);
 
+            baksmaliOptions options = new baksmaliOptions();
+            options.deodex = true;
             DexFile file = new DexBackedDexFile(Opcodes.forApi(options.apiLevel), bytes);
             ClassDefinition classDefinition = new ClassDefinition(options, file.getClasses().iterator().next());
             classDefinition.writeTo(new IndentingWriter(new StringBuilderWriter(output)));
