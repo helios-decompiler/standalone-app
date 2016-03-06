@@ -21,6 +21,7 @@ import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.converters.Converter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jf.smali.SmaliOptions;
 import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
@@ -57,8 +58,9 @@ public class SmaliAssembler extends Assembler {
 
             FileUtils.write(tempSmali, contents, "UTF-8", false);
             try {
-                org.jf.smali.main.main(
-                        new String[]{tempSmaliFolder.getAbsolutePath(), "-o", tempDex.getAbsolutePath()});
+                SmaliOptions smaliOptions = new SmaliOptions();
+                smaliOptions.outputDexFile = tempDex.getAbsolutePath();
+                org.jf.smali.main.run(smaliOptions, tempSmaliFolder.getAbsolutePath());
             } catch (Exception e) {
                 ExceptionHandler.handle(e);
             }

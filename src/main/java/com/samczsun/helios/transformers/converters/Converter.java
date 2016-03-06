@@ -35,9 +35,16 @@ public abstract class Converter extends Transformer {
         public void convert(File in, File out) {
             if (Helios.ensurePython3Set()) {
                 try {
-                    ProcessBuilder pb = new ProcessBuilder(Settings.PYTHON3_LOCATION.get().asString(), "-O", "-m",
-                            "enjarify.main", in.getAbsolutePath(), "-o", out.getAbsolutePath(), "-f").directory(
-                            Constants.ENJARIFY_DIR);
+                    ProcessBuilder pb = new ProcessBuilder(
+                            Settings.PYTHON3_LOCATION.get().asString(),
+                            "-O",
+                            "-m",
+                            "enjarify.main",
+                            in.getAbsolutePath(),
+                            "-o",
+                            out.getAbsolutePath(),
+                            "-f"
+                    ).directory(Constants.ENJARIFY_DIR);
                     Process process = Helios.launchProcess(pb);
                     process.waitFor();
                 } catch (Exception e) {
@@ -92,11 +99,7 @@ public abstract class Converter extends Transformer {
     public static final Converter JAR2DEX = new Converter() {
         @Override
         public void convert(File in, File out) {
-            try {
-                com.googlecode.dex2jar.tools.Jar2Dex.main("-o", out.getAbsolutePath(), "--force", in.getAbsolutePath());
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-            }
+            throw new IllegalArgumentException("TODO: Use dx from BaksmaliDisassembler");
         }
 
         @Override
