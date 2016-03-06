@@ -42,6 +42,10 @@ import org.zeroturnaround.zip.ZipUtil;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -49,23 +53,21 @@ import java.util.List;
 import java.util.Locale;
 
 public class BaksmaliDisassembler extends Disassembler {
-    private static final Class<?> DEXER;
-    private static final Field OUTPUT_DEX;
-    private static final Field ARGS;
-    private static final Method PROCESS_FILE_BYTES;
-    private static final Method WRITE_DEX;
+    private static final MethodHandle OUTPUT_DEX;
+    private static final MethodHandle ARGS;
+    private static final MethodHandle PROCESS_FILE_BYTES;
+    private static final MethodHandle WRITE_DEX;
 
     static {
-        DEXER = com.android.dx.command.dexer.Main.class;
+        Class<?> dexer = com.android.dx.command.dexer.Main.class;
         try {
-            OUTPUT_DEX = DEXER.getDeclaredField("outputDex");
-            OUTPUT_DEX.setAccessible(true);
-            ARGS = DEXER.getDeclaredField("args");
-            ARGS.setAccessible(true);
-            PROCESS_FILE_BYTES = DEXER.getDeclaredMethod("processFileBytes", String.class, long.class, byte[].class);
-            PROCESS_FILE_BYTES.setAccessible(true);
-            WRITE_DEX = DEXER.getDeclaredMethod("writeDex");
-            WRITE_DEX.setAccessible(true);
+            Constructor<MethodHandles.Lookup> lookupConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+            lookupConstructor.setAccessible(true);
+            MethodHandles.Lookup lookup = lookupConstructor.newInstance(Object.class, -1);
+            OUTPUT_DEX = lookup.findStaticSetter(dexer, "outputDex", com.android.dx.dex.file.DexFile.class);
+            ARGS = lookup.findStaticSetter(dexer, "args", Main.Arguments.class);
+            PROCESS_FILE_BYTES = lookup.findStatic(dexer, "processFileBytes", MethodType.methodType(boolean.class, String.class, long.class, byte[].class));
+            WRITE_DEX = lookup.findStatic(dexer, "writeDex", MethodType.methodType(byte[].class));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -84,16 +86,16 @@ public class BaksmaliDisassembler extends Disassembler {
         try {
             DexOptions dexOptions = new DexOptions();
             dexOptions.targetApiLevel = DexFormat.API_NO_EXTENDED_OPCODES;
-            OUTPUT_DEX.set(null, new com.android.dx.dex.file.DexFile(dexOptions));
+            OUTPUT_DEX.invoke(new com.android.dx.dex.file.DexFile(dexOptions));
             Main.Arguments args = new Main.Arguments();
             args.parse(new String[] {"--no-strict", "Helios.class"});
-            ARGS.set(null, args);
+            ARGS.invoke(args);
 
-            PROCESS_FILE_BYTES.invoke(null, "Helios.class", System.currentTimeMillis(), b);
-            byte[] bytes = (byte[]) WRITE_DEX.invoke(null);
+            PROCESS_FILE_BYTES.invoke("Helios.class", System.currentTimeMillis(), b);
+            byte[] bytes = (byte[]) WRITE_DEX.invoke();
 
-            OUTPUT_DEX.set(null, null);
-            ARGS.set(null, null);
+            OUTPUT_DEX.invoke((Object) null);
+            ARGS.invoke((Object) null);
 
             baksmaliOptions options = new baksmaliOptions();
             options.deodex = true;
@@ -101,8 +103,9 @@ public class BaksmaliDisassembler extends Disassembler {
             ClassDefinition classDefinition = new ClassDefinition(options, file.getClasses().iterator().next());
             classDefinition.writeTo(new IndentingWriter(new StringBuilderWriter(output)));
             return true;
-        } catch (final Exception e) {
-            ExceptionHandler.handle(e);
+        } catch (final Throwable e) {
+            output.setLength(0);
+            output.append(parseException(e));
             return false;
         }
     }
