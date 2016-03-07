@@ -19,6 +19,7 @@ package com.samczsun.helios.transformers.decompilers;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
+import com.samczsun.helios.transformers.TransformerSettings;
 import com.samczsun.helios.utils.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -36,6 +37,9 @@ import java.util.zip.ZipFile;
 public class KrakatauDecompiler extends Decompiler {
     public KrakatauDecompiler() {
         super("krakatau-decompiler", "Krakatau Decompiler");
+        for (Settings setting : Settings.values()) {
+            settings.registerSetting(setting);
+        }
     }
 
     public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
@@ -56,11 +60,12 @@ public class KrakatauDecompiler extends Decompiler {
 
                     createdProcess = Helios.launchProcess(
                             new ProcessBuilder(
-                                    Settings.PYTHON2_LOCATION.get().asString(),
+                                    com.samczsun.helios.Settings.PYTHON2_LOCATION.get().asString(),
                                     "-O",
                                     "decompile.py",
                                     "-skip",
                                     "-nauto",
+                                    Settings.MAGIC_THROW.isEnabled() ? "-xmagicthrow" : "",
                                     "-path",
                                     buildPath(inputJar),
                                     "-out",
@@ -95,5 +100,40 @@ public class KrakatauDecompiler extends Decompiler {
             output.append("You need to set the location of Python 2.x");
         }
         return false;
+    }
+
+
+    public enum Settings implements TransformerSettings.Setting {
+        MAGIC_THROW("xmagicthrow", "Assume all instructions can throw (disabling can result in inaccurate code)", true);
+
+        private final String name;
+        private final String param;
+        private boolean on;
+
+        Settings(String param, String name) {
+            this(param, name, false);
+        }
+
+        Settings(String param, String name, boolean on) {
+            this.name = name;
+            this.param = param;
+            this.on = on;
+        }
+
+        public String getParam() {
+            return param;
+        }
+
+        public String getText() {
+            return name;
+        }
+
+        public boolean isEnabled() {
+            return on;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.on = enabled;
+        }
     }
 }
