@@ -31,6 +31,7 @@ public abstract class Disassembler extends Transformer {
         new JavapDisassembler().register();
         new KrakatauDisassembler().register();
         new BaksmaliDisassembler().register();
+        new ProcyonDisassembler().register();
     }
 
     private final String id;
@@ -60,7 +61,7 @@ public abstract class Disassembler extends Transformer {
         return disassembleClassNode((ClassNode) args[0], (byte[]) args[1], (StringBuilder) args[2]);
     }
 
-    public abstract boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output);
+    public abstract boolean disassembleClassNode(ClassNode classNode, byte[] bytes, StringBuilder output);
 
     public static Disassembler getById(String id) {
         return BY_ID.get(id);
