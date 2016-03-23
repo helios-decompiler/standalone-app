@@ -74,6 +74,14 @@ public class TreeManager {
                 }
             }
         });
+        tree.addListener(SWT.Expand, event -> {
+            TreeItem current = (TreeItem) event.item;
+            TreeItem[] children;
+            while ((children = current.getItems()).length == 1) {
+                children[0].setExpanded(true);
+                current = children[0];
+            }
+        });
         tree.addListener(SWT.MeasureItem, event -> {
         });
         tree.addMouseListener(new MouseAdapter() {
