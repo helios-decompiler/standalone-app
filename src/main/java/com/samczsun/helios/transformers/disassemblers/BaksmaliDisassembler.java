@@ -19,19 +19,24 @@ package com.samczsun.helios.transformers.disassemblers;
 import com.android.dx.command.dexer.Main;
 import com.android.dx.dex.DexFormat;
 import com.android.dx.dex.DexOptions;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.jf.baksmali.Adaptors.ClassDefinition;
 import org.jf.baksmali.baksmaliOptions;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
+import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
 import org.jf.util.IndentingWriter;
 import org.objectweb.asm.tree.ClassNode;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.util.Iterator;
 
 public class BaksmaliDisassembler extends Disassembler {
     private static final MethodHandle OUTPUT_DEX;
@@ -65,11 +70,15 @@ public class BaksmaliDisassembler extends Disassembler {
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         try {
+            PrintStream oldErr = System.err;
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(outputStream));
+
             DexOptions dexOptions = new DexOptions();
             dexOptions.targetApiLevel = DexFormat.API_NO_EXTENDED_OPCODES;
             OUTPUT_DEX.invoke(new com.android.dx.dex.file.DexFile(dexOptions));
             Main.Arguments args = new Main.Arguments();
-            args.parse(new String[] {"--no-strict", "Helios.class"});
+            args.parse(new String[]{"--no-strict", "Helios.class"});
             ARGS.invoke(args);
 
             PROCESS_FILE_BYTES.invoke("Helios.class", System.currentTimeMillis(), b);
@@ -81,9 +90,17 @@ public class BaksmaliDisassembler extends Disassembler {
             baksmaliOptions options = new baksmaliOptions();
             options.deodex = true;
             DexFile file = new DexBackedDexFile(Opcodes.forApi(options.apiLevel), bytes);
-            ClassDefinition classDefinition = new ClassDefinition(options, file.getClasses().iterator().next());
-            classDefinition.writeTo(new IndentingWriter(new StringBuilderWriter(output)));
-            return true;
+            Iterator<? extends ClassDef> it = file.getClasses().iterator();
+
+            System.setErr(oldErr);
+
+            if (it.hasNext()) {
+                ClassDefinition classDefinition = new ClassDefinition(options, it.next());
+                classDefinition.writeTo(new IndentingWriter(new StringBuilderWriter(output)));
+                return true;
+            } else {
+                throw new IllegalStateException("Baksmali failed to read the class file\n" + new String(outputStream.toByteArray(), "UTF-8"));
+            }
         } catch (final Throwable e) {
             output.setLength(0);
             output.append(parseException(e));
