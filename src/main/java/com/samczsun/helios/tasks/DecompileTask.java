@@ -84,7 +84,6 @@ public class DecompileTask implements Runnable {
                     cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)));
                     this.compilationUnit = cu;
                 } catch (ParseException | TokenMgrError e) {
-                    ExceptionHandler.handle(e);
                 } finally {
                     if (cu != null) {
                         String result = output.toString();
