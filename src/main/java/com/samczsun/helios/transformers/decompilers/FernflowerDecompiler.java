@@ -28,6 +28,7 @@ import org.objectweb.asm.tree.InnerClassNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.Manifest;
@@ -84,7 +85,7 @@ public class FernflowerDecompiler extends Decompiler {
             result.set(null);
 
             BaseDecompiler baseDecompiler = new BaseDecompiler((s, s1) -> {
-                byte[] b = importantClasses.get(s.substring(s.lastIndexOf("FERNFLOWER ") + "FERNFLOWER ".length(), s.length()).replace('\\', '/'));
+                byte[] b = importantClasses.get(s);
                 byte[] clone = new byte[b.length];
                 System.arraycopy(b, 0, clone, 0, b.length);
                 return clone;
@@ -137,9 +138,16 @@ public class FernflowerDecompiler extends Decompiler {
             System.out.println("Decompiling");
             importantClasses.forEach((str, barr) -> {
                 try {
-                    baseDecompiler.addSpace(new File("FERNFLOWER " + str), true);
+                    baseDecompiler.addSpace(new File(str) {
+                        @Override
+                        public String getAbsolutePath() {
+                            return str; //For wacky zip paths
+                        }
+                    }, true);
                 } catch (IOException e) {
                     ExceptionHandler.handle(e);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
             baseDecompiler.decompileContext();
