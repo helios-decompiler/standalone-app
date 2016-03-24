@@ -128,6 +128,15 @@ public class Helios {
                     }
                 }
             }
+            File file = new File(Settings.RT_LOCATION.get().asString());
+            if (file.exists()) {
+                try {
+                    LoadedFile loadedFile = new LoadedFile(file);
+                    newPath.put(loadedFile.getName(), loadedFile);
+                } catch (IOException e1) {
+                    ExceptionHandler.handle(e1);
+                }
+            }
             synchronized (Helios.class) {
                 path.clear();
                 path.putAll(newPath);

@@ -39,17 +39,20 @@ import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
 
 import java.io.ByteArrayInputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class DecompileTask implements Runnable {
     private final String fileName;
@@ -84,6 +87,20 @@ public class DecompileTask implements Runnable {
                     cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)));
                     this.compilationUnit = cu;
                 } catch (ParseException | TokenMgrError e) {
+                    StringBuilder message = new StringBuilder("/*\n");
+                    Consumer<String> write = msg -> {
+                        message.append(" * ").append(msg).append("\n");
+                    };
+                    write.accept("Error: Helios could not parse this file. Hyperlinks will not be inserted");
+                    write.accept("");
+                    StringBuilder exceptionToString = new StringBuilder();
+                    e.printStackTrace(new PrintWriter(new StringBuilderWriter(exceptionToString)));
+                    String[] lines = exceptionToString.toString().split("\r*\n");
+                    for (String line : lines) {
+                        write.accept(line);
+                    }
+                    message.append(" */\n\n");
+                    output.insert(0, message.toString());
                 } finally {
                     if (cu != null) {
                         String result = output.toString();
