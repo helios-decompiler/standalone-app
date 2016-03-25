@@ -22,7 +22,7 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
     protected static final Cursor DEFAULT_CURSOR = Cursor.getDefaultCursor();
     protected static final Cursor HAND_CURSOR = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
 
-    public Set<Link> links = new HashSet<>();
+    public Set<Link> links = new HashSet<>(); //fixme concurrency issues
 
     private final String fileName;
 

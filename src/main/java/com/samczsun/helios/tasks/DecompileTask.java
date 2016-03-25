@@ -123,7 +123,30 @@ public class DecompileTask implements Runnable {
                         String result = output.toString();
                         result = result.replaceAll("\r*\n", "\n");
                         output = new StringBuilder(result);
-                        handle(cu, output.toString());
+                        try {
+                            handle(cu, output.toString());
+                        } catch (Throwable t) {
+                            StringBuilder message = new StringBuilder("/*\n");
+                            Consumer<String> write = msg -> {
+                                message.append(" * ").append(msg).append("\n");
+                            };
+                            write.accept("Error: Helios could not parse this file. Hyperlinks will not be inserted");
+                            write.accept("The error has been inserted at the bottom of the output");
+                            message.append(" */\n\n");
+                            output.insert(0, message.toString());
+
+                            message.setLength(0);
+                            message.append("\n/*\n");
+                            StringBuilder exceptionToString = new StringBuilder();
+                            t.printStackTrace(new PrintWriter(new StringBuilderWriter(exceptionToString)));
+                            String[] lines = exceptionToString.toString().split("\r*\n");
+                            for (String line : lines) {
+                                write.accept(line);
+                            }
+                            message.append(" */");
+                            output.append(message.toString());
+                            t.printStackTrace();
+                        }
                     }
                 }
                 textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
@@ -620,8 +643,8 @@ public class DecompileTask implements Runnable {
              *   SomeClass.someStaticMethod()
              * Variable
              *   myVar.someVirtualMethod()
-             * Static field
-             *   staticField.someVirtualMethod() //fixme implement (check System.clearProperty)
+             * Field
+             *   field.someVirtualMethod() //fixme implement (check System.clearProperty)
              */
             NameExpr scopeExpr = (NameExpr) methodCallExpr.getScope();
             String scope = scopeExpr.toString();
@@ -641,16 +664,25 @@ public class DecompileTask implements Runnable {
 
             Node node = methodCallExpr.getParentNode();
             List<com.github.javaparser.ast.type.Type> ref = new ArrayList<>();
+            List<Node> parentChain = new ArrayList<>();
+            Node tmpNode = node;
+            while (tmpNode != null) {
+                parentChain.add(tmpNode);
+                tmpNode = tmpNode.getParentNode();
+            }
             while (ref.size() == 0 && node != null) {
                 print(depth, "Trying to find localvar in " + node.getClass());
                 node.accept(
                         new VoidVisitorAdapter<Node>() {
                             @Override
                             public void visit(VariableDeclarationExpr n, Node arg) {
-                                if (n.getVars().size() != 1) {
-                                    throw new IllegalStateException("What?");
+                                boolean equals = false;
+                                for (VariableDeclarator var : n.getVars()) {
+                                    if (var.getId().getName().equals(scopeExpr.getName())) {
+                                        equals = true;
+                                    }
                                 }
-                                if (n.getVars().get(0).getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                if (equals) {
                                     print(depth, "Found VariableDeclarationExpr " + n);
                                     print(depth, "This is it! Type is " + n.getType());
                                     ref.add(n.getType());
@@ -675,12 +707,30 @@ public class DecompileTask implements Runnable {
                                     ref.add(n.getType());
                                 }
                             }
+
+                            @Override
+                            public void visit(BlockStmt n, Node arg) {
+                                if (parentChain.contains(n)) {
+                                    super.visit(n, n);
+                                }
+                            }
                         }, null);
+                if (node instanceof MethodDeclaration) {
+                    // We don't want to check for variables outside of this method. That would be a field
+                    break;
+                }
                 node = node.getParentNode();
+            }
+            Iterator<com.github.javaparser.ast.type.Type> iterator = ref.iterator();
+            while (iterator.hasNext()) {
+                com.github.javaparser.ast.type.Type next = iterator.next();
+                if (next.getBeginLine() > methodCallExpr.getBeginLine()) {
+                    iterator.remove(); //fixme hacky way of determining order
+                }
             }
             if (ref.size() > 0) {
                 if (ref.size() > 1) {
-                    throw new IllegalArgumentException("Was not expecting more than one localvar");
+                    throw new IllegalArgumentException("Was not expecting more than one localvar " + ref);
                 }
                 com.github.javaparser.ast.type.Type type = ref.get(0); //fixme check all
                 while (type instanceof ReferenceType) {
