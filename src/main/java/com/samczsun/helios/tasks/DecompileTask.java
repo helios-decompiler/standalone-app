@@ -740,10 +740,19 @@ public class DecompileTask implements Runnable {
                 if (type instanceof ClassOrInterfaceType) {
                     ClassOrInterfaceType coit = (ClassOrInterfaceType) type;
                     for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-                        if (importDeclaration.getName().getName().equals(coit.getName())) {
-                            String javaName = importDeclaration.getName().toString();
-                            String internalName = javaName.replace('.', '/');
-                            possibleClassNames.add(internalName + ".class");
+                        if (importDeclaration.isAsterisk()) {
+                            String fullImport = importDeclaration.getName().toString();
+                            String internalName = fullImport.replace('.', '/');
+                            possibleClassNames.add(internalName + "/" + coit.getName() + ".class");
+                        } else if (importDeclaration.isStatic()) {
+
+                        } else {
+                            NameExpr importName = importDeclaration.getName();
+                            if (importName.getName().equals(coit.getName())) {
+                                String javaName = importDeclaration.getName().toString();
+                                String internalName = javaName.replace('.', '/');
+                                possibleClassNames.add(internalName + ".class");
+                            }
                         }
                     }
                     possibleClassNames.add("java/lang/" + coit.getName() + ".class");
@@ -768,10 +777,19 @@ public class DecompileTask implements Runnable {
              * Finally, check imports
              */
             for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-                if (importDeclaration.getName().getName().equals(methodCallExpr.getScope().toString())) {
-                    String javaName = importDeclaration.getName().toString();
-                    String internalName = javaName.replace('.', '/');
-                    possibleClassNames.add(internalName + ".class");
+                if (importDeclaration.isAsterisk()) {
+                    String fullImport = importDeclaration.getName().toString();
+                    String internalName = fullImport.replace('.', '/');
+                    possibleClassNames.add(internalName + "/" + scope + ".class");
+                } else if (importDeclaration.isStatic()) {
+
+                } else {
+                    NameExpr importName = importDeclaration.getName();
+                    if (importName.getName().equals(scope)) {
+                        String javaName = importDeclaration.getName().toString();
+                        String internalName = javaName.replace('.', '/');
+                        possibleClassNames.add(internalName + ".class");
+                    }
                 }
             }
 
@@ -800,6 +818,8 @@ public class DecompileTask implements Runnable {
              * Another way of calling a static/virtual method within the same class
              *
              * this.someVirtualMethod();
+             *
+             * fixme what about Outer.this.method();
              */
             possibleClassNames.add(this.className);
         } else if (methodCallExpr.getScope() instanceof SuperExpr) {
@@ -851,6 +871,8 @@ public class DecompileTask implements Runnable {
              */
 
         }
+
+        print(depth, possibleClassNames.toString());
         Map<String, LoadedFile> mapping = possibleClassNames.stream().map(name -> new AbstractMap.SimpleEntry<>(name, getFileFor(name)))
                 .filter(ent -> ent.getValue() != null)
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
@@ -896,9 +918,11 @@ public class DecompileTask implements Runnable {
                         if (node != null) {
                             link.className = internalName + ".class";
                             Type returnType = Type.getType(node.desc);
-                            if (returnType.getReturnType().getSort() != Type.VOID) {
+                            if (returnType.getReturnType().getSort() == Type.OBJECT) {
                                 print(depth, "Found method with return type " + returnType);
                                 return returnType.getReturnType().getInternalName() + ".class";
+                            } else if (returnType.getReturnType().getSort() == Type.ARRAY) {
+                                return "java/lang/Object.class";
                             } else {
                                 return null;
                             }
