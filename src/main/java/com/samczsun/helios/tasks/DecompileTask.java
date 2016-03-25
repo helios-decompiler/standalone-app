@@ -40,23 +40,27 @@ import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.sql.Ref;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class DecompileTask implements Runnable {
     private final String fileName;
     private final String className;
+    private final String simpleName;
     private final ClickableSyntaxTextArea textArea;
     private final Transformer transformer;
     private final String jumpTo;
@@ -70,6 +74,14 @@ public class DecompileTask implements Runnable {
         this.textArea = textArea;
         this.transformer = transformer;
         this.jumpTo = jumpTo;
+
+        String simpleName = this.className;
+        int lastIndex;
+        if ((lastIndex = simpleName.lastIndexOf('/')) != -1) {
+            simpleName = simpleName.substring(lastIndex + 1, simpleName.length());
+            simpleName = simpleName.substring(0, simpleName.length() - 6);
+        }
+        this.simpleName = simpleName;
     }
 
     @Override
@@ -84,7 +96,7 @@ public class DecompileTask implements Runnable {
             if (((Decompiler) transformer).decompile(loadedFile.getClassNode(className), classFile, output)) {
                 CompilationUnit cu = null;
                 try {
-                    cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)));
+                    cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)), "UTF-8", false);
                     this.compilationUnit = cu;
                 } catch (ParseException | TokenMgrError e) {
                     StringBuilder message = new StringBuilder("/*\n");
@@ -92,15 +104,20 @@ public class DecompileTask implements Runnable {
                         message.append(" * ").append(msg).append("\n");
                     };
                     write.accept("Error: Helios could not parse this file. Hyperlinks will not be inserted");
-                    write.accept("");
+                    write.accept("The error has been inserted at the bottom of the output");
+                    message.append(" */\n\n");
+                    output.insert(0, message.toString());
+
+                    message.setLength(0);
+                    message.append("\n/*\n");
                     StringBuilder exceptionToString = new StringBuilder();
                     e.printStackTrace(new PrintWriter(new StringBuilderWriter(exceptionToString)));
                     String[] lines = exceptionToString.toString().split("\r*\n");
                     for (String line : lines) {
                         write.accept(line);
                     }
-                    message.append(" */\n\n");
-                    output.insert(0, message.toString());
+                    message.append(" */");
+                    output.append(message.toString());
                 } finally {
                     if (cu != null) {
                         String result = output.toString();
@@ -129,6 +146,26 @@ public class DecompileTask implements Runnable {
     private void handle(CompilationUnit comp, String output) {
         for (String s : output.split("\n")) {
             lineSizes.add(s.length());
+        }
+        imports:
+        for (ImportDeclaration decl : comp.getImports()) {
+            String fullName = decl.getName().toString();
+            if (fullName.endsWith("*")) continue; //Ignore wildcard imports
+            String internalName = fullName.replace('.', '/');
+            Set<LoadedFile> check = new HashSet<>();
+            check.addAll(Helios.getAllFiles());
+            check.addAll(Helios.getPathFiles().values());
+            for (LoadedFile loadedFile : check) {
+                if (loadedFile.getData().containsKey(internalName + ".class")) {
+                    Pair<Integer, Integer> offsets = getOffsets(lineSizes, decl.getName());
+                    ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(decl.getName().getBeginLine(), decl.getName().getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+                    link.fileName = loadedFile.getName();
+                    link.className = internalName + ".class";
+                    link.jumpTo = "";
+                    textArea.links.add(link);
+                    continue imports;
+                }
+            }
         }
         comp.accept(
                 new VoidVisitorAdapter<Node>() {
@@ -244,7 +281,7 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(ClassOrInterfaceType n, Node arg) {
-                        recursivelyHandleNameExpr(n);
+                        handleClassOrInterfaceType(n);
                         super.visit(n, n);
                     }
 
@@ -381,10 +418,8 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(NameExpr n, Node arg) {
-                        System.out.println("Visiting nameexpr with type " + (arg == null ? null : arg.getClass()));
-                        System.out.println(n + " " + arg);
                         if (arg instanceof MethodCallExpr) {
-                            recursivelyHandleNameExpr((MethodCallExpr) arg, n);
+                            recursivelyHandleNameExpr((MethodCallExpr) arg, n, 0);
                         }
                         super.visit(n, n);
                     }
@@ -561,164 +596,286 @@ public class DecompileTask implements Runnable {
                 }, null);
     }
 
-    private String recursivelyHandleNameExpr(MethodCallExpr methodCallExpr, NameExpr nameExpr) {
-        //System.out.println("NameExpr: " + nameExpr);
-        //System.out.println("Parent is " + methodCallExpr);
+    private void print(int d, String msg) {
+        String space = "";
+        for (int i = 0; i < d; i++) {
+            space += "  ";
+        }
+        System.out.println(space + msg);
+    }
+
+    private String recursivelyHandleNameExpr(MethodCallExpr methodCallExpr, NameExpr nameExpr, int depth) {
+        if (methodCallExpr.getNameExpr() != nameExpr) return null;
+        print(depth, "RHNE " + methodCallExpr + " " + nameExpr);
+        print(depth, "Scope is " + ((methodCallExpr.getScope() == null) ? null : methodCallExpr.getScope().getClass()) + " " + methodCallExpr.getScope());
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, nameExpr);
         ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(nameExpr.getBeginLine(), nameExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
-        String className = null;
-        System.out.println("Scope is " + (methodCallExpr.getScope() == null ? null : methodCallExpr.getScope().getClass()) + " " + methodCallExpr.getScope());
+
+        Set<String> possibleClassNames = new HashSet<>();
+
         if (methodCallExpr.getScope() instanceof NameExpr) {
+            /*
+             * Cases:
+             * Static method
+             *   SomeClass.someStaticMethod()
+             * Variable
+             *   myVar.someVirtualMethod()
+             * Static field
+             *   staticField.someVirtualMethod() //fixme implement (check System.clearProperty)
+             */
+            NameExpr scopeExpr = (NameExpr) methodCallExpr.getScope();
+            String scope = scopeExpr.toString();
+            if (scope.contains(".")) {
+                throw new IllegalArgumentException("Was not expecting '.' in " + scope);
+            }
+
+            /*
+             * In Java, variables have priority
+             * Therefore, something like this
+             *
+             * Object Integer = null;
+             * Integer.parseInt("4");
+             *
+             * would fail
+             */
+
+            Node node = methodCallExpr.getParentNode();
+            List<com.github.javaparser.ast.type.Type> ref = new ArrayList<>();
+            while (ref.size() == 0 && node != null) {
+                print(depth, "Trying to find localvar in " + node.getClass());
+                node.accept(
+                        new VoidVisitorAdapter<Node>() {
+                            @Override
+                            public void visit(VariableDeclarationExpr n, Node arg) {
+                                if (n.getVars().size() != 1) {
+                                    throw new IllegalStateException("What?");
+                                }
+                                if (n.getVars().get(0).getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                    print(depth, "Found VariableDeclarationExpr " + n);
+                                    print(depth, "This is it! Type is " + n.getType());
+                                    ref.add(n.getType());
+                                }
+                                super.visit(n, n);
+                            }
+
+                            @Override
+                            public void visit(MultiTypeParameter n, Node arg) {
+                                if (n.getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                    print(depth, "Found VariableDeclarationExpr " + n);
+                                    print(depth, "This is it! Type is " + n.getTypes());
+                                    ref.addAll(n.getTypes());
+                                }
+                            }
+
+                            @Override
+                            public void visit(Parameter n, Node arg) {
+                                if (n.getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                    print(depth, "Found Parameter " + n);
+                                    print(depth, "This is it! Type is " + n.getType());
+                                    ref.add(n.getType());
+                                }
+                            }
+                        }, null);
+                node = node.getParentNode();
+            }
+            if (ref.size() > 0) {
+                if (ref.size() > 1) {
+                    throw new IllegalArgumentException("Was not expecting more than one localvar");
+                }
+                com.github.javaparser.ast.type.Type type = ref.get(0); //fixme check all
+                while (type instanceof ReferenceType) {
+                    type = ((ReferenceType) type).getType();
+                }
+                print(depth, "Final type is " + type.getClass() + " " + type);
+                if (type instanceof ClassOrInterfaceType) {
+                    ClassOrInterfaceType coit = (ClassOrInterfaceType) type;
+                    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+                        if (importDeclaration.getName().getName().equals(coit.getName())) {
+                            String javaName = importDeclaration.getName().toString();
+                            String internalName = javaName.replace('.', '/');
+                            possibleClassNames.add(internalName + ".class");
+                        }
+                    }
+                    possibleClassNames.add("java/lang/" + coit.getName() + ".class");
+                } else {
+                    throw new IllegalArgumentException("Got unexpected type " + type.getClass());
+                }
+            }
+
+            /*
+             * Check for static method invocation
+             * If this class was called "Test" we want to check for
+             *
+             * Test.staticMethod();
+             */
+
+            print(depth, "Simple name is " + simpleName);
+            if (scopeExpr.getName().equals(simpleName)) {
+                possibleClassNames.add(this.className);
+            }
+
+            /*
+             * Finally, check imports
+             */
             for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
                 if (importDeclaration.getName().getName().equals(methodCallExpr.getScope().toString())) {
-                    className = importDeclaration.getName().toString();
-                    break;
+                    String javaName = importDeclaration.getName().toString();
+                    String internalName = javaName.replace('.', '/');
+                    possibleClassNames.add(internalName + ".class");
                 }
             }
-            if (className == null) {
-                String thisClassName = this.className;
-                if (thisClassName.lastIndexOf('/') != -1) {
-                    thisClassName = thisClassName.substring(thisClassName.lastIndexOf('/') + 1, thisClassName.length()).replace(".class", "");
+
+            /*
+             * java.lang.* classes don't need to be imported
+             * Add it just in case
+             */
+            possibleClassNames.add("java/lang/" + scope + ".class");
+        } else if (methodCallExpr.getScope() instanceof MethodCallExpr) {
+            /*
+             * Recursively handle the chained method. The return should be the class name we want
+             */
+            possibleClassNames.add(recursivelyHandleNameExpr((MethodCallExpr) methodCallExpr.getScope(), ((MethodCallExpr) methodCallExpr.getScope()).getNameExpr(), depth + 1));
+        } else if (methodCallExpr.getScope() == null) {
+            /*
+             * Another way of calling a static/virtual method within the same class.
+             *
+             * someStaticMethod();
+             */
+            possibleClassNames.add(this.className);
+        } else if (methodCallExpr.getScope() instanceof ThisExpr) {
+            if (methodCallExpr.getNameExpr() != nameExpr) {
+                throw new IllegalArgumentException("?");
+            }
+            /*
+             * Another way of calling a static/virtual method within the same class
+             *
+             * this.someVirtualMethod();
+             */
+            possibleClassNames.add(this.className);
+        } else if (methodCallExpr.getScope() instanceof SuperExpr) {
+            /*
+             * Calling a super method
+             *
+             * super.someVirtualMethod();
+             */
+            LoadedFile loadedFile = Helios.getLoadedFile(fileName);
+            ClassNode node = loadedFile.getClassNode(this.className);
+            possibleClassNames.add(node.superName);
+        } else if (methodCallExpr.getScope() instanceof EnclosedExpr) {
+            /*
+             * fixme We could be missing CastExprs elsewhere but it's unlikely
+             *
+             * EnclosedExpr represents an expression surrounded by brackets
+             * It's assumed that there may be a cast within
+             *
+             * ((String) obj).toCharArray();
+             */
+            EnclosedExpr enclosedExpr = (EnclosedExpr) methodCallExpr.getScope();
+            if (enclosedExpr.getInner() instanceof CastExpr) {
+                CastExpr castExpr = (CastExpr) enclosedExpr.getInner();
+                com.github.javaparser.ast.type.Type type = castExpr.getType();
+                while (type instanceof ReferenceType) {
+                    type = ((ReferenceType) type).getType();
                 }
-                //System.out.println("THISCLASSNAME  " + thisClassName);
-                if (((NameExpr) methodCallExpr.getScope()).getName().equals(thisClassName)) {
-                    className = this.className.replace('/', '.').replace(".class", "");
-                } else {
-                    Node node = methodCallExpr.getParentNode();
-                    AtomicReference<com.github.javaparser.ast.type.Type> ref = new AtomicReference<>();
-                    while (ref.get() == null && node != null) {
-                        System.out.println("Trying to find it in " + node.getClass());
-                        node.accept(
-                                new VoidVisitorAdapter<Node>() {
-
-                                    @Override
-                                    public void visit(ClassOrInterfaceType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-
-                                    @Override
-                                    public void visit(PrimitiveType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-
-                                    @Override
-                                    public void visit(UnknownType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-
-                                    @Override
-                                    public void visit(WildcardType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-
-                                    @Override
-                                    public void visit(VoidType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-
-                                    @Override
-                                    public void visit(ReferenceType n, Node arg) {
-                                        System.out.println("FOUND ONE: " + n);
-                                        ref.set(n);
-                                        super.visit(n, n);
-                                    }
-                                }, null);
-                        node = node.getParentNode();
+                if (type instanceof ClassOrInterfaceType) {
+                    ClassOrInterfaceType coit = (ClassOrInterfaceType) type;
+                    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+                        if (importDeclaration.getName().getName().equals(coit.getName())) {
+                            String javaName = importDeclaration.getName().toString();
+                            String internalName = javaName.replace('.', '/');
+                            possibleClassNames.add(internalName + ".class");
+                        }
                     }
-                    com.github.javaparser.ast.type.Type type = ref.get();
-                    if (type != null) {
-                        if (type instanceof ClassOrInterfaceType) {
-                            className = recursivelyHandleNameExpr(new MethodCallExpr(new NameExpr(((ClassOrInterfaceType) type).getName()), methodCallExpr.getName()), nameExpr);
-                            if (className != null) {
-                                offsets = getOffsets(lineSizes, type);
-                                link = new ClickableSyntaxTextArea.Link(type.getBeginLine(), type.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
-                                link.fileName = fileName;
-                                String fileName = thisClassName.replace('.', '/') + ".class";
-                                link.className = fileName;
-                                link.jumpTo = " " + methodCallExpr.getScope().toString();
-                                textArea.links.add(link);
+                    possibleClassNames.add("java/lang/" + coit.getName() + ".class");
+                } else {
+                    throw new IllegalArgumentException("Got unexpected type " + type.getClass());
+                }
+            }
+        } else if (methodCallExpr.getScope() instanceof FieldAccessExpr) { // Handle fields
+            /*
+             * Could either be a field OR a FQN
+             *
+             * System.out.println(); -> System.out is the FieldAccessExpr
+             *
+             * java.lang.System.out.println(); -> java.lang.System.out is the FieldAccessExpr
+             */
+
+        }
+        Map<String, LoadedFile> mapping = possibleClassNames.stream().map(name -> new AbstractMap.SimpleEntry<>(name, getFileFor(name)))
+                .filter(ent -> ent.getValue() != null)
+                .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
+
+        if (mapping.size() == 0) {
+            print(depth, "Error: Could not find classname for " + methodCallExpr);
+        } else if (mapping.size() > 1) {
+            print(depth, "Error: More than one classname found: " + mapping.keySet());
+        } else {
+            print(depth, "ClassName for " + methodCallExpr + " is " + mapping.keySet());
+            String className = mapping.keySet().iterator().next();
+            String internalName = className.substring(0, className.length() - 6);
+
+            try {
+                while (true) {
+                    LoadedFile readFrom = null;
+
+                    String fileName = internalName + ".class";
+                    LoadedFile file = Helios.getLoadedFile(this.fileName);
+                    if (file.getData().get(fileName) != null) {
+                        readFrom = file;
+                    } else {
+                        Set<LoadedFile> check = new HashSet<>();
+                        check.addAll(Helios.getAllFiles());
+                        check.addAll(Helios.getPathFiles().values());
+                        for (LoadedFile loadedFile : check) {
+                            if (loadedFile.getData().get(fileName) != null) {
+                                readFrom = loadedFile;
+                                break;
                             }
                         }
-
-                        return className;
-                    } else {
-                        className = "java.lang." + methodCallExpr.getScope().toString();
                     }
-                }
-            }
-        } else if (methodCallExpr.getScope() instanceof MethodCallExpr) {
-            className = recursivelyHandleNameExpr((MethodCallExpr) methodCallExpr.getScope(), ((MethodCallExpr) methodCallExpr.getScope()).getNameExpr());
-        } else if (methodCallExpr.getScope() == null) {
-            className = this.className.replace('/', '.').replace(".class", "");
-        } else if (methodCallExpr.getScope() instanceof ThisExpr && methodCallExpr.getNameExpr() == nameExpr) {
-            className = this.className.replace('/', '.').replace(".class", "");
-        }
-        System.out.println("ClassName for " + nameExpr + " is : " + className);
-        if (className != null) {
-            String fileName = className.replace('.', '/') + ".class";
-            LoadedFile file = Helios.getLoadedFile(this.fileName);
-            if (file.getData().get(fileName) != null) {
-                System.out.println("Yes for this");
-                link.fileName = file.getName();
-                link.className = fileName;
-                link.jumpTo = " " + nameExpr.getName() + "(";
-                textArea.links.add(link);
-                try {
-                    String internalName = className.replace('.', '/');
-                    WrappedClassNode classNode = file.getEmptyClasses().get(internalName);
-                    if (classNode != null) {
-                        Type returnType = Type.getType(classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(methodCallExpr.getName())).findFirst().orElse(null).desc);
-                        return returnType.getReturnType().getInternalName().replace('/', '.');
-                    } else {
-                        System.out.println("Could not find class " + internalName);
-                        return null;
-                    }
-                } catch (Exception e) {
-//                    e.printStackTrace(System.out);
-                }
-            } else {
-                Set<LoadedFile> check = new HashSet<>();
-                check.addAll(Helios.getAllFiles());
-                check.addAll(Helios.getPathFiles().values());
-                for (LoadedFile loadedFile : check) {
-                    System.out.println("Checking " + loadedFile.getName());
-                    if (loadedFile.getData().get(fileName) != null) {
-                        System.out.println("YES");
-                        link.fileName = loadedFile.getName();
+                    if (readFrom != null) {
+                        print(depth, "Found in " + readFrom.getName());
+                        link.fileName = readFrom.getName();
                         link.className = fileName;
                         link.jumpTo = " " + nameExpr.getName() + "(";
                         textArea.links.add(link);
 
-                        try {
-                            String internalName = className.replace('.', '/');
-                            WrappedClassNode classNode = loadedFile.getEmptyClasses().get(internalName);
-                            //System.out.println("Looking for method with name " + methodCallExpr.getName() + " in " + internalName);
-                            //System.out.println(classNode.getClassNode().name);
-                            Type returnType = Type.getType(classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(methodCallExpr.getName())).findFirst().orElse(null).desc);
-                            return returnType.getReturnType().getInternalName().replace('/', '.');
-                        } catch (Exception e) {
-//                            e.printStackTrace(System.out);
+                        WrappedClassNode classNode = readFrom.getEmptyClasses().get(internalName);
+                        print(depth, "Looking for method with name " + methodCallExpr.getName() + " in " + internalName + " " + classNode);
+                        MethodNode node = classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(methodCallExpr.getName())).findFirst().orElse(null);
+                        if (node != null) {
+                            link.className = internalName + ".class";
+                            Type returnType = Type.getType(node.desc);
+                            if (returnType.getReturnType().getSort() != Type.VOID) {
+                                print(depth, "Found method with return type " + returnType);
+                                return returnType.getReturnType().getInternalName() + ".class";
+                            } else {
+                                return null;
+                            }
+                        } else {
+                            print(depth, "Could not find methodnode " + methodCallExpr.getName());
                         }
+                        if (internalName.equals("java/lang/Object")) {
+                            break;
+                        }
+                        internalName = classNode.getClassNode().superName;
+                    } else {
+                        print(depth, "Could not find readfrom ");
+                        break;
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace(System.out);
             }
         }
         return null;
     }
 
-    private String recursivelyHandleNameExpr(ClassOrInterfaceType classOrInterfaceType) {
+    private void handleClassOrInterfaceType(ClassOrInterfaceType classOrInterfaceType) {
+        System.out.println("Handling ClassOrInterfaceType " + classOrInterfaceType + " on line " + classOrInterfaceType.getBeginLine());
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, classOrInterfaceType);
         ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(classOrInterfaceType.getBeginLine(), classOrInterfaceType.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+
         StringBuilder fullNameBuilder = new StringBuilder();
         {
             ClassOrInterfaceType type = classOrInterfaceType;
@@ -729,66 +886,58 @@ public class DecompileTask implements Runnable {
             }
             fullNameBuilder.setLength(fullNameBuilder.length() - 1);
         }
-        String className = null;
-        if (fullNameBuilder.toString().indexOf('.') != -1) {
-            className = fullNameBuilder.toString();
-        } else {
-            for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-                if (importDeclaration.getName().getName().equals(classOrInterfaceType.getName())) {
-                    className = importDeclaration.getName().toString();
-                    break;
+
+        String fullName = fullNameBuilder.toString();
+        String rootClass = fullName;
+        String innerClass = null;
+        if (fullName.contains(".")) {
+            rootClass = fullName.substring(0, fullName.indexOf('.'));
+            innerClass = fullName.substring(fullName.indexOf('.') + 1);
+        }
+
+        List<String> possibleClassNames = new ArrayList<>();
+
+        for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+            String javaName = importDeclaration.getName().toString();
+            if (importDeclaration.getName().getName().equals(classOrInterfaceType.getName())) {
+                possibleClassNames.add(javaName.replace('.', '/') + ".class");
+            }
+            if (fullName.contains(".")) { //fixme still weird
+                if (importDeclaration.getName().getName().equals(rootClass)) {
+                    possibleClassNames.add(javaName.replace('.', '/') + "$" + innerClass.replace('.', '$') + ".class");
                 }
             }
         }
-        if (className == null) {
-            className = "java.lang." + classOrInterfaceType.getName();
-        }
-        System.out.println("ClassName for coitype " + classOrInterfaceType + " is : " + className);
-        //System.out.println("CLASS IS " + className);
-        String fileName = className.replace('.', '/') + ".class";
-        //System.out.println(fileName);
-        LoadedFile file = Helios.getLoadedFile(this.fileName);
-        if (file.getData().get(fileName) != null) {
-            //System.out.println("Yes for this");
-            link.fileName = file.getName();
-            link.className = fileName;
+        possibleClassNames.add("java/lang/" + classOrInterfaceType.getName() + ".class");
+
+        Map<String, LoadedFile> mapping = possibleClassNames.stream().map(name -> new AbstractMap.SimpleEntry<>(name, getFileFor(name)))
+                .filter(ent -> ent.getValue() != null)
+                .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
+
+        if (mapping.size() == 0) {
+            System.out.println("ERROR: Could not find file which contains " + possibleClassNames);
+        } else if (mapping.size() > 1) {
+            System.out.println("ERROR: Multiple results: " + mapping.keySet());
+        } else {
+            Map.Entry<String, LoadedFile> entry = mapping.entrySet().iterator().next();
+            link.fileName = entry.getValue().getName();
+            link.className = entry.getKey();
             link.jumpTo = " " + classOrInterfaceType.getName() + " ";
             textArea.links.add(link);
-            try {
-                String internalName = className.replace('.', '/');
-                WrappedClassNode classNode = file.getEmptyClasses().get(internalName);
-                if (classNode != null) {
-                    Type returnType = Type.getType(classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(classOrInterfaceType.getName())).findFirst().orElse(null).desc);
-                    return returnType.getReturnType().getInternalName().replace('/', '.');
-                } else {
-                    System.out.println("Could not find class " + internalName);
-                }
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-            }
+        }
+    }
+
+    private LoadedFile getFileFor(String fileName) {
+        LoadedFile file = Helios.getLoadedFile(this.fileName);
+        if (file.getData().get(fileName) != null) {
+            return file;
         } else {
             Set<LoadedFile> check = new HashSet<>();
             check.addAll(Helios.getAllFiles());
             check.addAll(Helios.getPathFiles().values());
             for (LoadedFile loadedFile : check) {
-                //System.out.println("Checking " + loadedFile.getName() + " for " + fileName);
                 if (loadedFile.getData().get(fileName) != null) {
-                    //System.out.println("YES");
-                    link.fileName = loadedFile.getName();
-                    link.className = fileName;
-                    link.jumpTo = " " + classOrInterfaceType.getName() + " ";
-                    textArea.links.add(link);
-
-                    try {
-                        String internalName = className.replace('.', '/');
-                        WrappedClassNode classNode = loadedFile.getEmptyClasses().get(internalName);
-                        //System.out.println("Looking for method with name " + classOrInterfaceType.getName() + " in " + internalName);
-                        //System.out.println(classNode.getClassNode().name);
-                        Type returnType = Type.getType(classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(classOrInterfaceType.getName())).findFirst().orElse(null).desc);
-                        return returnType.getReturnType().getInternalName().replace('/', '.');
-                    } catch (Exception e) {
-//                            e.printStackTrace(System.out);
-                    }
+                    return loadedFile;
                 }
             }
         }

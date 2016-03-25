@@ -94,6 +94,12 @@ public class TreeManager {
                             click(item);
                         } else {
                             item.setExpanded(!item.getExpanded());
+                            TreeItem current = item;
+                            TreeItem[] children;
+                            while ((children = current.getItems()).length == 1) {
+                                children[0].setExpanded(true);
+                                current = children[0];
+                            }
                         }
                     }
                 } else if (e.button == 3) {
