@@ -61,6 +61,7 @@ public class DecompileTask implements Runnable {
     private final String fileName;
     private final String className;
     private final String simpleName;
+    private final String packageName;
     private final ClickableSyntaxTextArea textArea;
     private final Transformer transformer;
     private final String jumpTo;
@@ -82,6 +83,14 @@ public class DecompileTask implements Runnable {
             simpleName = simpleName.substring(0, simpleName.length() - 6);
         }
         this.simpleName = simpleName;
+
+        String packageName = this.className;
+        if ((lastIndex = packageName.lastIndexOf('/')) != -1) {
+            packageName = packageName.substring(0, lastIndex);
+        } else {
+            packageName = null;
+        }
+        this.packageName = packageName;
     }
 
     @Override
@@ -627,7 +636,7 @@ public class DecompileTask implements Runnable {
         System.out.println(space + msg);
     }
 
-    private String recursivelyHandleNameExpr(MethodCallExpr methodCallExpr, NameExpr nameExpr, int depth) {
+    private String recursivelyHandleNameExpr(MethodCallExpr methodCallExpr, NameExpr nameExpr, int depth) { //fixme generics
         if (methodCallExpr.getNameExpr() != nameExpr) return null;
         print(depth, "RHNE " + methodCallExpr + " " + nameExpr);
         print(depth, "Scope is " + ((methodCallExpr.getScope() == null) ? null : methodCallExpr.getScope().getClass()) + " " + methodCallExpr.getScope());
@@ -721,13 +730,6 @@ public class DecompileTask implements Runnable {
                 }
                 node = node.getParentNode();
             }
-            Iterator<com.github.javaparser.ast.type.Type> iterator = ref.iterator();
-            while (iterator.hasNext()) {
-                com.github.javaparser.ast.type.Type next = iterator.next();
-                if (next.getBeginLine() > methodCallExpr.getBeginLine()) {
-                    iterator.remove(); //fixme hacky way of determining order
-                }
-            }
             if (ref.size() > 0) {
                 if (ref.size() > 1) {
                     throw new IllegalArgumentException("Was not expecting more than one localvar " + ref);
@@ -756,6 +758,9 @@ public class DecompileTask implements Runnable {
                         }
                     }
                     possibleClassNames.add("java/lang/" + coit.getName() + ".class");
+                    if (packageName != null) {
+                        possibleClassNames.add(packageName + "/" + coit.getName() + ".class");
+                    }
                 } else {
                     throw new IllegalArgumentException("Got unexpected type " + type.getClass());
                 }
@@ -798,6 +803,14 @@ public class DecompileTask implements Runnable {
              * Add it just in case
              */
             possibleClassNames.add("java/lang/" + scope + ".class");
+
+            /*
+             * Classes in the current package don't need to be imported
+             * Add it just in case
+             */
+            if (packageName != null) {
+                possibleClassNames.add(packageName + "/" + scope + ".class");
+            }
         } else if (methodCallExpr.getScope() instanceof MethodCallExpr) {
             /*
              * Recursively handle the chained method. The return should be the class name we want
@@ -857,6 +870,9 @@ public class DecompileTask implements Runnable {
                         }
                     }
                     possibleClassNames.add("java/lang/" + coit.getName() + ".class");
+                    if (packageName != null) {
+                        possibleClassNames.add(packageName + "/" + coit.getName() + ".class");
+                    }
                 } else {
                     throw new IllegalArgumentException("Got unexpected type " + type.getClass());
                 }
@@ -870,6 +886,14 @@ public class DecompileTask implements Runnable {
              * java.lang.System.out.println(); -> java.lang.System.out is the FieldAccessExpr
              */
 
+        } else if (methodCallExpr.getScope() instanceof ArrayAccessExpr) {
+            /*
+             * somearray[index].method()
+             */
+        } else if (methodCallExpr.getScope() instanceof ObjectCreationExpr) {
+            /*
+             * new Object().method()
+             */
         }
 
         print(depth, possibleClassNames.toString());
@@ -878,9 +902,9 @@ public class DecompileTask implements Runnable {
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
 
         if (mapping.size() == 0) {
-            print(depth, "Error: Could not find classname for " + methodCallExpr);
+            print(depth, "Error: Could not find classname");
         } else if (mapping.size() > 1) {
-            print(depth, "Error: More than one classname found: " + mapping.keySet());
+            print(depth, "Error: More than one classname found: " + mapping.keySet()); //fixme filter by which one contains the method
         } else {
             print(depth, "ClassName for " + methodCallExpr + " is " + mapping.keySet());
             String className = mapping.keySet().iterator().next();
@@ -969,20 +993,33 @@ public class DecompileTask implements Runnable {
             innerClass = fullName.substring(fullName.indexOf('.') + 1);
         }
 
-        List<String> possibleClassNames = new ArrayList<>();
+        Set<String> possibleClassNames = new HashSet<>();
 
         for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
             String javaName = importDeclaration.getName().toString();
-            if (importDeclaration.getName().getName().equals(classOrInterfaceType.getName())) {
-                possibleClassNames.add(javaName.replace('.', '/') + ".class");
-            }
-            if (fullName.contains(".")) { //fixme still weird
-                if (importDeclaration.getName().getName().equals(rootClass)) {
-                    possibleClassNames.add(javaName.replace('.', '/') + "$" + innerClass.replace('.', '$') + ".class");
+            if (importDeclaration.isAsterisk()) {
+                String fullImport = importDeclaration.getName().toString();
+                String internalName = fullImport.replace('.', '/');
+                possibleClassNames.add(internalName + "/" + fullName.replace('.', '$') + ".class");
+            } else if (importDeclaration.isStatic()) {
+
+            } else {
+                if (importDeclaration.getName().getName().equals(classOrInterfaceType.getName())) {
+                    possibleClassNames.add(javaName.replace('.', '/') + ".class");
+                }
+                if (fullName.contains(".")) { //fixme still weird
+                    if (importDeclaration.getName().getName().equals(rootClass)) {
+                        possibleClassNames.add(javaName.replace('.', '/') + "$" + innerClass.replace('.', '$') + ".class");
+                    }
                 }
             }
         }
+
         possibleClassNames.add("java/lang/" + classOrInterfaceType.getName() + ".class");
+
+        if (packageName != null) {
+            possibleClassNames.add(packageName + "/" + classOrInterfaceType.getName() + ".class");
+        }
 
         Map<String, LoadedFile> mapping = possibleClassNames.stream().map(name -> new AbstractMap.SimpleEntry<>(name, getFileFor(name)))
                 .filter(ent -> ent.getValue() != null)
