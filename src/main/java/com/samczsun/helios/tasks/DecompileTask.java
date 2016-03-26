@@ -57,6 +57,7 @@ import java.sql.Ref;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DecompileTask implements Runnable {
@@ -644,6 +645,67 @@ public class DecompileTask implements Runnable {
         System.out.println(space + msg);
     }
 
+    private List<String> generatePossibilities(ClassOrInterfaceType type) {
+        List<String> possibilities = new ArrayList<>();
+
+        /*
+         * This is the ClassOrInterfaceType as the entire string.
+         * Eg. java.lang.System or System
+         */
+        String fullName = type.toString();
+        /*
+         * This will only be one word.
+         * Eg. System
+         */
+        String simpleName = type.getName();
+        /*
+         * If the fullName is something like Outer.Inner, asInnerClass will be Outer$Inner
+         *
+         * However, if the fullName is a FQN, then asInnerClass will not be valid
+         * Eg, java$lang$System
+         */
+        String asInnerClass = fullName.replace('.', '$');
+
+        for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+            if (importDeclaration.isAsterisk()) {
+                String fullImport = importDeclaration.getName().toString();
+                String internalName = fullImport.replace('.', '/');
+                possibilities.add(internalName + "/" + asInnerClass + ".class");
+            } else if (importDeclaration.isStatic()) {
+
+            } else {
+                NameExpr importName = importDeclaration.getName();
+                if (importName.getName().equals(simpleName)) {
+                    String javaName = importDeclaration.getName().toString();
+                    String internalName = javaName.replace('.', '/');
+                    possibilities.add(internalName + ".class");
+                }
+            }
+        }
+
+        /*
+         * We must consider Fully Qualified Names
+         * Therefore the string java.lang.System could be java$lang$System, java.lang$System, or java.lang.System
+         */
+        String[] split = fullName.split("\\.");
+        for (int i = 0; i < split.length; i++) {
+            StringBuilder builder = new StringBuilder();
+            for (int start = 0; start < i; start++) {
+                builder.append(split[start]).append("/");
+            }
+            for (int start = i; start < split.length; start++) {
+                builder.append(split[start]).append("$");
+            }
+            if (builder.length() > 0 && (builder.charAt(builder.length() - 1) == '$' || builder.charAt(builder.length() - 1) == '/')) {
+                builder.setLength(builder.length() - 1);
+            }
+            builder.append(".class");
+            possibilities.add(builder.toString());
+        }
+
+        return possibilities;
+    }
+
     private String recursivelyHandleNameExpr(MethodCallExpr methodCallExpr, NameExpr nameExpr, int depth) { //fixme generics
         if (methodCallExpr.getNameExpr() != nameExpr) return null;
         print(depth, "RHNE " + methodCallExpr + " " + nameExpr);
@@ -653,7 +715,14 @@ public class DecompileTask implements Runnable {
 
         Set<String> possibleClassNames = new HashSet<>();
 
-        if (methodCallExpr.getScope() instanceof NameExpr) {
+        if (methodCallExpr.getScope() instanceof NameExpr || methodCallExpr.getScope() instanceof ArrayAccessExpr) {
+            Node tmp = methodCallExpr.getScope();
+
+            if (tmp instanceof ArrayAccessExpr) {
+                ArrayAccessExpr expr = (ArrayAccessExpr) tmp;
+                tmp = expr.getName();
+            }
+
             /*
              * Cases:
              * Static method
@@ -663,7 +732,8 @@ public class DecompileTask implements Runnable {
              * Field
              *   field.someVirtualMethod() //fixme implement (check System.clearProperty)
              */
-            NameExpr scopeExpr = (NameExpr) methodCallExpr.getScope();
+            Node fnode = tmp;
+            NameExpr scopeExpr = (NameExpr) tmp;
             String scope = scopeExpr.toString();
             if (scope.contains(".")) {
                 throw new IllegalArgumentException("Was not expecting '.' in " + scope);
@@ -709,7 +779,7 @@ public class DecompileTask implements Runnable {
 
                             @Override
                             public void visit(MultiTypeParameter n, Node arg) {
-                                if (n.getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                if (n.getId().getName().equals(((NameExpr) fnode).getName())) {
                                     print(depth, "Found VariableDeclarationExpr " + n);
                                     print(depth, "This is it! Type is " + n.getTypes());
                                     ref.addAll(n.getTypes());
@@ -718,7 +788,7 @@ public class DecompileTask implements Runnable {
 
                             @Override
                             public void visit(Parameter n, Node arg) {
-                                if (n.getId().getName().equals(((NameExpr) methodCallExpr.getScope()).getName())) {
+                                if (n.getId().getName().equals(((NameExpr) fnode).getName())) {
                                     print(depth, "Found Parameter " + n);
                                     print(depth, "This is it! Type is " + n.getType());
                                     ref.add(n.getType());
@@ -732,7 +802,7 @@ public class DecompileTask implements Runnable {
                                 }
                             }
                         }, null);
-                if (node instanceof MethodDeclaration || node instanceof ConstructorDeclaration) {
+                if (node instanceof BodyDeclaration) {
                     // We don't want to check for variables outside of this method. That would be a field
                     break;
                 }
@@ -749,22 +819,7 @@ public class DecompileTask implements Runnable {
                 print(depth, "Final type is " + type.getClass() + " " + type);
                 if (type instanceof ClassOrInterfaceType) {
                     ClassOrInterfaceType coit = (ClassOrInterfaceType) type;
-                    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-                        if (importDeclaration.isAsterisk()) {
-                            String fullImport = importDeclaration.getName().toString();
-                            String internalName = fullImport.replace('.', '/');
-                            possibleClassNames.add(internalName + "/" + coit.getName() + ".class");
-                        } else if (importDeclaration.isStatic()) {
-
-                        } else {
-                            NameExpr importName = importDeclaration.getName();
-                            if (importName.getName().equals(coit.getName())) {
-                                String javaName = importDeclaration.getName().toString();
-                                String internalName = javaName.replace('.', '/');
-                                possibleClassNames.add(internalName + ".class");
-                            }
-                        }
-                    }
+                    possibleClassNames.addAll(generatePossibilities(coit));
                     possibleClassNames.add("java/lang/" + coit.getName() + ".class");
                     if (packageName != null) {
                         possibleClassNames.add(packageName + "/" + coit.getName() + ".class");
@@ -832,9 +887,6 @@ public class DecompileTask implements Runnable {
              */
             possibleClassNames.add(this.className);
         } else if (methodCallExpr.getScope() instanceof ThisExpr) {
-            if (methodCallExpr.getNameExpr() != nameExpr) {
-                throw new IllegalArgumentException("?");
-            }
             /*
              * Another way of calling a static/virtual method within the same class
              *
@@ -870,17 +922,7 @@ public class DecompileTask implements Runnable {
                 }
                 if (type instanceof ClassOrInterfaceType) {
                     ClassOrInterfaceType coit = (ClassOrInterfaceType) type;
-                    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-                        if (importDeclaration.getName().getName().equals(coit.getName())) {
-                            String javaName = importDeclaration.getName().toString();
-                            String internalName = javaName.replace('.', '/');
-                            possibleClassNames.add(internalName + ".class");
-                        }
-                    }
-                    possibleClassNames.add("java/lang/" + coit.getName() + ".class");
-                    if (packageName != null) {
-                        possibleClassNames.add(packageName + "/" + coit.getName() + ".class");
-                    }
+                    possibleClassNames.addAll(handleClassOrInterfaceType(coit));
                 } else {
                     throw new IllegalArgumentException("Got unexpected type " + type.getClass());
                 }
@@ -894,6 +936,35 @@ public class DecompileTask implements Runnable {
              * java.lang.System.out.println(); -> java.lang.System.out is the FieldAccessExpr
              */
 
+            FieldAccessExpr expr = (FieldAccessExpr) methodCallExpr.getScope();
+
+            String left = expr.getScope().toString();
+
+            ClassOrInterfaceType type = new ClassOrInterfaceType(left);
+            type.setBeginLine(expr.getScope().getBeginLine());
+            type.setEndLine(expr.getScope().getEndLine());
+            type.setBeginColumn(expr.getScope().getBeginColumn());
+            type.setEndColumn(expr.getScope().getEndColumn());
+            Set<String> possible = handleClassOrInterfaceType(type);
+
+            if (possible.size() > 0) { // Maybe field
+                print(depth, "FieldAccessExpr field: " + expr.getScope() + " " + expr.getField() + " " + expr.getScope().getClass() + " " + possible);
+                // Start parsing fields of all the classes and find the right type
+                // fixme what if the classes don't have the field?
+            } else {
+                type = new ClassOrInterfaceType(expr.toString());
+                type.setBeginLine(expr.getBeginLine());
+                type.setEndLine(expr.getEndLine());
+                type.setBeginColumn(expr.getBeginColumn());
+                type.setEndColumn(expr.getEndColumn());
+                possible = handleClassOrInterfaceType(type);
+                if (possible.size() == 0) {
+                    print(depth, "Error: Could not parse FieldAccessExpr");
+                } else {
+                    print(depth, "FieldAccessExpr fqn: " + expr.getScope() + " " + expr.getField() + " " + expr.getScope().getClass() + " " + possible);
+                    possibleClassNames.addAll(possible);
+                }
+            }
         } else if (methodCallExpr.getScope() instanceof ArrayAccessExpr) {
             /*
              * somearray[index].method()
@@ -902,6 +973,8 @@ public class DecompileTask implements Runnable {
             /*
              * new Object().method()
              */
+            ObjectCreationExpr objectCreationExpr = (ObjectCreationExpr) methodCallExpr.getScope();
+            possibleClassNames.addAll(handleClassOrInterfaceType(objectCreationExpr.getType()));
         }
 
         print(depth, possibleClassNames.toString());
@@ -914,7 +987,7 @@ public class DecompileTask implements Runnable {
         } else if (mapping.size() > 1) {
             print(depth, "Error: More than one classname found: " + mapping.keySet()); //fixme filter by which one contains the method
         } else {
-            print(depth, "ClassName for " + methodCallExpr + " is " + mapping.keySet());
+            print(depth, "ClassName is " + mapping.keySet());
             String className = mapping.keySet().iterator().next();
             String internalName = className.substring(0, className.length() - 6);
 
@@ -977,47 +1050,92 @@ public class DecompileTask implements Runnable {
         return null;
     }
 
-    private void handleClassOrInterfaceType(ClassOrInterfaceType classOrInterfaceType) {
+    private Map<ClassOrInterfaceType, Set<String>> handled = new IdentityHashMap<>();
+    private Map<ClassOrInterfaceType, String> tostring = new HashMap<>();
+
+    private Function<ClassOrInterfaceType, String> toStringComputer = type -> {
+        StringBuilder fullNameBuilder = new StringBuilder();
+        while (type != null) {
+            fullNameBuilder.insert(0, ".");
+            fullNameBuilder.insert(0, type.getName());
+            type = type.getScope();
+        }
+        fullNameBuilder.setLength(fullNameBuilder.length() - 1);
+        return fullNameBuilder.toString();
+    };
+
+    private Set<String> handleClassOrInterfaceType(ClassOrInterfaceType classOrInterfaceType) {
+        Set<String> result = handled.get(classOrInterfaceType);
+        if (result != null) {
+            return result;
+        }
+        result = new HashSet<>();
+        handled.put(classOrInterfaceType, result);
+
         System.out.println("Handling ClassOrInterfaceType " + classOrInterfaceType + " on line " + classOrInterfaceType.getBeginLine());
+
+        /*
+         * Possibilities:
+         * Simple name: System
+         * -> Could be imported direcly
+         * -> Could be imported using wildcard
+         * -> Could be package-local
+         * -> Could be java.lang
+         * Inner class (Java): System.Inner
+         * Inner class (Internal): System$Inner
+         * Fully Qualified Name (Java): java.lang.System
+         * Fully Qualified Name with inner (Java): java.lang.System.Inner
+         * Fully Qualified Name with inner (internal): java.lang.System$Inner
+         */
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, classOrInterfaceType);
         ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(classOrInterfaceType.getBeginLine(), classOrInterfaceType.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
 
-        StringBuilder fullNameBuilder = new StringBuilder();
-        {
-            ClassOrInterfaceType type = classOrInterfaceType;
-            while (type != null) {
-                fullNameBuilder.insert(0, ".");
-                fullNameBuilder.insert(0, type.getName());
-                type = type.getScope();
-            }
-            fullNameBuilder.setLength(fullNameBuilder.length() - 1);
-        }
+        /* Could be any of the above possibilities */
+        String fullName = tostring.computeIfAbsent(classOrInterfaceType, toStringComputer);
 
-        String fullName = fullNameBuilder.toString();
-        String rootClass = fullName;
-        String innerClass = null;
-        if (fullName.contains(".")) {
-            rootClass = fullName.substring(0, fullName.indexOf('.'));
-            innerClass = fullName.substring(fullName.indexOf('.') + 1);
+        Set<String> allPossibilitiesWithoutImports = new HashSet<>();
+        String[] split = fullName.split("\\.");
+        for (int i = 0; i < split.length; i++) {
+            StringBuilder builder = new StringBuilder();
+            for (int start = 0; start < i; start++) {
+                builder.append(split[start]).append("/");
+            }
+            for (int start = i; start < split.length; start++) {
+                builder.append(split[start]).append("$");
+            }
+            if (builder.length() > 0 && (builder.charAt(builder.length() - 1) == '$' || builder.charAt(builder.length() - 1) == '/')) {
+                builder.setLength(builder.length() - 1);
+            }
+            builder.append(".class");
+            allPossibilitiesWithoutImports.add(builder.toString());
         }
 
         Set<String> possibleClassNames = new HashSet<>();
+        possibleClassNames.addAll(allPossibilitiesWithoutImports);
 
         for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
             String javaName = importDeclaration.getName().toString();
             if (importDeclaration.isAsterisk()) {
                 String fullImport = importDeclaration.getName().toString();
                 String internalName = fullImport.replace('.', '/');
-                possibleClassNames.add(internalName + "/" + fullName.replace('.', '$') + ".class");
+                for (String name : allPossibilitiesWithoutImports) {
+                    possibleClassNames.add(internalName + "/" + name);
+                }
             } else if (importDeclaration.isStatic()) {
 
             } else {
-                if (importDeclaration.getName().getName().equals(classOrInterfaceType.getName())) {
-                    possibleClassNames.add(javaName.replace('.', '/') + ".class");
-                }
-                if (fullName.contains(".")) { //fixme still weird
-                    if (importDeclaration.getName().getName().equals(rootClass)) {
-                        possibleClassNames.add(javaName.replace('.', '/') + "$" + innerClass.replace('.', '$') + ".class");
+                for (String name : allPossibilitiesWithoutImports) {
+                    String nameWithoutClass = name.substring(0, name.length() - 6);
+                    String simple = nameWithoutClass;
+                    int index;
+                    if ((index = simple.indexOf('.')) != -1) {
+                        simple = simple.substring(0, index);
+                        if (importDeclaration.getName().getName().equals(simple)) {
+                            possibleClassNames.add(javaName.replace('.', '/') + "$" + simple.substring(index + 1).replace('.', '$') + ".class");
+                        }
+                    }
+                    if (importDeclaration.getName().getName().equals(nameWithoutClass)) {
+                        possibleClassNames.add(javaName.replace('.', '/') + ".class");
                     }
                 }
             }
@@ -1029,10 +1147,13 @@ public class DecompileTask implements Runnable {
             possibleClassNames.add(packageName + "/" + classOrInterfaceType.getName() + ".class");
         }
 
+        System.out.println(possibleClassNames);
+
         Map<String, LoadedFile> mapping = possibleClassNames.stream().map(name -> new AbstractMap.SimpleEntry<>(name, getFileFor(name)))
                 .filter(ent -> ent.getValue() != null)
                 .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
 
+        System.out.println("Result: " + mapping.keySet());
         if (mapping.size() == 0) {
             System.out.println("ERROR: Could not find file which contains " + possibleClassNames);
         } else if (mapping.size() > 1) {
@@ -1044,6 +1165,10 @@ public class DecompileTask implements Runnable {
             link.jumpTo = " " + classOrInterfaceType.getName() + " ";
             textArea.links.add(link);
         }
+
+        result.addAll(mapping.keySet());
+
+        return result;
     }
 
     private LoadedFile getFileFor(String fileName) {
