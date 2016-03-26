@@ -19,19 +19,16 @@ package com.samczsun.helios.transformers.decompilers;
 import com.samczsun.helios.transformers.Transformer;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Decompiler extends Transformer {
-    private static final Map<String, Decompiler> BY_ID = new HashMap<>();
+    private static final Map<String, Decompiler> BY_ID = new LinkedHashMap<>();
 
     static {
-        new ProcyonDecompiler().register();
+        new KrakatauDecompiler().register();
         new FernflowerDecompiler().register();
         new CFRDecompiler().register();
-        new KrakatauDecompiler().register();
+        new ProcyonDecompiler().register();
     }
 
     private final String id;

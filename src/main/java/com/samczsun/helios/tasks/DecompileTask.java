@@ -37,6 +37,7 @@ import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.decompilers.CFRDecompiler;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -50,6 +51,7 @@ import org.objectweb.asm.tree.MethodNode;
 import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.lang.ref.Reference;
+import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.sql.Ref;
 import java.util.*;
@@ -114,6 +116,11 @@ public class DecompileTask implements Runnable {
                     };
                     write.accept("Error: Helios could not parse this file. Hyperlinks will not be inserted");
                     write.accept("The error has been inserted at the bottom of the output");
+                    if (transformer instanceof CFRDecompiler) {
+                        write.accept("");
+                        write.accept("I noticed you are using CFR");
+                        write.accept("Try nagging the author to output valid Java even if the code is undecompilable");
+                    }
                     message.append(" */\n\n");
                     output.insert(0, message.toString());
 
@@ -135,6 +142,7 @@ public class DecompileTask implements Runnable {
                         try {
                             handle(cu, output.toString());
                         } catch (Throwable t) {
+                            textArea.links.clear();
                             StringBuilder message = new StringBuilder("/*\n");
                             Consumer<String> write = msg -> {
                                 message.append(" * ").append(msg).append("\n");
@@ -724,7 +732,7 @@ public class DecompileTask implements Runnable {
                                 }
                             }
                         }, null);
-                if (node instanceof MethodDeclaration) {
+                if (node instanceof MethodDeclaration || node instanceof ConstructorDeclaration) {
                     // We don't want to check for variables outside of this method. That would be a field
                     break;
                 }
