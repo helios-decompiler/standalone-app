@@ -46,6 +46,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.ByteArrayInputStream;
@@ -867,6 +868,10 @@ public class DecompileTask implements Runnable {
              */
             possibleClassNames.add("java/lang/" + scope + ".class");
 
+            FieldAccessExpr expr = new FieldAccessExpr(null, scope);
+            Set<String> owners = handleFieldExpr(expr, className, depth);
+            possibleClassNames.addAll(owners);
+
             /*
              * Classes in the current package don't need to be imported
              * Add it just in case
@@ -949,8 +954,11 @@ public class DecompileTask implements Runnable {
 
             if (possible.size() > 0) { // Maybe field
                 print(depth, "FieldAccessExpr field: " + expr.getScope() + " " + expr.getField() + " " + expr.getScope().getClass() + " " + possible);
-                // Start parsing fields of all the classes and find the right type
-                // fixme what if the classes don't have the field?
+                if (possible.size() > 1) {
+                    throw new IllegalArgumentException("Expected 1");
+                }
+                Set<String> types = handleFieldExpr(expr, possible.iterator().next(), depth);
+                possibleClassNames.addAll(types);
             } else {
                 type = new ClassOrInterfaceType(expr.toString());
                 type.setBeginLine(expr.getBeginLine());
@@ -1063,6 +1071,70 @@ public class DecompileTask implements Runnable {
         fullNameBuilder.setLength(fullNameBuilder.length() - 1);
         return fullNameBuilder.toString();
     };
+
+    private Set<String> handleFieldExpr(FieldAccessExpr fieldAccessExpr, String owner, int depth) {
+        Set<String> types = new HashSet<>();
+
+        Pair<Integer, Integer> offsets = getOffsets(lineSizes, fieldAccessExpr);
+        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(fieldAccessExpr.getBeginLine(), fieldAccessExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+
+        String className = owner;
+        String internalName = className.substring(0, className.length() - 6);
+
+        try {
+            while (true) {
+                LoadedFile readFrom = null;
+
+                String fileName = internalName + ".class";
+                LoadedFile file = Helios.getLoadedFile(this.fileName);
+                if (file.getData().get(fileName) != null) {
+                    readFrom = file;
+                } else {
+                    Set<LoadedFile> check = new HashSet<>();
+                    check.addAll(Helios.getAllFiles());
+                    check.addAll(Helios.getPathFiles().values());
+                    for (LoadedFile loadedFile : check) {
+                        if (loadedFile.getData().get(fileName) != null) {
+                            readFrom = loadedFile;
+                            break;
+                        }
+                    }
+                }
+                if (readFrom != null) {
+                    print(depth, "Found in " + readFrom.getName());
+                    link.fileName = readFrom.getName();
+                    link.className = fileName;
+                    link.jumpTo = " " + fieldAccessExpr.getField();
+                    textArea.links.add(link);
+
+                    WrappedClassNode classNode = readFrom.getEmptyClasses().get(internalName);
+                    print(depth, "Looking for field with name " + fieldAccessExpr.getField() + " in " + internalName + " " + classNode);
+                    List<FieldNode> fields = classNode.getClassNode().fields.stream().filter(f -> f.name.equals(fieldAccessExpr.getField())).collect(Collectors.toList());
+                    if (fields.size() > 0) {
+                        link.className = internalName + ".class";
+                        for (FieldNode fieldNode : fields) {
+                            Type type = Type.getType(fieldNode.desc);
+                            types.add(type.getInternalName() + ".class");
+                        }
+                        return types;
+                    } else {
+                        print(depth, "Could not find field " + fieldAccessExpr.getField());
+                    }
+                    if (internalName.equals("java/lang/Object")) {
+                        break;
+                    }
+                    internalName = classNode.getClassNode().superName;
+                } else {
+                    print(depth, "Could not find readfrom ");
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+
+        return types;
+    }
 
     private Set<String> handleClassOrInterfaceType(ClassOrInterfaceType classOrInterfaceType) {
         Set<String> result = handled.get(classOrInterfaceType);
