@@ -954,11 +954,10 @@ public class DecompileTask implements Runnable {
 
             if (possible.size() > 0) { // Maybe field
                 print(depth, "FieldAccessExpr field: " + expr.getScope() + " " + expr.getField() + " " + expr.getScope().getClass() + " " + possible);
-                if (possible.size() > 1) {
-                    throw new IllegalArgumentException("Expected 1");
+                for (String p : possible) {
+                    Set<String> types = handleFieldExpr(expr, p, depth);
+                    possibleClassNames.addAll(types);
                 }
-                Set<String> types = handleFieldExpr(expr, possible.iterator().next(), depth);
-                possibleClassNames.addAll(types);
             } else {
                 type = new ClassOrInterfaceType(expr.toString());
                 type.setBeginLine(expr.getBeginLine());
