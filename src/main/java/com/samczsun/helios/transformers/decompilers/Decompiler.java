@@ -23,6 +23,7 @@ import java.util.*;
 
 public abstract class Decompiler extends Transformer {
     private static final Map<String, Decompiler> BY_ID = new LinkedHashMap<>();
+    private static final Map<String, Decompiler> BY_NAME = new LinkedHashMap<>();
 
     static {
         new KrakatauDecompiler().register();
@@ -34,14 +35,27 @@ public abstract class Decompiler extends Transformer {
     private final String id;
     private final String name;
 
+    private final String originalId;
+    private final String originalName;
+
     public Decompiler(String id, String name) {
-        this.id = id;
-        this.name = name;
+        this.id = id + "-decompiler";
+        this.name = name + " Decompiler";
+        this.originalId = id;
+        this.originalName = name;
     }
 
     public final Decompiler register() {
-        if (!BY_ID.containsKey(id)) {
-            BY_ID.put(id, this);
+        super.register();
+        if (!BY_ID.containsKey(originalId)) {
+            BY_ID.put(originalId, this);
+        } else {
+            throw new IllegalArgumentException(originalId + " already exists!");
+        }
+        if (!BY_NAME.containsKey(originalName)) {
+            BY_NAME.put(originalName, this);
+        } else {
+            throw new IllegalArgumentException(originalName + " already exists!");
         }
         return this;
     }
@@ -71,6 +85,10 @@ public abstract class Decompiler extends Transformer {
 
     public static Decompiler getById(String id) {
         return BY_ID.get(id);
+    }
+
+    public static Decompiler getByName(String name) {
+        return BY_NAME.get(name);
     }
 
     public static Collection<Decompiler> getAllDecompilers() {

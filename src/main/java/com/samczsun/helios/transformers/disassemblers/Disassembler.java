@@ -19,13 +19,11 @@ package com.samczsun.helios.transformers.disassemblers;
 import com.samczsun.helios.transformers.Transformer;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Disassembler extends Transformer {
-    private static final Map<String, Disassembler> BY_ID = new HashMap<>();
+    private static final Map<String, Disassembler> BY_ID = new LinkedHashMap<>();
+    private static final Map<String, Disassembler> BY_NAME = new LinkedHashMap<>();
 
     static {
         new JavapDisassembler().register();
@@ -37,14 +35,28 @@ public abstract class Disassembler extends Transformer {
     private final String id;
     private final String name;
 
+    private final String originalId;
+    private final String originalName;
+
     public Disassembler(String id, String name) {
-        this.id = id;
-        this.name = name;
+        this.id = id + "-disassembler";
+        this.name = name + " Disassembler";
+        this.originalId = id;
+        this.originalName = name;
     }
 
+    @Override
     public final Disassembler register() {
-        if (!BY_ID.containsKey(id)) {
-            BY_ID.put(id, this);
+        super.register();
+        if (!BY_ID.containsKey(originalId)) {
+            BY_ID.put(originalId, this);
+        } else {
+            throw new IllegalArgumentException(originalId + " already exists!");
+        }
+        if (!BY_NAME.containsKey(originalName)) {
+            BY_NAME.put(originalName, this);
+        } else {
+            throw new IllegalArgumentException(originalName + " already exists!");
         }
         return this;
     }
@@ -65,6 +77,10 @@ public abstract class Disassembler extends Transformer {
 
     public static Disassembler getById(String id) {
         return BY_ID.get(id);
+    }
+
+    public static Disassembler getByName(String name) {
+        return BY_NAME.get(name);
     }
 
     public static Collection<Disassembler> getAllDisassemblers() {

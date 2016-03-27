@@ -36,7 +36,7 @@ import java.util.zip.ZipFile;
 
 public class KrakatauDecompiler extends Decompiler {
     public KrakatauDecompiler() {
-        super("krakatau-decompiler", "Krakatau Decompiler");
+        super("krakatau", "Krakatau");
         for (Settings setting : Settings.values()) {
             settings.registerSetting(setting);
         }

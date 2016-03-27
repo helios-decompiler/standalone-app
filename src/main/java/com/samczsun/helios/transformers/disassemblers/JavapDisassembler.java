@@ -26,7 +26,7 @@ import java.io.StringWriter;
 
 public class JavapDisassembler extends Disassembler {
     public JavapDisassembler() {
-        super("javap-disassembler", "javap Disassembler");
+        super("javap", "javap");
         for (Settings setting : Settings.values()) {
             settings.registerSetting(setting);
         }

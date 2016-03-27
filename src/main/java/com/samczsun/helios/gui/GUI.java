@@ -16,13 +16,14 @@
 
 package com.samczsun.helios.gui;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Resources;
 import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.Addon;
-import com.samczsun.helios.api.events.Events;
-import com.samczsun.helios.api.events.Listener;
+import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.transformers.Transformer;
@@ -59,10 +60,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class GUI {
     private final Display display = Display.getDefault();
@@ -220,6 +218,12 @@ public class GUI {
         new MenuItem(settingsMenu, SWT.SEPARATOR);
 
         setupDecompilerSettings(settingsMenu);
+
+        new MenuItem(settingsMenu, SWT.SEPARATOR);
+
+        MenuItem filetypeAssociations = new MenuItem(settingsMenu, SWT.CASCADE);
+        filetypeAssociations.setText("&Filetype Associations");
+        setupFiletypeAssociations(filetypeAssociations);
     }
 
     private void setupDecompilerSettings(Menu settingsMenu) {
@@ -246,6 +250,77 @@ public class GUI {
                 }
             }
         }
+    }
+
+    private void setupFiletypeAssociations(MenuItem filetypeAssociations) {
+        Menu filetypeMenu = new Menu(filetypeAssociations);
+        Map<String, MenuItem> extensionToItem = new HashMap<>();
+
+        for (JsonObject.Member next : Settings.FILETYPE_ASSOCIATIONS.get().asObject()) {
+            FiletypeAssociationData data = new FiletypeAssociationData(next.getName(), next.getValue().asString());
+            MenuItem add = new MenuItem(filetypeMenu, SWT.PUSH);
+            add.setData(data);
+            add.setText(data.formatName());
+            add.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent) {
+                    selectionEvent.doit = false;
+                    new AddFiletypeAssociationPopup(add).open();
+                }
+            });
+
+            extensionToItem.put(data.getExtension(), add);
+        }
+
+        MenuItem add = new MenuItem(filetypeMenu, SWT.PUSH);
+        add.setText("Add");
+        add.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent) {
+                selectionEvent.doit = false;
+                new AddFiletypeAssociationPopup().open();
+            }
+        });
+
+        Events.registerListener(new Listener() {
+            @Override
+            public void handleFiletypeAssociationCreation(FiletypeAssociationCreateEvent event) {
+                FiletypeAssociationData data = new FiletypeAssociationData(event.getExtension(), event.getTransformer().getId());
+                MenuItem add = new MenuItem(filetypeMenu, SWT.PUSH, filetypeMenu.getItemCount() - 1);
+                add.setData(data);
+                add.setText(data.formatName());
+                add.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent) {
+                        selectionEvent.doit = false;
+                        new AddFiletypeAssociationPopup(add).open();
+                    }
+                });
+
+                extensionToItem.put(data.getExtension(), add);
+                Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+            }
+
+            @Override
+            public void handleFiletypeAssociationEdit(FiletypeAssociationEditEvent event) {
+                MenuItem item = extensionToItem.get(event.getExtension());
+                FiletypeAssociationData data = (FiletypeAssociationData) item.getData();
+                data.setTransformer(event.getTransformer());
+                item.setText(data.formatName());
+
+                Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+            }
+
+            @Override
+            public void handleFiletypeAssociationDeletion(FiletypeAssociationDeleteEvent event) {
+                MenuItem item = extensionToItem.get(event.getExtension());
+                item.dispose();
+                extensionToItem.remove(event.getExtension());
+                Settings.FILETYPE_ASSOCIATIONS.get().asObject().remove(event.getExtension());
+            }
+        });
+
+        filetypeAssociations.setMenu(filetypeMenu);
     }
 
     private void setupAddonsBar(Menu menuBar) {

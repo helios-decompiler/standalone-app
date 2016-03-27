@@ -33,7 +33,7 @@ import java.util.zip.ZipFile;
 
 public class KrakatauDisassembler extends Disassembler {
     public KrakatauDisassembler() {
-        super("krakatau-disassembler", "Krakatau Disassembler");
+        super("krakatau", "Krakatau");
         for (Settings setting : Settings.values()) {
             settings.registerSetting(setting);
         }

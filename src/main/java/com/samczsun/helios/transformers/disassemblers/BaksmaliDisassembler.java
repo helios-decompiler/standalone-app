@@ -60,7 +60,7 @@ public class BaksmaliDisassembler extends Disassembler {
     }
 
     public BaksmaliDisassembler() {
-        super("baksmali-disassembler", "Baksmali Disassembler");
+        super("baksmali", "Baksmali");
     }
 
     @Override

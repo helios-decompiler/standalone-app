@@ -16,8 +16,11 @@
 
 package com.samczsun.helios.gui;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.LoadedFile;
+import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.SearchRequest;
@@ -26,6 +29,8 @@ import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.SWTUtil;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.comparator.DefaultFileComparator;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -72,6 +77,7 @@ public class ClassManager {
     }
 
     public void openFile(String file, String name) {
+        String extension = name.lastIndexOf('.') == -1 ? "" : name.substring(name.lastIndexOf('.'));
         Display display = Display.getDefault();
         final ClassData classData = opened.computeIfAbsent(file + name, obj -> new ClassData(file, name));
         String finalName = name.substring(name.lastIndexOf('/') + 1, name.length());
@@ -98,31 +104,40 @@ public class ClassManager {
 
             mainTabs.setSelection(fileTab);
 
-            ClassTransformationData transformationData = classData.open(Transformer.HEX);
+            Transformer defaultTransformer = null;
+
+            JsonValue star = Settings.FILETYPE_ASSOCIATIONS.get().asObject().get(".*");
+
+            for (JsonObject.Member member : Settings.FILETYPE_ASSOCIATIONS.get().asObject()) {
+                if (member.getName().equals(extension)) {
+                    if (defaultTransformer == null) {
+                        defaultTransformer = Transformer.getById(member.getValue().asString());
+                    }
+                }
+            }
+
+            if (defaultTransformer == null && star != null) {
+                defaultTransformer = Transformer.getById(star.asString());
+            }
+
+            if (defaultTransformer == null) {
+                defaultTransformer = Transformer.HEX;
+            }
+
+            ClassTransformationData transformationData = classData.open(defaultTransformer);
             CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
-            nestedItem.setText(Transformer.HEX.getName());
-            nestedItem.setData(Transformer.HEX);
+            nestedItem.setText(defaultTransformer.getName());
+            nestedItem.setData(defaultTransformer);
             transformationData.setTransformerTab(nestedItem);
-            nestedItem.setControl(generateTab(innerTabFolder, file, name));
+            nestedItem.setControl(generateTab(classData, innerTabFolder, file, name, defaultTransformer));
             innerTabFolder.setSelection(nestedItem);
         });
     }
 
-    private Control generateTab(CTabFolder parent, String file, String name) {
-        LoadedFile loadedFile = Helios.getLoadedFile(file);
-        final HexEditor editor = new HexEditor();
-        try {
-            editor.open(new ByteArrayInputStream(loadedFile.getFiles().get(name)));
-        } catch (IOException e1) {
-            ExceptionHandler.handle(e1);
-        }
-        editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
-            Helios.getGui().getClassManager().handleNewTabRequest();
-        }, GenericClickListener.ClickType.RIGHT));
-
+    private Control generateTab(ClassData data, CTabFolder parent, String file, String name, Transformer transformer) {
         SwingControl control = new SwingControl(parent, SWT.NONE) {
             protected JComponent createSwingComponent() {
-                return editor;
+                return transformer.open(ClassManager.this, data, null);
             }
 
             public Composite getLayoutAncestor() {

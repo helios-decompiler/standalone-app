@@ -25,6 +25,18 @@ public class Listener {
 
     }
 
+    public void handleFiletypeAssociationCreation(FiletypeAssociationCreateEvent event) {
+
+    }
+
+    public void handleFiletypeAssociationEdit(FiletypeAssociationEditEvent event) {
+
+    }
+
+    public void handleFiletypeAssociationDeletion(FiletypeAssociationDeleteEvent event) {
+
+    }
+
     public void handleTreeUpdateRequest(TreeUpdateRequest request) {
 
     }

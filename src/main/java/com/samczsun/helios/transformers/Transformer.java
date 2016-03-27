@@ -32,12 +32,35 @@ import javax.swing.*;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public abstract class Transformer {
-    public static final Transformer HEX = new HexViewer();
+    private static final Map<String, Transformer> BY_ID = new LinkedHashMap<>();
+    private static final Map<String, Transformer> BY_NAME = new LinkedHashMap<>();
 
-    public static final Transformer TEXT = new TextViewer();
+    public static final Transformer HEX = new HexViewer().register();
+
+    public static final Transformer TEXT = new TextViewer().register();
+
+    protected Transformer() {
+
+    }
+
+    protected Transformer register() {
+        if (!BY_ID.containsKey(getId())) {
+            BY_ID.put(getId(), this);
+        } else {
+            throw new IllegalArgumentException(getId() + " already exists!");
+        }
+        if (!BY_NAME.containsKey(getName())) {
+            BY_NAME.put(getName(), this);
+        } else {
+            throw new IllegalArgumentException(getName() + " already exists!");
+        }
+        return this;
+    }
 
     protected final TransformerSettings settings = new TransformerSettings(this);
 
@@ -100,5 +123,21 @@ public abstract class Transformer {
     @Override
     public boolean equals(Object obj) {
         return !(obj == null || obj.getClass() != this.getClass()) && Objects.equals(this.getId(), ((Transformer) obj).getId());
+    }
+
+    public static Transformer getById(String id) {
+        return BY_ID.get(id);
+    }
+
+    public static Transformer getByName(String name) {
+        return BY_NAME.get(name);
+    }
+
+    public static Collection<Transformer> getAllTransformers() {
+        return getAllTransformers(transformer -> true);
+    }
+
+    public static Collection<Transformer> getAllTransformers(Predicate<Transformer> filter) {
+        return BY_ID.values().stream().filter(filter).collect(Collectors.toList());
     }
 }

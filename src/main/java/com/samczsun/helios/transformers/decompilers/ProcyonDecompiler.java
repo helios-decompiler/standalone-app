@@ -47,7 +47,7 @@ import java.util.Map;
 public class ProcyonDecompiler extends Decompiler {
 
     public ProcyonDecompiler() {
-        super("procyon-decompiler", "Procyon Decompiler");
+        super("procyon", "Procyon");
         for (Settings setting : Settings.values()) {
             settings.registerSetting(setting);
         }

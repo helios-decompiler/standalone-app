@@ -47,6 +47,11 @@ public class Settings {
     public static final Settings APKTOOL = new Settings("apktool").set(true);
     public static final Settings APK_CONVERSION = new Settings("apk_conversion").set(Converter.NONE.getId());
 
+    public static final Settings FILETYPE_ASSOCIATIONS = new Settings("filetype_associations").set(
+            new JsonObject()
+            .add(".*", "hex")
+    );
+
     private final String key;
 
     private Settings(String key) {
