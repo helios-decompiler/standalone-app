@@ -12,6 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <swt.version>4.5.2</swt.version>
+        <build.number>999</build.number>
     </properties>
 
     <build>
@@ -43,7 +44,10 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.samczsun.helios.bootloader.Bootloader</mainClass>
+                                    <manifestEntries>
+                                        <Main-Class>com.samczsun.helios.bootloader.Bootloader</Main-Class>
+                                        <Implementation-Version>${build.number}</Implementation-Version>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                             <filters>
