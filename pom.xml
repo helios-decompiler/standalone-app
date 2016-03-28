@@ -11,7 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <swt.version>4.5.1</swt.version>
+        <swt.version>4.5.2</swt.version>
     </properties>
 
     <build>
