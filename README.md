@@ -37,10 +37,6 @@ A: JD-GUI is incompatible with this project. It's a legality issue
 Q: Where can I download the latest build?  
 A: You can do so [here](https://ci.samczsun.com/job/Helios/)
 
-Q: Maven can't resolve dependencies. It throws a `sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target`  
-A: You need to install the root certificate for Let's Encrypt. Please look at Contributing
-
-
 # Contributing
 
 Thanks for wanting to help! This project is currently licensed under the Apache 2.0 license.
@@ -56,14 +52,6 @@ future-proofed should we ever want to switch GUI libraries.
 * If your code could throw an exception, handle it appropriately. If you want a popup to be shown, use
 `ExceptionHandler.handle(exception);`  
 * Opening brackets should be on the same line as the preceding statement
-    
-If you encounter an error while downloading the dependencies, you may need to manually install the Let's Encrypt
-intermediary certificate into the Java trusted root store. You can do so using this command:
-
-`keytool -trustcacerts -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit 
--importcert -file lets-encrypt-x1-cross-signed.pem`
-
-The intermediary root CA has been included in the root of this project.
 
 # Acknowledgements
 
