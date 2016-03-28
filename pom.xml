@@ -24,7 +24,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
+                <version>3.5.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -73,7 +73,7 @@
 
     <repositories>
         <repository>
-            <id>helios</id>
+            <id>helios-repo</id>
             <name>Official Helios Repository</name>
             <url>https://repo.samczsun.com/content/repositories/helios/</url>
         </repository>
