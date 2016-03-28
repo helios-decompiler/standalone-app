@@ -21,6 +21,7 @@ import com.eclipsesource.json.JsonValue;
 import com.google.common.collect.Sets;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
+import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.bootloader.BootSequence;
 import com.samczsun.helios.bootloader.Splash;
@@ -463,7 +464,7 @@ public class Helios {
             } else {
                 if (e.keyCode == SWT.F5) {
                     if ((e.stateMask & SWT.SHIFT) == SWT.SHIFT) {
-                        getGui().getClassManager().refreshCurrentView();
+                        Events.callEvent(new RefreshViewRequest());
                     } else {
                         promptForRefresh();
                     }

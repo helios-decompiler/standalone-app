@@ -23,6 +23,7 @@ import com.samczsun.helios.LoadedFile;
 import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.Listener;
+import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
@@ -69,9 +70,16 @@ public class ClassManager {
                 opened.remove(data.getFileName() + data.getClassName());
             }
         });
+
         Events.registerListener(new Listener() {
+            @Override
             public void handleSearchRequest(SearchRequest request) {
                 shell.getDisplay().asyncExec(() -> search(request.getText()));
+            }
+
+            @Override
+            public void handleRefreshViewRequest(RefreshViewRequest request) {
+                shell.getDisplay().asyncExec(() -> refreshCurrentView());
             }
         });
     }
@@ -124,28 +132,25 @@ public class ClassManager {
                 defaultTransformer = Transformer.HEX;
             }
 
+
+            Transformer transformer = defaultTransformer;
+
             ClassTransformationData transformationData = classData.open(defaultTransformer);
             CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
             nestedItem.setText(defaultTransformer.getName());
             nestedItem.setData(defaultTransformer);
             transformationData.setTransformerTab(nestedItem);
-            nestedItem.setControl(generateTab(classData, innerTabFolder, file, name, defaultTransformer));
+            nestedItem.setControl(new SwingControl(innerTabFolder, SWT.NONE) {
+                protected JComponent createSwingComponent() {
+                    return transformer.open(ClassManager.this, classData, null);
+                }
+
+                public Composite getLayoutAncestor() {
+                    return innerTabFolder;
+                }
+            });
             innerTabFolder.setSelection(nestedItem);
         });
-    }
-
-    private Control generateTab(ClassData data, CTabFolder parent, String file, String name, Transformer transformer) {
-        SwingControl control = new SwingControl(parent, SWT.NONE) {
-            protected JComponent createSwingComponent() {
-                return transformer.open(ClassManager.this, data, null);
-            }
-
-            public Composite getLayoutAncestor() {
-                return parent;
-            }
-        };
-        while (parent.getDisplay().readAndDispatch()) ;
-        return control;
     }
 
     public void closeCurrentTab() {
@@ -231,7 +236,7 @@ public class ClassManager {
         });
     }
 
-    public void refreshCurrentView() {
+    private void refreshCurrentView() {
         CTabItem file = mainTabs.getSelection();
         if (file == null) {
             return;
@@ -257,7 +262,7 @@ public class ClassManager {
         }
     }
 
-    public void search(String find) {
+    private void search(String find) {
         CTabItem file = mainTabs.getSelection();
         if (file == null) {
             return;

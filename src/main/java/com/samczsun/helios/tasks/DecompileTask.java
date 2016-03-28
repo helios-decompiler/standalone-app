@@ -35,13 +35,11 @@ import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.PreDecompileEvent;
 import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
-import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.CFRDecompiler;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.apache.commons.io.output.StringBuilderWriter;
-import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
@@ -51,12 +49,8 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
-import java.lang.ref.Reference;
-import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
-import java.sql.Ref;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -322,12 +316,6 @@ public class DecompileTask implements Runnable {
                     }
 
                     @Override
-                    public void visit(ClassOrInterfaceType n, Node arg) {
-                        handleClassOrInterfaceType(n);
-                        super.visit(n, n);
-                    }
-
-                    @Override
                     public void visit(PrimitiveType n, Node arg) {
                         super.visit(n, n);
                     }
@@ -454,15 +442,19 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(MethodCallExpr n, Node arg) {
+                        recursivelyHandleNameExpr(n, n.getNameExpr(), 0);
                         visit(n.getNameExpr(), n);
                         super.visit(n, n);
                     }
 
                     @Override
+                    public void visit(ClassOrInterfaceType n, Node arg) {
+                        handleClassOrInterfaceType(n);
+                        super.visit(n, n);
+                    }
+
+                    @Override
                     public void visit(NameExpr n, Node arg) {
-                        if (arg instanceof MethodCallExpr) {
-                            recursivelyHandleNameExpr((MethodCallExpr) arg, n, 0);
-                        }
                         super.visit(n, n);
                     }
 
@@ -721,7 +713,7 @@ public class DecompileTask implements Runnable {
 
             if (tmp instanceof ArrayAccessExpr) {
                 ArrayAccessExpr expr = (ArrayAccessExpr) tmp;
-                tmp = expr.getName();
+                tmp = expr.getName(); //todo could be other than nameexpr
             }
 
             /*
@@ -731,7 +723,7 @@ public class DecompileTask implements Runnable {
              * Variable
              *   myVar.someVirtualMethod()
              * Field
-             *   field.someVirtualMethod() //fixme implement (check System.clearProperty)
+             *   field.someVirtualMethod()
              */
             Node fnode = tmp;
             NameExpr scopeExpr = (NameExpr) tmp;
@@ -944,13 +936,18 @@ public class DecompileTask implements Runnable {
             FieldAccessExpr expr = (FieldAccessExpr) methodCallExpr.getScope();
 
             String left = expr.getScope().toString();
-
-            ClassOrInterfaceType type = new ClassOrInterfaceType(left);
-            type.setBeginLine(expr.getScope().getBeginLine());
-            type.setEndLine(expr.getScope().getEndLine());
-            type.setBeginColumn(expr.getScope().getBeginColumn());
-            type.setEndColumn(expr.getScope().getEndColumn());
-            Set<String> possible = handleClassOrInterfaceType(type);
+            Set<String> possible;
+            if (left.equals("this")) {
+                possible = new HashSet<>();
+                possible.add(className);
+            } else {
+                ClassOrInterfaceType type = new ClassOrInterfaceType(left);
+                type.setBeginLine(expr.getScope().getBeginLine());
+                type.setEndLine(expr.getScope().getEndLine());
+                type.setBeginColumn(expr.getScope().getBeginColumn());
+                type.setEndColumn(expr.getScope().getEndColumn());
+                possible = handleClassOrInterfaceType(type);
+            }
 
             if (possible.size() > 0) { // Maybe field
                 print(depth, "FieldAccessExpr field: " + expr.getScope() + " " + expr.getField() + " " + expr.getScope().getClass() + " " + possible);
@@ -959,7 +956,7 @@ public class DecompileTask implements Runnable {
                     possibleClassNames.addAll(types);
                 }
             } else {
-                type = new ClassOrInterfaceType(expr.toString());
+                ClassOrInterfaceType type = new ClassOrInterfaceType(expr.toString());
                 type.setBeginLine(expr.getBeginLine());
                 type.setEndLine(expr.getEndLine());
                 type.setBeginColumn(expr.getBeginColumn());

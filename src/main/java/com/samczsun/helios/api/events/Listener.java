@@ -17,6 +17,7 @@
 package com.samczsun.helios.api.events;
 
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
+import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 
@@ -46,6 +47,10 @@ public class Listener {
     }
 
     public void handleSearchRequest(SearchRequest request) {
+
+    }
+    
+    public void handleRefreshViewRequest(RefreshViewRequest request) {
 
     }
 }

@@ -56,8 +56,6 @@ public class Bootloader {
             if (Constants.SETTINGS_FILE.isDirectory())
                 throw new RuntimeException("Settings file is directory");
 
-            loadSWTLibrary();
-
             DisplayPumper displayPumper = new DisplayPumper();
 
             if (System.getProperty("os.name").toLowerCase().contains("mac")) {

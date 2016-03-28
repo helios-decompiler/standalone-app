@@ -17,6 +17,8 @@
 package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
+import com.samczsun.helios.api.events.Events;
+import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -70,7 +72,7 @@ public class SearchPopup {
                 @Override
                 public void keyReleased(KeyEvent e) {
                     if (SWTUtil.isEnter(e.keyCode)) {
-                        Helios.getGui().getClassManager().search(text.getText());
+                        Events.callEvent(new SearchRequest(text.getText()));
                     }
                 }
             });

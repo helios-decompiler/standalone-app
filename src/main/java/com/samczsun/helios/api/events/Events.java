@@ -24,8 +24,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Events {
+    private static final ExecutorService EVENT_LOOP = Executors.newFixedThreadPool(4);
+
     private static final Map<Class<?>, Method> METHOD_MAP;
 
     private static final List<Listener> listeners = new ArrayList<>();
@@ -45,21 +49,23 @@ public class Events {
     }
 
     public static <T> void callEvent(T consume) {
-        try {
-            Method method = METHOD_MAP.get(consume.getClass());
-            if (method != null) {
-                for (Listener listener : listeners) {
-                    try {
-                        method.invoke(listener, consume);
-                    } catch (Throwable e) {
-                        e.printStackTrace();
+        EVENT_LOOP.submit(() -> {
+            try {
+                Method method = METHOD_MAP.get(consume.getClass());
+                if (method != null) {
+                    for (Listener listener : listeners) {
+                        try {
+                            method.invoke(listener, consume);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
                     }
+                } else {
+                    throw new IllegalArgumentException("Unknown event " + consume.getClass());
                 }
-            } else {
-                throw new IllegalArgumentException("Unknown event " + consume.getClass());
+            } catch (Exception e) {
+                ExceptionHandler.handle(e);
             }
-        } catch (Exception e) {
-            ExceptionHandler.handle(e);
-        }
+        });
     }
 }
