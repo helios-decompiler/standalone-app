@@ -28,17 +28,23 @@ import javax.swing.JOptionPane;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.concurrent.Executor;
+
+import static com.samczsun.helios.Constants.SWT_VERSION;
+import static org.apache.commons.io.IOUtils.copy;
 
 public class Bootloader {
     public static void main(String[] args) {
@@ -55,6 +61,12 @@ public class Bootloader {
                 throw new RuntimeException("Addons directory is file");
             if (Constants.SETTINGS_FILE.isDirectory())
                 throw new RuntimeException("Settings file is directory");
+
+            try {
+                Class.forName("org.eclipse.swt.widgets.Display");
+            } catch (ClassNotFoundException ignored) {
+                loadSWTLibrary(); // For debugging purposes
+            }
 
             DisplayPumper displayPumper = new DisplayPumper();
 
@@ -135,21 +147,90 @@ public class Bootloader {
         }
     }
 
-    private static void loadSWTLibrary() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+
+    private static byte[] loadSWTLibrary() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException {
         String name = getOSName();
         if (name == null) throw new IllegalArgumentException("Cannot determine OS");
         String arch = getArch();
         if (arch == null) throw new IllegalArgumentException("Cannot determine architecture");
 
-        String swtLocation = "/swt/org.eclipse.swt." + name + "." + arch + "-" + Constants.SWT_VERSION + ".jar";
+        String artifactId = "org.eclipse.swt." + name + "." + arch;
+        String swtLocation = artifactId + "-" + SWT_VERSION + ".jar";
 
-        System.out.println("Loading SWT version " + swtLocation.substring(5));
+        System.out.println("Loading SWT version " + swtLocation);
 
-        InputStream swtIn = Bootloader.class.getResourceAsStream(swtLocation);
-        if (swtIn == null) throw new IllegalArgumentException("SWT library not found");
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        IOUtils.copy(swtIn, outputStream);
-        ByteArrayInputStream swt = new ByteArrayInputStream(outputStream.toByteArray());
+        byte[] data = null;
+
+        File savedJar = new File(Constants.DATA_DIR, swtLocation);
+        if (savedJar.isDirectory() && !savedJar.delete())
+            throw new IllegalArgumentException("Saved file is a directory and could not be deleted");
+
+        if (savedJar.exists() && savedJar.canRead()) {
+            try {
+                System.out.println("Loading from saved file");
+                InputStream inputStream = new FileInputStream(savedJar);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                copy(inputStream, outputStream);
+                data = outputStream.toByteArray();
+            } catch (IOException exception) {
+                System.out.println("Failed to load from saved file.");
+                exception.printStackTrace(System.out);
+            }
+        }
+        if (data == null) {
+            InputStream fromJar = Bootloader.class.getResourceAsStream("/swt/" + swtLocation);
+            if (fromJar != null) {
+                try {
+                    System.out.println("Loading from within JAR");
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    copy(fromJar, outputStream);
+                    data = outputStream.toByteArray();
+                } catch (IOException exception) {
+                    System.out.println("Failed to load within JAR");
+                    exception.printStackTrace(System.out);
+                }
+            }
+        }
+        if (data == null) {
+            URL url = new URL("https://maven-eclipse.github.io/maven/org/eclipse/swt/" + artifactId + "/" + SWT_VERSION + "/" + swtLocation);
+            try {
+                System.out.println("Loading over the internet");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                if (connection.getResponseCode() == 200) {
+                    InputStream fromURL = connection.getInputStream();
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    copy(fromURL, outputStream);
+                    data = outputStream.toByteArray();
+                } else {
+                    throw new IOException(connection.getResponseCode() + ": " + connection.getResponseMessage());
+                }
+            } catch (IOException exception) {
+                System.out.println("Failed to load over the internet");
+                exception.printStackTrace(System.out);
+            }
+        }
+
+        if (data == null) {
+            throw new IllegalArgumentException("Failed to load SWT");
+        }
+
+        if (!savedJar.exists()) {
+            try {
+                System.out.println("Writing to saved file");
+                if (savedJar.createNewFile()) {
+                    FileOutputStream fileOutputStream = new FileOutputStream(savedJar);
+                    fileOutputStream.write(data);
+                    fileOutputStream.close();
+                } else {
+                    throw new IOException("Could not create new file");
+                }
+            } catch (IOException exception) {
+                System.out.println("Failed to write to saved file");
+                exception.printStackTrace(System.out);
+            }
+        }
+
+        byte[] dd = data;
 
         URL.setURLStreamHandlerFactory(protocol -> { //JarInJar!
             if (protocol.equals("swt")) {
@@ -160,7 +241,7 @@ public class Bootloader {
                             }
 
                             public InputStream getInputStream() {
-                                return swt;
+                                return new ByteArrayInputStream(dd);
                             }
                         };
                     }
@@ -178,8 +259,10 @@ public class Bootloader {
         method.setAccessible(true);
         method.invoke(classLoader, new URL("swt://load"));
 
-        System.out.println("Loaded SWT Library");
+        return data;
     }
+
+
 
     private static void displayError(Throwable t) {
         t.printStackTrace();

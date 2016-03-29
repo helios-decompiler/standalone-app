@@ -285,38 +285,44 @@ public class GUI {
         Events.registerListener(new Listener() {
             @Override
             public void handleFiletypeAssociationCreation(FiletypeAssociationCreateEvent event) {
-                FiletypeAssociationData data = new FiletypeAssociationData(event.getExtension(), event.getTransformer().getId());
-                MenuItem add = new MenuItem(filetypeMenu, SWT.PUSH, filetypeMenu.getItemCount() - 1);
-                add.setData(data);
-                add.setText(data.formatName());
-                add.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent selectionEvent) {
-                        selectionEvent.doit = false;
-                        new AddFiletypeAssociationPopup(add).open();
-                    }
-                });
+                display.asyncExec(() -> {
+                    FiletypeAssociationData data = new FiletypeAssociationData(event.getExtension(), event.getTransformer().getId());
+                    MenuItem add = new MenuItem(filetypeMenu, SWT.PUSH, filetypeMenu.getItemCount() - 1);
+                    add.setData(data);
+                    add.setText(data.formatName());
+                    add.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent selectionEvent) {
+                            selectionEvent.doit = false;
+                            new AddFiletypeAssociationPopup(add).open();
+                        }
+                    });
 
-                extensionToItem.put(data.getExtension(), add);
-                Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+                    extensionToItem.put(data.getExtension(), add);
+                    Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+                });
             }
 
             @Override
             public void handleFiletypeAssociationEdit(FiletypeAssociationEditEvent event) {
-                MenuItem item = extensionToItem.get(event.getExtension());
-                FiletypeAssociationData data = (FiletypeAssociationData) item.getData();
-                data.setTransformer(event.getTransformer());
-                item.setText(data.formatName());
+                display.asyncExec(() -> {
+                    MenuItem item = extensionToItem.get(event.getExtension());
+                    FiletypeAssociationData data = (FiletypeAssociationData) item.getData();
+                    data.setTransformer(event.getTransformer());
+                    item.setText(data.formatName());
 
-                Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+                    Settings.FILETYPE_ASSOCIATIONS.get().asObject().set(event.getExtension(), event.getTransformer().getId());
+                });
             }
 
             @Override
             public void handleFiletypeAssociationDeletion(FiletypeAssociationDeleteEvent event) {
-                MenuItem item = extensionToItem.get(event.getExtension());
-                item.dispose();
-                extensionToItem.remove(event.getExtension());
-                Settings.FILETYPE_ASSOCIATIONS.get().asObject().remove(event.getExtension());
+                display.asyncExec(() -> {
+                    MenuItem item = extensionToItem.get(event.getExtension());
+                    item.dispose();
+                    extensionToItem.remove(event.getExtension());
+                    Settings.FILETYPE_ASSOCIATIONS.get().asObject().remove(event.getExtension());
+                });
             }
         });
 
