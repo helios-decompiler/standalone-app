@@ -2,6 +2,8 @@
 
 Helios is an all-in-one Java reverse engineering tool. It features integration with the latest up-to-date decompilers.
 
+If you want to download the latest version, check out the FAQ down below
+
 There are several keybinds that can be used. To open a new file, simply use `Ctrl-O`. Arrow keys can be used to
 navigate the file tree. Enter or clicking a file will open that file into the editor view.
 
@@ -35,7 +37,8 @@ Q: Why is JD-GUI not included? I use it all the time!
 A: JD-GUI is incompatible with this project. It's a legality issue
 
 Q: Where can I download the latest build?  
-A: You can do so [here](https://ci.samczsun.com/job/Helios/)
+A: This is merely the implementation. If you want to start using Helios right away, download the bootstrapper [here](https://ci.samczsun.com/job/bootstrapper/lastSuccessfulBuild/artifact/target/bootstrapper-0.0.1-without-swt.jar)
+Otherwise, feel free to check out the [bootstrapper repo](https://github.com/helios-decompiler/bootstrapper) for more information
 
 # Contributing
 
