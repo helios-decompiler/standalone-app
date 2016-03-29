@@ -596,7 +596,7 @@ public class Helios {
     }
 
     private static File getJarLocation() throws URISyntaxException {
-        File currentJarLocation = new File(Helios.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        File currentJarLocation = (File) System.getProperties().get("com.heliosdecompiler.bootstrapperFile");
         while (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
             SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
             List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
