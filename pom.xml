@@ -6,7 +6,7 @@
 
     <groupId>com.samczsun</groupId>
     <artifactId>helios</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <!--Refer to http://semver.org-->
 
     <properties>
