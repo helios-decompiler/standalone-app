@@ -109,10 +109,14 @@ public class Helios {
 
         List<File> open = new ArrayList<>();
 
-        for (String name : args) {
-            File file = new File(name);
-            if (file.exists()) {
-                open.add(file);
+        if (args.length == 1 && args[0].equals("-addtocontextmenu")) {
+            addToContextMenu();
+        } else {
+            for (String name : args) {
+                File file = new File(name);
+                if (file.exists()) {
+                    open.add(file);
+                }
             }
         }
 
@@ -538,7 +542,7 @@ public class Helios {
                         if (currentJarLocation != null) {
                             File javaw = getJavawLocation();
                             if (javaw != null) {
-                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" \\\"%1\\\"\" /f");
+                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" -open \\\"%1\\\"\" /f");
                                 process.waitFor();
                                 if (process.exitValue() == 0) {
                                     SWTUtil.showMessage("Done");

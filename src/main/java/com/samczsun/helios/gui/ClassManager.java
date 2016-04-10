@@ -148,8 +148,11 @@ public class ClassManager {
                 public Composite getLayoutAncestor() {
                     return innerTabFolder;
                 }
+
+                protected void afterComponentCreatedSWTThread() {
+                    innerTabFolder.setSelection(nestedItem);
+                }
             });
-            innerTabFolder.setSelection(nestedItem);
         });
     }
 
