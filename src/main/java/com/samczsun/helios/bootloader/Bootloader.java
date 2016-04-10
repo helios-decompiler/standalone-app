@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.zeroturnaround.zip.ZipUtil;
 
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -99,6 +100,14 @@ public class Bootloader {
                     BootSequence.CLEANING_ENJARIFY, BootSequence.MOVING_ENJARIFY);
             checkPackagedLibrary(splashScreen, "Krakatau", Constants.KRAKATAU_VERSION, BootSequence.CHECKING_KRAKATAU,
                     BootSequence.CLEANING_KRAKATAU, BootSequence.MOVING_KRAKATAU);
+
+            try {
+                if (!System.getProperty("os.name").toLowerCase().contains("linux")) {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                }
+            } catch (Exception exception) { //Not important. No point notifying the user
+            }
+
             Helios.main(args, shell, splashScreen);
             while (!displayPumper.isDone()) {
                 Thread.sleep(100);

@@ -33,6 +33,13 @@ import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.tasks.AddFilesTask;
 import com.samczsun.helios.utils.FileChooserUtil;
 import com.samczsun.helios.utils.SWTUtil;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -74,12 +81,6 @@ public class Helios {
     private static volatile Map<String, LoadedFile> path = new HashMap<>();
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
-        try {
-            if (!System.getProperty("os.name").toLowerCase().contains("linux")) {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            }
-        } catch (Exception exception) { //Not important. No point notifying the user
-        }
         splashScreen.updateState(BootSequence.LOADING_SETTINGS);
         Settings.loadSettings();
         backgroundTaskGui = new BackgroundTaskGui();
@@ -109,15 +110,47 @@ public class Helios {
 
         List<File> open = new ArrayList<>();
 
-        if (args.length == 1 && args[0].equals("-addtocontextmenu")) {
-            addToContextMenu();
-        } else {
-            for (String name : args) {
-                File file = new File(name);
-                if (file.exists()) {
-                    open.add(file);
+        Options options = new Options();
+        options.addOption(
+                Option.builder("o")
+                        .longOpt("open")
+                        .hasArg()
+                        .desc("Open a file straight away")
+                        .build()
+        );
+        options.addOption(
+                Option.builder("h")
+                        .longOpt("help")
+                        .desc("Help!")
+                        .build()
+        );
+        options.addOption(
+                Option.builder("ctx")
+                        .longOpt("addtocontextmenu")
+                        .desc("Run add to context menu on start")
+                        .build()
+        );
+        try {
+            CommandLineParser parser = new DefaultParser();
+            CommandLine commandLine = parser.parse(options, args);
+            if (commandLine.hasOption("help")) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("java -jar bootstrapper.jar -a [options]", options);
+            } else {
+                if (commandLine.hasOption("addtocontextmenu")) {
+                    addToContextMenu();
+                }
+                if (commandLine.hasOption("open")) {
+                    for (String name : commandLine.getOptionValues("open")) {
+                        File file = new File(name);
+                        if (file.exists()) {
+                            open.add(file);
+                        }
+                    }
                 }
             }
+        } catch (ParseException e) {
+            ExceptionHandler.handle(e);
         }
 
         submitBackgroundTask(() -> {
@@ -542,7 +575,7 @@ public class Helios {
                         if (currentJarLocation != null) {
                             File javaw = getJavawLocation();
                             if (javaw != null) {
-                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" -open \\\"%1\\\"\" /f");
+                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" -a \\\"--open \\\\\\\"%1\\\\\\\"\\\"\" /f");
                                 process.waitFor();
                                 if (process.exitValue() == 0) {
                                     SWTUtil.showMessage("Done");
@@ -590,7 +623,7 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + "\"\"\", strFolder, \"runas\", 1");
+        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"C:\\Users\\Sam\\IdeaProjects\\Helios\\bootstrapper\\target\\bootstrapper-0.0.3.jar\"\" \"\"-a\"\" \"\"-ctx\"\"\", strFolder, \"runas\", 1");
         writer.println("WScript.Quit 0");
         writer.close();
 

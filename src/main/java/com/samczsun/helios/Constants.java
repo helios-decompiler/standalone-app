@@ -21,13 +21,13 @@ import java.util.function.Supplier;
 
 public class Constants {
     public static final String REPO_NAME = "Helios";
-    public static final String REPO_VERSION = "0.0.2" + (System.getProperty("com.heliosdecompiler.buildNumber") != null ? " (Build " + System.getProperty("com.heliosdecompiler.buildNumber") + ")" : "");
+    public static final String REPO_VERSION = "0.0.3" + (System.getProperty("com.heliosdecompiler.buildNumber") != null ? " (Build " + System.getProperty("com.heliosdecompiler.buildNumber") + ")" : "");
     public static final String REPO_BASE = "https://github.com/samczsun/" + REPO_NAME + "/";
     public static final String RAW_REPO_BASE = "https://raw.github.com/samczsun/" + REPO_NAME + "/";
 
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
-    public static final String SWT_VERSION = "4.5.1";
+    public static final String SWT_VERSION = "4.5.2";
     public static final String KRAKATAU_VERSION = "a000009e6fea1af91917cda4721462b5238cb561";
     public static final String ENJARIFY_VERSION = "ad8d64f6e564922bbe1f08f488cf7f51c961422d";
 
