@@ -31,11 +31,8 @@ import java.util.Map;
 
 public class CFRDecompiler extends Decompiler {
 
-    public CFRDecompiler() {
-        super("cfr", "CFR");
-        for (Settings setting : Settings.values()) {
-            settings.registerSetting(setting);
-        }
+    CFRDecompiler() {
+        super("cfr", "CFR", Settings.class);
     }
 
     @Override

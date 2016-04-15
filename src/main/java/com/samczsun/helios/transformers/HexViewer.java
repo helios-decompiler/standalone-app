@@ -27,14 +27,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 public class HexViewer extends Transformer {
-    @Override
-    public String getId() {
-        return "hex";
-    }
-
-    @Override
-    public String getName() {
-        return "Hex";
+    public HexViewer() {
+        super("hex", "Hex");
     }
 
     @Override

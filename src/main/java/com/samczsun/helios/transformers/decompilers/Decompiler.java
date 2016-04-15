@@ -17,6 +17,7 @@
 package com.samczsun.helios.transformers.decompilers;
 
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.TransformerSettings;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.*;
@@ -32,49 +33,36 @@ public abstract class Decompiler extends Transformer {
         new ProcyonDecompiler().register();
     }
 
-    private final String id;
-    private final String name;
-
     private final String originalId;
     private final String originalName;
 
     public Decompiler(String id, String name) {
-        this.id = id + "-decompiler";
-        this.name = name + " Decompiler";
+        this(id, name, null);
+    }
+
+    public Decompiler(String id, String name, Class<? extends TransformerSettings.Setting> settingsClass) {
+        super(id + "-decompiler", name + " Decompiler", settingsClass);
         this.originalId = id;
         this.originalName = name;
     }
 
+    @Override
     public final Decompiler register() {
-        super.register();
-        if (!BY_ID.containsKey(originalId)) {
-            BY_ID.put(originalId, this);
-        } else {
+        if (BY_ID.containsKey(originalId)) {
             throw new IllegalArgumentException(originalId + " already exists!");
         }
-        if (!BY_NAME.containsKey(originalName)) {
-            BY_NAME.put(originalName, this);
-        } else {
+        if (BY_NAME.containsKey(originalName)) {
             throw new IllegalArgumentException(originalName + " already exists!");
         }
+        super.register();
+        BY_ID.put(originalId, this);
+        BY_NAME.put(originalName, this);
         return this;
-    }
-
-    public final String getId() {
-        return this.id;
-    }
-
-    public final String getName() {
-        return this.name;
     }
 
     @Override
     public boolean isApplicable(String className) {
         return className.endsWith(".class");
-    }
-
-    public boolean hasSettings() {
-        return settings.size() > 0;
     }
 
     public Object transform(Object... args) {

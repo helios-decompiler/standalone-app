@@ -17,32 +17,46 @@
 package com.samczsun.helios.transformers.compilers;
 
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.TransformerSettings;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public abstract class Compiler extends Transformer {
-    private static final Map<String, Compiler> BY_ID = new HashMap<>();
+    private static final Map<String, Compiler> BY_ID = new LinkedHashMap<>();
+    private static final Map<String, Compiler> BY_NAME = new LinkedHashMap<>();
 
     static {
         new JavaCompiler().register();
     }
 
-    private final String id;
-    private final String name;
+    private final String originalId;
+    private final String originalName;
 
     public Compiler(String id, String name) {
-        this.id = id;
-        this.name = name;
+        this(id, name, null);
     }
 
+    public Compiler(String id, String name, Class<? extends TransformerSettings.Setting> settingsClass) {
+        super(id + "-compiler", name + " Compiler", settingsClass);
+        this.originalId = id;
+        this.originalName = name;
+    }
 
-    public Compiler register() {
-        if (!BY_ID.containsKey(id)) {
-            BY_ID.put(id, this);
+    @Override
+    public final Compiler register() {
+        if (BY_ID.containsKey(originalId)) {
+            throw new IllegalArgumentException(originalId + " already exists!");
         }
+        if (BY_NAME.containsKey(originalName)) {
+            throw new IllegalArgumentException(originalName + " already exists!");
+        }
+        super.register();
+        BY_ID.put(originalId, this);
+        BY_NAME.put(originalName, this);
         return this;
     }
 
@@ -52,16 +66,12 @@ public abstract class Compiler extends Transformer {
 
     public abstract byte[] compile(String name, String contents);
 
-    public final String getId() {
-        return this.id;
-    }
-
-    public final String getName() {
-        return this.name;
-    }
-
     public static Compiler getById(String id) {
         return BY_ID.get(id);
+    }
+
+    public static Compiler getByName(String name) {
+        return BY_NAME.get(name);
     }
 
     public static Collection<Compiler> getAllCompilers() {

@@ -30,7 +30,7 @@ public abstract class Converter extends Transformer {
 
     private static final Map<String, Converter> BY_ID = new HashMap<>();
 
-    public static final Converter ENJARIFY = new Converter() {
+    public static final Converter ENJARIFY = new Converter("enjarify", "Enjarify") {
         @Override
         public void convert(File in, File out) {
             if (Helios.ensurePython3Set()) {
@@ -54,22 +54,12 @@ public abstract class Converter extends Transformer {
         }
 
         @Override
-        public String getId() {
-            return "enjarify";
-        }
-
-        @Override
-        public String getName() {
-            return "Enjarify";
-        }
-
-        @Override
         public boolean isApplicable(String className) {
             return true;
         }
     };
 
-    public static final Converter DEX2JAR = new Converter() {
+    public static final Converter DEX2JAR = new Converter("dex2jar", "Dex2Jar") {
         @Override
         public void convert(File in, File out) {
             try {
@@ -81,35 +71,15 @@ public abstract class Converter extends Transformer {
         }
 
         @Override
-        public String getName() {
-            return "Dex2Jar";
-        }
-
-        @Override
-        public String getId() {
-            return "dex2jar";
-        }
-
-        @Override
         public boolean isApplicable(String className) {
             return className.endsWith(".dex");
         }
     };
 
-    public static final Converter JAR2DEX = new Converter() {
+    public static final Converter JAR2DEX = new Converter("jar2dex", "Jar2Dex") {
         @Override
         public void convert(File in, File out) {
             throw new IllegalArgumentException("TODO: Use dx from BaksmaliDisassembler");
-        }
-
-        @Override
-        public String getName() {
-            return "Jar2Dex";
-        }
-
-        @Override
-        public String getId() {
-            return "jar2dex";
         }
 
         @Override
@@ -118,19 +88,9 @@ public abstract class Converter extends Transformer {
         }
     };
 
-    public static final Converter NONE = new Converter() {
+    public static final Converter NONE = new Converter("none", "None") {
         @Override
         public void convert(File in, File out) {
-        }
-
-        @Override
-        public String getName() {
-            return "None";
-        }
-
-        @Override
-        public String getId() {
-            return "none";
         }
 
         @Override
@@ -138,6 +98,10 @@ public abstract class Converter extends Transformer {
             return false;
         }
     };
+
+    private Converter(String id, String name) {
+        super(id, name);
+    }
 
     public Object transform(Object... args) {
         convert((File) args[0], (File) args[1]);

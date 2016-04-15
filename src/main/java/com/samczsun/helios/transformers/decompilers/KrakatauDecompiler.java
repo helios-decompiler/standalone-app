@@ -35,11 +35,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class KrakatauDecompiler extends Decompiler {
-    public KrakatauDecompiler() {
-        super("krakatau", "Krakatau");
-        for (Settings setting : Settings.values()) {
-            settings.registerSetting(setting);
-        }
+    KrakatauDecompiler() {
+        super("krakatau", "Krakatau", Settings.class);
     }
 
     public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {

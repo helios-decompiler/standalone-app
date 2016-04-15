@@ -18,37 +18,48 @@ package com.samczsun.helios.transformers.assemblers;
 
 
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.TransformerSettings;
+import com.samczsun.helios.transformers.compilers.JavaCompiler;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-
 public abstract class Assembler extends Transformer {
-    private static final Map<String, Assembler> BY_ID = new HashMap<>();
+    private static final Map<String, Assembler> BY_ID = new LinkedHashMap<>();
+    private static final Map<String, Assembler> BY_NAME = new LinkedHashMap<>();
 
     static {
         new KrakatauAssembler().register();
         new SmaliAssembler().register();
     }
 
-    private final String id;
-    private final String name;
+    private final String originalId;
+    private final String originalName;
 
     public Assembler(String id, String name) {
-        this.id = id;
-        this.name = name;
+        this(id, name, null);
     }
 
-    public static Assembler getById(String id) {
-        return BY_ID.get(id);
+    public Assembler(String id, String name, Class<? extends TransformerSettings.Setting> settingsClass) {
+        super(id + "-assembler", name + " Assembler", settingsClass);
+        this.originalId = id;
+        this.originalName = name;
     }
 
-    public Assembler register() {
-        if (!BY_ID.containsKey(id)) {
-            BY_ID.put(id, this);
+    @Override
+    public final Assembler register() {
+        if (BY_ID.containsKey(originalId)) {
+            throw new IllegalArgumentException(originalId + " already exists!");
         }
+        if (BY_NAME.containsKey(originalName)) {
+            throw new IllegalArgumentException(originalName + " already exists!");
+        }
+        super.register();
+        BY_ID.put(originalId, this);
+        BY_NAME.put(originalName, this);
         return this;
     }
 
@@ -58,12 +69,12 @@ public abstract class Assembler extends Transformer {
 
     public abstract byte[] assemble(String name, String contents);
 
-    public final String getId() {
-        return this.id;
+    public static Assembler getById(String id) {
+        return BY_ID.get(id);
     }
 
-    public final String getName() {
-        return this.name;
+    public static Assembler getByName(String name) {
+        return BY_NAME.get(name);
     }
 
     public static Collection<Assembler> getAllAssemblers() {

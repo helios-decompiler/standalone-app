@@ -23,6 +23,7 @@ import com.eclipsesource.json.JsonValue;
 import com.eclipsesource.json.ParseException;
 import com.eclipsesource.json.WriterConfig;
 import com.samczsun.helios.handler.ExceptionHandler;
+import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.converters.Converter;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 
@@ -49,7 +50,7 @@ public class Settings {
 
     public static final Settings FILETYPE_ASSOCIATIONS = new Settings("filetype_associations").set(
             new JsonObject()
-            .add(".*", "hex")
+                    .add(".*", "hex")
     );
 
     private final String key;
@@ -59,13 +60,21 @@ public class Settings {
     }
 
     public static void saveSettings() {
-        try (Writer writer = new FileWriter(Constants.SETTINGS_FILE)){
+        try (Writer writer = new FileWriter(Constants.SETTINGS_FILE)) {
             JsonObject settings = new JsonObject();
-            for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
-                decompiler.getSettings().saveTo(settings);
+            if (settings.get("transformers") == null) {
+                settings.set("transformers", new JsonObject());
+            }
+            JsonObject transformerSection = settings.get("transformers").asObject();
+            for (Transformer transformer : Transformer.getAllTransformers(Transformer::hasSettings)) {
+                if (transformerSection.get(transformer.getId()) == null) {
+                    transformerSection.set(transformer.getId(), new JsonObject());
+                }
+                JsonObject transformerObject = transformerSection.get(transformer.getId()).asObject();
+                transformer.getSettings().saveTo(transformerObject);
             }
             if (settings.get("settings") == null) {
-                settings.add("settings", new JsonObject());
+                settings.set("settings", new JsonObject());
             }
             JsonObject rootSettings = settings.get("settings").asObject();
             for (JsonObject.Member val : INSTANCE) {
@@ -78,11 +87,22 @@ public class Settings {
     }
 
     public static void loadSettings() {
-        try (FileInputStream input = new FileInputStream(Constants.SETTINGS_FILE); InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)){
+        try (FileInputStream input = new FileInputStream(Constants.SETTINGS_FILE); InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             JsonObject settings = new JsonObject();
             try {
                 settings = Json.parse(reader).asObject();
             } catch (ParseException | UnsupportedOperationException ignored) {
+            }
+            if (settings.get("transformers") == null) {
+                settings.set("transformers", new JsonObject());
+            }
+            JsonObject transformerSection = settings.get("transformers").asObject();
+            for (Transformer transformer : Transformer.getAllTransformers(Transformer::hasSettings)) {
+                if (transformerSection.get(transformer.getId()) == null) {
+                    transformerSection.set(transformer.getId(), new JsonObject());
+                }
+                JsonObject transformerObject = transformerSection.get(transformer.getId()).asObject();
+                transformer.getSettings().loadFrom(transformerObject);
             }
             for (Decompiler decompiler : Decompiler.getAllDecompilers()) {
                 decompiler.getSettings().loadFrom(settings);

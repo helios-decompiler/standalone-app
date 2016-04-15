@@ -26,14 +26,8 @@ import javax.swing.*;
 import java.nio.charset.StandardCharsets;
 
 public class TextViewer extends Transformer {
-    @Override
-    public String getId() {
-        return "text";
-    }
-
-    @Override
-    public String getName() {
-        return "Text";
+    public TextViewer() {
+        super("text", "Text");
     }
 
     @Override

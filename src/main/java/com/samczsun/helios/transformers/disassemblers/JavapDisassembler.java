@@ -26,10 +26,7 @@ import java.io.StringWriter;
 
 public class JavapDisassembler extends Disassembler {
     public JavapDisassembler() {
-        super("javap", "javap");
-        for (Settings setting : Settings.values()) {
-            settings.registerSetting(setting);
-        }
+        super("javap", "javap", Settings.class);
     }
 
     @Override

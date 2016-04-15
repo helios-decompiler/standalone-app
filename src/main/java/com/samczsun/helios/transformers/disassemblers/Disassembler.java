@@ -17,6 +17,7 @@
 package com.samczsun.helios.transformers.disassemblers;
 
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.TransformerSettings;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.*;
@@ -32,41 +33,36 @@ public abstract class Disassembler extends Transformer {
         new ProcyonDisassembler().register();
     }
 
-    private final String id;
-    private final String name;
-
     private final String originalId;
     private final String originalName;
 
     public Disassembler(String id, String name) {
-        this.id = id + "-disassembler";
-        this.name = name + " Disassembler";
+        this(id, name, null);
+    }
+
+    public Disassembler(String id, String name, Class<? extends TransformerSettings.Setting> settingsClass) {
+        super(id + "-disassembler", name + " Disassembler", settingsClass);
         this.originalId = id;
         this.originalName = name;
     }
 
     @Override
     public final Disassembler register() {
-        super.register();
-        if (!BY_ID.containsKey(originalId)) {
-            BY_ID.put(originalId, this);
-        } else {
+        if (BY_ID.containsKey(originalId)) {
             throw new IllegalArgumentException(originalId + " already exists!");
         }
-        if (!BY_NAME.containsKey(originalName)) {
-            BY_NAME.put(originalName, this);
-        } else {
+        if (BY_NAME.containsKey(originalName)) {
             throw new IllegalArgumentException(originalName + " already exists!");
         }
+        super.register();
+        BY_ID.put(originalId, this);
+        BY_NAME.put(originalName, this);
         return this;
     }
 
-    public final String getId() {
-        return this.id;
-    }
-
-    public final String getName() {
-        return this.name;
+    @Override
+    public final TransformerType getType() {
+        return TransformerType.DISASSEMBLER;
     }
 
     public Object transform(Object... args) {

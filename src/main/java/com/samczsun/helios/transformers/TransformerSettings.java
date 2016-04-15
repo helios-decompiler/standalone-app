@@ -36,30 +36,16 @@ public class TransformerSettings {
         return registrationOrder.size();
     }
 
-    public void loadFrom(JsonObject rootSettings) {
-        if (rootSettings.get("decompilers") != null) {
-            JsonObject decompilerSection = rootSettings.get("decompilers").asObject();
-            if (decompilerSection.get(decompiler.getId()) != null) {
-                JsonObject thisDecompiler = decompilerSection.get(decompiler.getId()).asObject();
-                thisDecompiler.forEach(member -> {
-                    Setting setting = registrationOrder.get(member.getName());
-                    if (setting != null) {
-                        setting.setEnabled(member.getValue().asBoolean());
-                    }
-                });
+    public void loadFrom(JsonObject thisDecompiler) {
+        thisDecompiler.forEach(member -> {
+            Setting setting = registrationOrder.get(member.getName());
+            if (setting != null) {
+                setting.setEnabled(member.getValue().asBoolean());
             }
-        }
+        });
     }
 
-    public void saveTo(JsonObject rootSettings) {
-        if (rootSettings.get("decompilers") == null) {
-            rootSettings.add("decompilers", new JsonObject());
-        }
-        JsonObject decompilerSection = rootSettings.get("decompilers").asObject();
-        if (decompilerSection.get(decompiler.getName()) == null) {
-            decompilerSection.add(decompiler.getName(), new JsonObject());
-        }
-        JsonObject thisDecompiler = decompilerSection.get(decompiler.getName()).asObject();
+    public void saveTo(JsonObject thisDecompiler) {
         for (Setting setting : registrationOrder.values()) {
             thisDecompiler.set(setting.getParam(), setting.isEnabled());
         }

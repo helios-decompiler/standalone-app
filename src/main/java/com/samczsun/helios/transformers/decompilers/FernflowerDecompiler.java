@@ -35,11 +35,8 @@ import java.util.jar.Manifest;
 
 public class FernflowerDecompiler extends Decompiler {
 
-    public FernflowerDecompiler() {
-        super("fernflower", "Fernflower");
-        for (Settings setting : Settings.values()) {
-            settings.registerSetting(setting);
-        }
+    FernflowerDecompiler() {
+        super("fernflower", "Fernflower", Settings.class);
     }
 
     @Override

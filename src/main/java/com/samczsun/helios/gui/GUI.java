@@ -227,27 +227,21 @@ public class GUI {
     }
 
     private void setupDecompilerSettings(Menu settingsMenu) {
-        Set<Transformer> allTransformers = new HashSet<>(); //TODO: Allow adding own transformers
-        allTransformers.addAll(Decompiler.getAllDecompilers());
-        allTransformers.addAll(Disassembler.getAllDisassemblers());
-
-        for (Transformer transformer : allTransformers) {
-            if (transformer.hasSettings()) {
-                MenuItem transformerSettingsMenuItem = new MenuItem(settingsMenu, SWT.CASCADE);
-                transformerSettingsMenuItem.setText(transformer.getName());
-                Menu transformerSettingsMenu = new Menu(shell, SWT.DROP_DOWN);
-                transformerSettingsMenuItem.setMenu(transformerSettingsMenu);
-                for (TransformerSettings.Setting setting : transformer.getSettings().getRegisteredSettings()) {
-                    MenuItem settingItem = new MenuItem(transformerSettingsMenu, SWT.CHECK);
-                    settingItem.setText(setting.getText());
-                    settingItem.setSelection(setting.isEnabled());
-                    settingItem.addSelectionListener(new SelectionAdapter() {
-                        @Override
-                        public void widgetSelected(SelectionEvent e) {
-                            setting.setEnabled(settingItem.getSelection());
-                        }
-                    });
-                }
+        for (Transformer transformer : Transformer.getAllTransformers(Transformer::hasSettings)) {
+            MenuItem transformerSettingsMenuItem = new MenuItem(settingsMenu, SWT.CASCADE);
+            transformerSettingsMenuItem.setText(transformer.getName());
+            Menu transformerSettingsMenu = new Menu(shell, SWT.DROP_DOWN);
+            transformerSettingsMenuItem.setMenu(transformerSettingsMenu);
+            for (TransformerSettings.Setting setting : transformer.getSettings().getRegisteredSettings()) {
+                MenuItem settingItem = new MenuItem(transformerSettingsMenu, SWT.CHECK);
+                settingItem.setText(setting.getText());
+                settingItem.setSelection(setting.isEnabled());
+                settingItem.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        setting.setEnabled(settingItem.getSelection());
+                    }
+                });
             }
         }
     }

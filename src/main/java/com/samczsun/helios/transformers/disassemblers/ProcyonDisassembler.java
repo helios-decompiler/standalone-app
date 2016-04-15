@@ -15,10 +15,7 @@ import java.util.Map;
 
 public class ProcyonDisassembler extends Disassembler {
     public ProcyonDisassembler() {
-        super("procyon", "Procyon");
-        for (Settings setting : Settings.values()) {
-            settings.registerSetting(setting);
-        }
+        super("procyon", "Procyon", Settings.class);
     }
 
     @Override

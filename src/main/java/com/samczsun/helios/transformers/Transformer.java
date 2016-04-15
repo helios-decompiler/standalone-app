@@ -23,6 +23,10 @@ import com.samczsun.helios.gui.ClassData;
 import com.samczsun.helios.gui.ClassManager;
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
 import com.samczsun.helios.tasks.DecompileTask;
+import com.samczsun.helios.transformers.assemblers.Assembler;
+import com.samczsun.helios.transformers.compilers.Compiler;
+import com.samczsun.helios.transformers.decompilers.Decompiler;
+import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -34,47 +38,88 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class Transformer {
+    private static final Pattern LEGAL_ID_PATTERN = Pattern.compile("[^0-9a-z\\-\\._]");
+    // Only allow digits, lower case letters, and the following characters
+    // - (HYPHEN)
+    // . (PERIOD)
+    // _ (UNDERSCORE)
+
     private static final Map<String, Transformer> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Transformer> BY_NAME = new LinkedHashMap<>();
+
+    static {
+        Decompiler.getAllDecompilers();
+        Disassembler.getAllDisassemblers();
+        Assembler.getAllAssemblers();
+        Compiler.getAllCompilers();
+    }
 
     public static final Transformer HEX = new HexViewer().register();
 
     public static final Transformer TEXT = new TextViewer().register();
 
-    protected Transformer() {
+    protected final TransformerSettings settings = new TransformerSettings(this);
 
+    private final String id;
+    private final String name;
+
+    protected Transformer(String id, String name) {
+        this(id, name, null);
+    }
+
+    protected Transformer(String id, String name, Class<? extends TransformerSettings.Setting> settingsClass) {
+        checkLegalId(id);
+        checkLegalName(name);
+        this.id = id;
+        this.name = name;
+        if (settingsClass != null) {
+            if (settingsClass.isEnum()) {
+                for (TransformerSettings.Setting setting : settingsClass.getEnumConstants()) {
+                    getSettings().registerSetting(setting);
+                }
+            } else {
+                throw new IllegalArgumentException("Settings must be an enum");
+            }
+        }
     }
 
     protected Transformer register() {
-        if (!BY_ID.containsKey(getId())) {
-            BY_ID.put(getId(), this);
-        } else {
+        if (BY_ID.containsKey(getId())) {
             throw new IllegalArgumentException(getId() + " already exists!");
         }
-        if (!BY_NAME.containsKey(getName())) {
-            BY_NAME.put(getName(), this);
-        } else {
+        if (BY_NAME.containsKey(getName())) {
             throw new IllegalArgumentException(getName() + " already exists!");
         }
+        BY_ID.put(getId(), this);
+        BY_NAME.put(getName(), this);
         return this;
     }
 
-    protected final TransformerSettings settings = new TransformerSettings(this);
 
     public final TransformerSettings getSettings() {
-        return settings;
+        return this.settings;
     }
 
-    public boolean hasSettings() {
-        return settings.size() > 0;
+    public final String getId() {
+        return this.id;
     }
 
-    public abstract String getId();
+    public final String getName() {
+        return this.name;
+    }
 
-    public abstract String getName();
+    public final boolean hasSettings() {
+        return getSettings().size() > 0;
+    }
+
+    public TransformerType getType() {
+        return TransformerType.OTHER;
+    }
 
     public abstract boolean isApplicable(String className);
 
@@ -115,14 +160,15 @@ public abstract class Transformer {
         return scrollPane;
     }
 
+    // Should be singletons
     @Override
     public int hashCode() {
-        return Objects.hash(this.getId());
+        return System.identityHashCode(this);
     }
 
     @Override
     public boolean equals(Object obj) {
-        return !(obj == null || obj.getClass() != this.getClass()) && Objects.equals(this.getId(), ((Transformer) obj).getId());
+        return obj == this;
     }
 
     public static Transformer getById(String id) {
@@ -139,5 +185,36 @@ public abstract class Transformer {
 
     public static Collection<Transformer> getAllTransformers(Predicate<Transformer> filter) {
         return BY_ID.values().stream().filter(filter).collect(Collectors.toList());
+    }
+
+    public enum TransformerType {
+        DECOMPILER("decompiler"),
+        DISASSEMBLER("disassembler"),
+        COMPILER("compiler"),
+        ASSEMBLER("assembler"),
+        CUSTOM("custom"),
+        OTHER("other");
+
+        private String id;
+
+        TransformerType(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return this.id;
+        }
+    }
+
+    private void checkLegalId(String request) {
+        if (request == null || request.length() == 0) throw new IllegalArgumentException("ID must not be empty");
+        Matcher matcher = LEGAL_ID_PATTERN.matcher(request);
+        if (matcher.find()) {
+            throw new IllegalArgumentException("ID must only be lowercase letters and numbers");
+        }
+    }
+
+    private void checkLegalName(String request) {
+        if (request == null || request.length() == 0) throw new IllegalArgumentException("Name must not be empty");
     }
 }
