@@ -26,6 +26,7 @@ import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.handler.ExceptionHandler;
+import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
@@ -52,12 +53,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Stream;
 
 public class ClassManager {
 
-    private final CTabFolder mainTabs;
     private final Shell shell;
+    private final CTabFolder mainTabs;
 
     private final ConcurrentHashMap<String, ClassData> opened = new ConcurrentHashMap<>();
 
@@ -101,9 +104,7 @@ public class ClassManager {
 
             CTabFolder innerTabFolder = new CTabFolder(mainTabs, SWT.BORDER);
             fileTab.setControl(innerTabFolder);
-            innerTabFolder.addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
-                ClassManager.this.handleNewTabRequest();
-            }, GenericClickListener.ClickType.RIGHT));
+            innerTabFolder.addMouseListener(new GenericClickListener((clickType, doubleClick) -> ClassManager.this.handleNewTabRequest(), GenericClickListener.ClickType.RIGHT));
             innerTabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
                 public void close(CTabFolderEvent event) {
                     ((ClassData) fileTab.getData()).close((Transformer) event.item.getData());
@@ -142,7 +143,13 @@ public class ClassManager {
             transformationData.setTransformerTab(nestedItem);
             nestedItem.setControl(new SwingControl(innerTabFolder, SWT.NONE) {
                 protected JComponent createSwingComponent() {
-                    return transformer.open(ClassManager.this, classData, null);
+                    JComponent component = transformer.open(ClassManager.this, classData);
+                    if (component instanceof RTextScrollPane) {
+                        RTextScrollPane scrollPane = (RTextScrollPane) component;
+                        Future<?> future = Helios.submitBackgroundTask(new DecompileTask(classData.getFileName(), classData.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
+                        transformationData.futures.add(future);
+                    }
+                    return component;
                 }
 
                 public Composite getLayoutAncestor() {
@@ -160,6 +167,14 @@ public class ClassManager {
         CTabItem item = mainTabs.getSelection();
         if (item != null) {
             ClassData data = (ClassData) item.getData();
+            CTabFolder nested = (CTabFolder) item.getControl();
+            for (CTabItem decompilerTab : nested.getItems()) {
+                Transformer transformer = (Transformer) decompilerTab.getData();
+                ClassTransformationData ctd = data.close(transformer);
+                for (Future<?> future : ctd.futures) {
+                    future.cancel(true);
+                }
+            }
             opened.remove(data.getFileName() + data.getClassName());
             item.dispose();
         }
@@ -168,10 +183,16 @@ public class ClassManager {
     public void closeCurrentInnerTab() {
         CTabItem item = mainTabs.getSelection();
         if (item != null) {
+            ClassData data = (ClassData) item.getData();
             CTabFolder nested = (CTabFolder) item.getControl();
             CTabItem nestedItem = nested.getSelection();
             if (nestedItem != null) {
-                ((ClassData) item.getData()).close(((Transformer) nestedItem.getData()));
+                Transformer transformer = (Transformer) nestedItem.getData();
+                ClassTransformationData ctd = data.close(transformer);
+                for (Future<?> future : ctd.futures) {
+                    System.out.println("Cancelling future");
+                    future.cancel(true);
+                }
                 nestedItem.dispose();
             }
         }
@@ -215,7 +236,12 @@ public class ClassManager {
                             decompilerTab.setData(transformer);
                             transformerData.setTransformerTab(decompilerTab);
 
-                            JComponent component = transformer.open(this, data, null);
+                            JComponent component = transformer.open(this, data);
+                            if (component instanceof RTextScrollPane) {
+                                RTextScrollPane scrollPane = (RTextScrollPane) component;
+                                Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
+                                transformerData.futures.add(future);
+                            }
                             SwingControl control = new SwingControl(nested, SWT.NONE) {
                                 protected JComponent createSwingComponent() {
                                     return component;
@@ -231,7 +257,6 @@ public class ClassManager {
                             };
                             control.setLayout(new FillLayout());
                             decompilerTab.setControl(control);
-
                         });
                     });
             menu.setLocation(SWTUtil.getMouseLocation());
@@ -316,11 +341,15 @@ public class ClassManager {
             decompilerTab.setData(currentTransformer);
             transformationData.setTransformerTab(decompilerTab);
 
-            JComponent scrollPane = currentTransformer.open(this, data, jumpTo);
-            // transformationData.setArea(area);
+            JComponent component = currentTransformer.open(this, data);
+            if (component instanceof RTextScrollPane) {
+                RTextScrollPane scrollPane = (RTextScrollPane) component;
+                Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), currentTransformer, jumpTo));
+                transformationData.futures.add(future);
+            }
             SwingControl control = new SwingControl(nested, SWT.NONE) {
                 protected JComponent createSwingComponent() {
-                    return scrollPane;
+                    return component;
                 }
 
                 public Composite getLayoutAncestor() {

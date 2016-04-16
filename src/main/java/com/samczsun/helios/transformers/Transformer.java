@@ -149,11 +149,10 @@ public abstract class Transformer {
 
     public abstract Object transform(Object... args);
 
-    public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
+    public JComponent open(ClassManager cm, ClassData data) {
         ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(cm, this, data.getFileName(), data.getClassName());
         area.getCaret().setSelectionVisible(true);
         area.setText("Decompiling... this may take a while");
-        Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), area, this, jumpTo));
         RTextScrollPane scrollPane = new RTextScrollPane(area);
         scrollPane.setLineNumbersEnabled(true);
         scrollPane.setFoldIndicatorEnabled(true);

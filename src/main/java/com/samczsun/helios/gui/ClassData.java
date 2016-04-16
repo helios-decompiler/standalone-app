@@ -29,8 +29,8 @@ public class ClassData {
         return this.transformers.containsKey(transformer);
     }
 
-    public void close(Transformer transformer) {
-        this.transformers.remove(transformer);
+    public ClassTransformationData close(Transformer transformer) {
+        return this.transformers.remove(transformer);
     }
 
     public CTabItem getFileTab() {

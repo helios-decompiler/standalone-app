@@ -45,7 +45,9 @@ public class Events {
     }
 
     public static void registerListener(Listener listener) {
-        listeners.add(listener);
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
     }
 
     public static <T> void callEvent(T consume) {
@@ -53,11 +55,13 @@ public class Events {
             try {
                 Method method = METHOD_MAP.get(consume.getClass());
                 if (method != null) {
-                    for (Listener listener : listeners) {
-                        try {
-                            method.invoke(listener, consume);
-                        } catch (Throwable e) {
-                            e.printStackTrace();
+                    synchronized(listeners) {
+                        for (Listener listener : listeners) {
+                            try {
+                                method.invoke(listener, consume);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 } else {

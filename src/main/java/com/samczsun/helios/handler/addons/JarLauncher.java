@@ -16,6 +16,7 @@
 
 package com.samczsun.helios.handler.addons;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.api.Addon;
@@ -49,7 +50,7 @@ public class JarLauncher extends AddonHandler {
             ZipEntry entry = jarFile.getEntry("addon.json");
             if (entry != null) {
                 inputStream = jarFile.getInputStream(entry);
-                JsonObject jsonObject = JsonObject.readFrom(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                JsonObject jsonObject = Json.parse(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).asObject();
                 String main = jsonObject.get("main").asString();
                 URL[] url = new URL[]{file.toURI().toURL()};
                 ClassLoader classLoader = AccessController.doPrivileged(

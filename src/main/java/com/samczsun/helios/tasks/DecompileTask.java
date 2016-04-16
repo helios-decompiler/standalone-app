@@ -131,7 +131,7 @@ public class DecompileTask implements Runnable {
                     message.append(" */");
                     output.append(message.toString());
                 } finally {
-                    if (cu != null) {
+                    if (cu != null && false) {
                         String result = output.toString();
                         result = result.replaceAll("\r*\n", "\n");
                         output = new StringBuilder(result);

@@ -42,7 +42,7 @@ public class HexViewer extends Transformer {
     }
 
     @Override
-    public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
+    public JComponent open(ClassManager cm, ClassData data) {
         final HexEditor editor = new HexEditor();
         try {
             editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));

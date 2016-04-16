@@ -64,6 +64,7 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.security.Permission;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -515,8 +516,8 @@ public class Helios {
         return files.containsKey(file) ? files.get(file) : getPathFiles().get(file);
     }
 
-    public static void submitBackgroundTask(Runnable runnable) {
-        getBackgroundTaskHandler().submit(runnable);
+    public static Future<?> submitBackgroundTask(Runnable runnable) {
+        return getBackgroundTaskHandler().submit(runnable);
     }
 
     public static Collection<LoadedFile> getAllFiles() {

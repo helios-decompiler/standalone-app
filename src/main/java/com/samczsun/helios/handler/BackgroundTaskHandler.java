@@ -16,57 +16,59 @@
 
 package com.samczsun.helios.handler;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class BackgroundTaskHandler {
     private final ExecutorService executor = Executors.newFixedThreadPool(8, r -> new Thread(r, "Background Thread"));
-    private final ExecutorService synchronizer = Executors.newSingleThreadExecutor(
-            r -> new Thread(r, "Synchronizer Thread"));
 
-    private final Set<Runnable> tasks = new HashSet<>(); //This should only be modified by the synchronizer
+    private volatile int runningTasks = 0;
+    private volatile long currentTaskId = 0;
 
-    public void submit(Runnable runnable) {
-        if (!(runnable instanceof WrappedRunnable)) {
-            submit(new WrappedRunnable(runnable));
-        } else {
-            this.synchronizer.execute(() -> {
-                if (tasks.add(runnable)) {
-                    executor.execute(() -> {
-                        try {
-                            runnable.run();
-                        } catch (Throwable t) {
-                            ExceptionHandler.handle(t);
-                        }
-                        synchronizer.execute(() -> tasks.remove(runnable));
-                    });
+    @SuppressWarnings("deprecated")
+    public Future<?> submit(Runnable runnable) {
+        return executor.submit(() -> {
+            runningTasks++;
+//            System.out.println("BEGIN EXECUTING " + System.identityHashCode(runnable));
+            Thread thread = new Thread(runnable, System.identityHashCode(runnable) + " - " + currentTaskId++);
+            thread.setUncaughtExceptionHandler((t, e) -> ExceptionHandler.handle(e));
+            thread.start();
+            try {
+//                System.out.println("JOINING " + System.identityHashCode(runnable));
+                thread.join();
+            } catch (InterruptedException ex) {
+                try {
+                    thread.suspend();
+                    thread.stop();
+                } catch (ThreadDeath ignored) {
+                    // Don't care
                 }
-            });
-        }
+            } catch (Throwable t) {
+                ExceptionHandler.handle(t);
+            }
+//            System.out.println("DONE EXECUTING " + System.identityHashCode(runnable));
+            while (thread.isAlive()) {
+//                StackTraceElement[] e = Thread.getAllStackTraces().get(thread);
+//                System.out.println(e.length + " " + Arrays.toString(e));
+            }
+//            System.out.println("THREAD DIED " + System.identityHashCode(runnable));
+            runningTasks--;
+        });
     }
 
     public void shutdown() {
         System.out.println("Shutting down executors...");
         executor.shutdownNow();
-        synchronizer.shutdownNow();
         System.out.println("Done shutting down executors");
     }
 
     public int getActiveTasks() {
-        return tasks.size();
-    }
-
-    private static class WrappedRunnable implements Runnable {
-        private final Runnable wrapped;
-
-        WrappedRunnable(Runnable wrapped) {
-            this.wrapped = wrapped;
-        }
-
-        public void run() {
-            wrapped.run();
-        }
+        return runningTasks;
     }
 }

@@ -2,10 +2,17 @@ package com.samczsun.helios.gui;
 
 import org.eclipse.swt.custom.CTabItem;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Future;
+
 public class ClassTransformationData {
     private CTabItem transformerTab;
 
     private ClickableSyntaxTextArea area;
+
+    public List<Future<?>> futures = Collections.synchronizedList(new ArrayList<>());
 
     public boolean isInitialized() {
         return this.transformerTab != null;

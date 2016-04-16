@@ -41,7 +41,7 @@ public class TextViewer extends Transformer {
     }
 
     @Override
-    public JComponent open(ClassManager cm, ClassData data, String jumpTo) {
+    public JComponent open(ClassManager cm, ClassData data) {
         RSyntaxTextArea area = new RSyntaxTextArea();
         area.setText(new String(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName()), StandardCharsets.UTF_8));
         return new RTextScrollPane(area);
