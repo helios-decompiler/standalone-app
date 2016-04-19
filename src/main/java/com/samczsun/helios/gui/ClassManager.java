@@ -111,13 +111,10 @@ public class ClassManager {
                     ((ClassData) fileTab.getData()).close((Transformer) event.item.getData());
                 }
             });
-
             mainTabs.setSelection(fileTab);
 
             Transformer defaultTransformer = null;
-
             JsonValue star = Settings.FILETYPE_ASSOCIATIONS.get().asObject().get(".*");
-
             for (JsonObject.Member member : Settings.FILETYPE_ASSOCIATIONS.get().asObject()) {
                 if (member.getName().equals(extension)) {
                     if (defaultTransformer == null) {
@@ -125,42 +122,13 @@ public class ClassManager {
                     }
                 }
             }
-
             if (defaultTransformer == null && star != null) {
                 defaultTransformer = Transformer.getById(star.asString());
             }
-
             if (defaultTransformer == null) {
                 defaultTransformer = Transformer.HEX;
             }
-
-
-            Transformer transformer = defaultTransformer;
-
-            ClassTransformationData transformationData = classData.open(defaultTransformer);
-            CTabItem nestedItem = new CTabItem(innerTabFolder, SWT.BORDER | SWT.CLOSE);
-            nestedItem.setText(defaultTransformer.getName());
-            nestedItem.setData(defaultTransformer);
-            transformationData.setTransformerTab(nestedItem);
-            nestedItem.setControl(new SwingControl(innerTabFolder, SWT.NONE) {
-                protected JComponent createSwingComponent() {
-                    JComponent component = transformer.open(ClassManager.this, classData);
-                    if (component instanceof RTextScrollPane) {
-                        RTextScrollPane scrollPane = (RTextScrollPane) component;
-                        Future<?> future = Helios.submitBackgroundTask(new DecompileTask(classData.getFileName(), classData.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
-                        transformationData.futures.add(future);
-                    }
-                    return component;
-                }
-
-                public Composite getLayoutAncestor() {
-                    return innerTabFolder;
-                }
-
-                protected void afterComponentCreatedSWTThread() {
-                    innerTabFolder.setSelection(nestedItem);
-                }
-            });
+            openViewWithTransformer(classData, innerTabFolder, defaultTransformer);
         });
     }
 
@@ -220,55 +188,50 @@ public class ClassManager {
         display.asyncExec(() -> {
             CTabItem selectedFile = mainTabs.getSelection();
             ClassData selectedFileData = (ClassData) selectedFile.getData();
-            CTabFolder nested = (CTabFolder) selectedFile.getControl();
+            CTabFolder transformerTabs = (CTabFolder) selectedFile.getControl();
             Menu menu = new Menu(shell, SWT.POP_UP);
-            Stream.of(Decompiler.getAllDecompilers(), Disassembler.getAllDisassemblers(), Arrays.asList(Transformer.HEX, Transformer.TEXT))
-                    .flatMap(Collection::stream)
-                    .forEach(transformer -> {
-                        if (!transformer.isApplicable(selectedFileData.getClassName())) {
-                            return;
-                        }
-                        MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
-                        menuItem.setText(transformer.getName());
-                        menuItem.addListener(SWT.Selection, event -> {
-                            ClassTransformationData transformerData = selectedFileData.open(transformer);
-                            if (transformerData.isInitialized()) {
-                                nested.setSelection(transformerData.getTransformerTab());
-                                return;
-                            }
-                            CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
-                            decompilerTab.setText(transformer.getName());
-                            decompilerTab.setData(transformer);
-                            transformerData.setTransformerTab(decompilerTab);
-
-                            JComponent component = transformer.open(this, selectedFileData);
-                            if (component instanceof RTextScrollPane) {
-                                RTextScrollPane scrollPane = (RTextScrollPane) component;
-                                if (scrollPane.getTextArea() instanceof ClickableSyntaxTextArea) {
-                                    Future<?> future = Helios.submitBackgroundTask(new DecompileTask(selectedFileData.getFileName(), selectedFileData.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
-                                    transformerData.futures.add(future);
-                                }
-                            }
-                            SwingControl control = new SwingControl(nested, SWT.NONE) {
-                                protected JComponent createSwingComponent() {
-                                    return component;
-                                }
-
-                                public Composite getLayoutAncestor() {
-                                    return shell;
-                                }
-
-                                protected void afterComponentCreatedSWTThread() {
-                                    nested.setSelection(decompilerTab);
-                                }
-                            };
-                            control.setLayout(new FillLayout());
-                            decompilerTab.setControl(control);
-                        });
-                    });
             menu.setLocation(SWTUtil.getMouseLocation());
+            Transformer.getAllTransformers(transformer -> {
+                return transformer instanceof Decompiler ||
+                        transformer instanceof Disassembler ||
+                        transformer == Transformer.HEX ||
+                        transformer == Transformer.TEXT;
+            }).forEach(transformer -> {
+                if (!transformer.isApplicable(selectedFileData.getClassName())) {
+                    return;
+                }
+                MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
+                menuItem.setText(transformer.getName());
+                menuItem.addListener(SWT.Selection, event -> {
+                    openViewWithTransformer(selectedFileData, transformerTabs, transformer);
+                });
+            });
             menu.setVisible(true);
         });
+    }
+
+    private void openViewWithTransformer(ClassData selectedFileData, CTabFolder transformerTabs, Transformer transformer) {
+        ClassTransformationData transformerData = selectedFileData.open(transformer);
+        if (transformerData.isInitialized()) {
+            transformerTabs.setSelection(transformerData.getTransformerTab());
+            return;
+        }
+        CTabItem transformerTab = new CTabItem(transformerTabs, SWT.BORDER | SWT.CLOSE);
+        transformerTab.setText(transformer.getName());
+        transformerTab.setData(transformer);
+        transformerData.setTransformerTab(transformerTab);
+
+        JComponent component = transformer.open(this, selectedFileData);
+        if (component instanceof RTextScrollPane) {
+            RTextScrollPane scrollPane = (RTextScrollPane) component;
+            if (scrollPane.getTextArea() instanceof ClickableSyntaxTextArea) {
+                Future<?> future = Helios.submitBackgroundTask(new DecompileTask(selectedFileData.getFileName(), selectedFileData.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
+                transformerData.futures.add(future);
+            }
+        }
+        CustomSwingControl control = new CustomSwingControl(transformerTabs, transformerTab, component);
+        control.setLayout(new FillLayout());
+        transformerTab.setControl(control);
     }
 
     private void refreshCurrentView() {
@@ -362,43 +325,38 @@ public class ClassManager {
     public void openFileAndDecompile(String fileName, String className, Transformer currentTransformer, String jumpTo) {
         System.out.println("Opening " + fileName + " " + className);
         openFile(fileName, className);
-        mainTabs.getDisplay().syncExec(() -> {
-            CTabItem item = mainTabs.getSelection();
-            ClassData data = (ClassData) item.getData();
-            ClassTransformationData transformationData = data.open(currentTransformer);
-            if (transformationData.isInitialized()) {
-                CTabFolder nested = (CTabFolder) item.getControl();
-                nested.setSelection(transformationData.getTransformerTab());
-                return;
-            }
-            CTabFolder nested = (CTabFolder) item.getControl();
-            // Menu menu = new Menu(shell, SWT.POP_UP);
-            CTabItem decompilerTab = new CTabItem(nested, SWT.BORDER | SWT.CLOSE);
-            decompilerTab.setText(currentTransformer.getName());
-            decompilerTab.setData(currentTransformer);
-            transformationData.setTransformerTab(decompilerTab);
+        CTabItem selectedFile = mainTabs.getSelection();
+        ClassData selectedFileData = (ClassData) selectedFile.getData();
+        CTabFolder transformerTabs = (CTabFolder) selectedFile.getControl();
+        openViewWithTransformer(selectedFileData, transformerTabs, currentTransformer);
+    }
 
-            JComponent component = currentTransformer.open(this, data);
-            if (component instanceof RTextScrollPane) {
-                RTextScrollPane scrollPane = (RTextScrollPane) component;
-                Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), currentTransformer, jumpTo));
-                transformationData.futures.add(future);
-            }
-            SwingControl control = new SwingControl(nested, SWT.NONE) {
-                protected JComponent createSwingComponent() {
-                    return component;
-                }
 
-                public Composite getLayoutAncestor() {
-                    return shell;
-                }
+    class CustomSwingControl extends SwingControl {
+        private JComponent component;
+        private CTabFolder transformerTabs;
+        private CTabItem transformerTab;
 
-                protected void afterComponentCreatedSWTThread() {
-                    nested.setSelection(decompilerTab);
-                }
-            };
-            control.setLayout(new FillLayout());
-            decompilerTab.setControl(control);
-        });
+        CustomSwingControl(CTabFolder transformerTabs, CTabItem transformerTab, JComponent component) {
+            super(transformerTabs, SWT.NONE);
+            this.component = component;
+            this.transformerTabs = transformerTabs;
+            this.transformerTab = transformerTab;
+        }
+
+        @Override
+        public JComponent createSwingComponent() {
+            return component;
+        }
+
+        @Override
+        public Composite getLayoutAncestor() {
+            return shell;
+        }
+
+        @Override
+        public void afterComponentCreatedSWTThread() {
+            transformerTabs.setSelection(transformerTab);
+        }
     }
 }
