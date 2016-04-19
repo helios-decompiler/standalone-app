@@ -4,6 +4,7 @@ import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.FiletypeAssociationCreateEvent;
 import com.samczsun.helios.api.events.FiletypeAssociationDeleteEvent;
 import com.samczsun.helios.api.events.FiletypeAssociationEditEvent;
+import com.samczsun.helios.gui.data.FiletypeAssociationData;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;

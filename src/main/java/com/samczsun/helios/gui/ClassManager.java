@@ -25,14 +25,14 @@ import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.SearchRequest;
+import com.samczsun.helios.gui.data.ClassData;
+import com.samczsun.helios.gui.data.ClassTransformationData;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.SWTUtil;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.comparator.DefaultFileComparator;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -48,13 +48,14 @@ import org.fife.ui.rtextarea.SearchContext;
 import org.fife.ui.rtextarea.SearchEngine;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Stream;
 
 public class ClassManager {
@@ -64,7 +65,7 @@ public class ClassManager {
 
     private final ConcurrentHashMap<String, ClassData> opened = new ConcurrentHashMap<>();
 
-    public ClassManager(Shell rootShell, CTabFolder tabs) {
+    ClassManager(Shell rootShell, CTabFolder tabs) {
         this.mainTabs = tabs;
         this.shell = rootShell;
         this.mainTabs.addCTabFolder2Listener(new CTabFolder2Adapter() {
@@ -77,7 +78,7 @@ public class ClassManager {
         Events.registerListener(new Listener() {
             @Override
             public void handleSearchRequest(SearchRequest request) {
-                shell.getDisplay().asyncExec(() -> search(request.getText()));
+                shell.getDisplay().asyncExec(() -> search(request));
             }
 
             @Override
@@ -87,7 +88,7 @@ public class ClassManager {
         });
     }
 
-    public void openFile(String file, String name) {
+    void openFile(String file, String name) {
         String extension = name.lastIndexOf('.') == -1 ? "" : name.substring(name.lastIndexOf('.'));
         Display display = Display.getDefault();
         final ClassData classData = opened.computeIfAbsent(file + name, obj -> new ClassData(file, name));
@@ -290,7 +291,7 @@ public class ClassManager {
         }
     }
 
-    private void search(String find) {
+    private void search(SearchRequest request) {
         CTabItem file = mainTabs.getSelection();
         if (file == null) {
             return;
@@ -304,14 +305,44 @@ public class ClassManager {
             RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
             RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
             SwingUtilities.invokeLater(() -> {
+                Field dotField = null;
+                Field markField = null;
+                try {
+                    dotField = DefaultCaret.class.getDeclaredField("dot");
+                    dotField.setAccessible(true);
+                    markField = DefaultCaret.class.getDeclaredField("mark");
+                    markField.setAccessible(true);
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
                 SearchContext context = new SearchContext();
-                context.setSearchFor(find);
-                context.setMatchCase(false);
+                context.setSearchFor(request.getText());
+                context.setMatchCase(request.isMatchCase());
                 try {
                     if (!SearchEngine.find(textArea, context).wasFound()) {
-                        shell.getDisplay().asyncExec(() -> {
-                            mainTabs.getDisplay().beep();
-                        });
+                        if (request.isWrap()) {
+                            int old = textArea.getCaretPosition();
+                            int omark = textArea.getCaret().getMark();
+                            if (request.isSearchForward()) {
+                                dotField.setInt(textArea.getCaret(), 0);
+                                markField.setInt(textArea.getCaret(), 0);
+                                if (!SearchEngine.find(textArea, context).wasFound()) {
+                                    dotField.setInt(textArea.getCaret(), old);
+                                    markField.setInt(textArea.getCaret(), omark);
+                                    shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
+                                }
+                            } else {
+                                dotField.setInt(textArea.getCaret(), textArea.getDocument().getLength() - 1);
+                                markField.setInt(textArea.getCaret(), textArea.getDocument().getLength() - 1);
+                                if (!SearchEngine.find(textArea, context).wasFound()) {
+                                    dotField.setInt(textArea.getCaret(), old);
+                                    markField.setInt(textArea.getCaret(), omark);
+                                    shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
+                                }
+                            }
+                        } else {
+                            shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
+                        }
                     }
                 } catch (Throwable t) {
                     ExceptionHandler.handle(t);

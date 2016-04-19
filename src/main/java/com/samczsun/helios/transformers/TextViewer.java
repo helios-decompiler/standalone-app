@@ -17,7 +17,7 @@
 package com.samczsun.helios.transformers;
 
 import com.samczsun.helios.Helios;
-import com.samczsun.helios.gui.ClassData;
+import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.gui.ClassManager;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;

@@ -17,12 +17,10 @@
 package com.samczsun.helios.transformers;
 
 import com.samczsun.helios.Constants;
-import com.samczsun.helios.Helios;
 import com.samczsun.helios.Settings;
-import com.samczsun.helios.gui.ClassData;
+import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.gui.ClassManager;
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
-import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.assemblers.Assembler;
 import com.samczsun.helios.transformers.compilers.Compiler;
 import com.samczsun.helios.transformers.decompilers.Decompiler;

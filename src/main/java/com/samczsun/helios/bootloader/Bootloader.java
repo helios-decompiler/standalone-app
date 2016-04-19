@@ -47,6 +47,9 @@ import java.util.concurrent.Executor;
 import static com.samczsun.helios.Constants.SWT_VERSION;
 import static org.apache.commons.io.IOUtils.copy;
 
+/*
+ * This ensures directories are made and SWT is loaded and other misc stuff like that
+ */
 public class Bootloader {
     public static void main(String[] args) {
         try {

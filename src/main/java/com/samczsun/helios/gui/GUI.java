@@ -17,7 +17,6 @@
 package com.samczsun.helios.gui;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
 import com.samczsun.helios.Resources;
@@ -25,12 +24,11 @@ import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.Addon;
 import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
+import com.samczsun.helios.gui.data.FiletypeAssociationData;
 import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.TransformerSettings;
 import com.samczsun.helios.transformers.converters.Converter;
-import com.samczsun.helios.transformers.decompilers.Decompiler;
-import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.SashForm;

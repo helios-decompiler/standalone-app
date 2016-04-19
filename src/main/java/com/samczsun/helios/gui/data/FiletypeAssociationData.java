@@ -1,4 +1,4 @@
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.data;
 
 import com.samczsun.helios.transformers.Transformer;
 

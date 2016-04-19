@@ -1,5 +1,6 @@
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.data;
 
+import com.samczsun.helios.gui.ClickableSyntaxTextArea;
 import org.eclipse.swt.custom.CTabItem;
 
 import java.util.ArrayList;

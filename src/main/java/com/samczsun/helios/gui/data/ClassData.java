@@ -1,4 +1,4 @@
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.data;
 
 import com.samczsun.helios.transformers.Transformer;
 import org.eclipse.swt.custom.CTabItem;
@@ -16,7 +16,7 @@ public class ClassData {
 
     private final Map<Transformer, ClassTransformationData> transformers = Collections.synchronizedMap(new HashMap<>());
 
-    ClassData(String file, String className) {
+    public ClassData(String file, String className) {
         this.file = file;
         this.className = className;
     }
