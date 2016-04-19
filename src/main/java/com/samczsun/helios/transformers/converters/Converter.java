@@ -63,7 +63,7 @@ public abstract class Converter extends Transformer {
         @Override
         public void convert(File in, File out) {
             try {
-                com.googlecode.dex2jar.tools.Dex2jarCmd.main("-o", out.getAbsolutePath(), "--force",
+                com.googlecode.dex2jar.tools.Dex2jarCmd.main("-o", "-n", out.getAbsolutePath(), "--force",
                         in.getAbsolutePath());
             } catch (Exception e) {
                 ExceptionHandler.handle(e);

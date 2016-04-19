@@ -624,7 +624,7 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"C:\\Users\\Sam\\IdeaProjects\\Helios\\bootstrapper\\target\\bootstrapper-0.0.3.jar\"\" \"\"-a\"\" \"\"-ctx\"\"\", strFolder, \"runas\", 1");
+        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + "\"\"\", strFolder, \"runas\", 1");
         writer.println("WScript.Quit 0");
         writer.close();
 
