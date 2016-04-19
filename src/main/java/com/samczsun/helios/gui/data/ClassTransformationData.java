@@ -1,6 +1,7 @@
 package com.samczsun.helios.gui.data;
 
 import com.samczsun.helios.gui.ClickableSyntaxTextArea;
+import com.samczsun.helios.transformers.Transformer;
 import org.eclipse.swt.custom.CTabItem;
 
 import java.util.ArrayList;
@@ -12,6 +13,11 @@ public class ClassTransformationData {
     private CTabItem transformerTab;
 
     private ClickableSyntaxTextArea area;
+    private Transformer transformer;
+
+    public ClassTransformationData(Transformer thisTransformer) {
+        this.transformer = thisTransformer;
+    }
 
     public List<Future<?>> futures = Collections.synchronizedList(new ArrayList<>());
 
@@ -33,5 +39,9 @@ public class ClassTransformationData {
 
     public void setArea(ClickableSyntaxTextArea area) {
         this.area = area;
+    }
+
+    public Transformer getTransformer() {
+        return this.transformer;
     }
 }

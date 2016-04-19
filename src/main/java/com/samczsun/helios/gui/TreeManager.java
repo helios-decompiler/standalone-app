@@ -138,7 +138,7 @@ public class TreeManager {
                         @Override
                         public void widgetSelected(SelectionEvent e) {
                             if (item != null) {
-                                List<Pair<String, String>> data = Arrays.asList(getFileName(item));
+                                List<Pair<String, String>> data = Collections.singletonList(getFileName(item));
                                 Helios.submitBackgroundTask(new DecompileAndSaveTask(data));
                             }
                         }

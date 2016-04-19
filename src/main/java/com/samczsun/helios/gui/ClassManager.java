@@ -54,18 +54,20 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 public class ClassManager {
-
+    private final Display display;
     private final Shell shell;
     private final CTabFolder mainTabs;
 
-    private final ConcurrentHashMap<String, ClassData> opened = new ConcurrentHashMap<>();
+    private final Map<String, ClassData> opened = new ConcurrentHashMap<>();
 
     ClassManager(Shell rootShell, CTabFolder tabs) {
+        this.display = rootShell.getDisplay();
         this.mainTabs = tabs;
         this.shell = rootShell;
         this.mainTabs.addCTabFolder2Listener(new CTabFolder2Adapter() {
@@ -90,8 +92,7 @@ public class ClassManager {
 
     void openFile(String file, String name) {
         String extension = name.lastIndexOf('.') == -1 ? "" : name.substring(name.lastIndexOf('.'));
-        Display display = Display.getDefault();
-        final ClassData classData = opened.computeIfAbsent(file + name, obj -> new ClassData(file, name));
+        ClassData classData = opened.computeIfAbsent(file + name, obj -> new ClassData(file, name));
         String finalName = name.substring(name.lastIndexOf('/') + 1, name.length());
         display.syncExec(() -> {
             if (classData.getFileTab() != null) {
@@ -235,28 +236,31 @@ public class ClassManager {
     }
 
     private void refreshCurrentView() {
-        CTabItem file = mainTabs.getSelection();
+        CTabItem file = getCurrentClass();
         if (file == null) {
             return;
         }
-        CTabItem decompiler = ((CTabFolder) file.getControl()).getSelection();
-        if (decompiler == null) {
+        ClassData classData = getCurrentClassData();
+        CTabItem transformerItem = getCurrentTransformer();
+        if (transformerItem == null) {
             return;
         }
-        ClassData data = (ClassData) file.getData();
-        LoadedFile loadedFile = Helios.getLoadedFile(data.getFileName());
-        SwingControl control = (SwingControl) decompiler.getControl();
-        if (decompiler.getData().equals("text")) {
-            RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
-            RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
-            textArea.setText(new String(loadedFile.getFiles().get(data.getClassName())));
-        } else if (decompiler.getData().equals(Transformer.HEX)) {
-            final HexEditor editor = (HexEditor) control.getSwingComponent();
+        LoadedFile loadedFile = Helios.getLoadedFile(classData.getFileName());
+        Transformer transformer = getTransformer();
+        if (transformer == Transformer.HEX) {
+            HexEditor hexEditor = (HexEditor) getCurrentSwingControl().getSwingComponent();
             try {
-                editor.open(new ByteArrayInputStream(loadedFile.getFiles().get(data.getClassName())));
-            } catch (IOException e1) {
-                e1.printStackTrace();
+                hexEditor.open(new ByteArrayInputStream(loadedFile.getFiles().get(classData.getClassName())));
+            } catch (IOException e) {
+                ExceptionHandler.handle(e);
             }
+        } else if (transformer == Transformer.TEXT) {
+            RTextScrollPane rTextScrollPane = (RTextScrollPane) getCurrentSwingControl().getSwingComponent();
+            RSyntaxTextArea rSyntaxTextArea = (RSyntaxTextArea) rTextScrollPane.getTextArea();
+            rSyntaxTextArea.setText(new String(loadedFile.getFiles().get(classData.getClassName())));
+        } else {
+            closeCurrentInnerTab();
+            openViewWithTransformer(classData, getCurrentTransformers(), transformer);
         }
     }
 
@@ -325,12 +329,36 @@ public class ClassManager {
     public void openFileAndDecompile(String fileName, String className, Transformer currentTransformer, String jumpTo) {
         System.out.println("Opening " + fileName + " " + className);
         openFile(fileName, className);
-        CTabItem selectedFile = mainTabs.getSelection();
-        ClassData selectedFileData = (ClassData) selectedFile.getData();
-        CTabFolder transformerTabs = (CTabFolder) selectedFile.getControl();
-        openViewWithTransformer(selectedFileData, transformerTabs, currentTransformer);
+        openViewWithTransformer(getCurrentClassData(), getCurrentTransformers(), currentTransformer);
     }
 
+    private CTabItem getCurrentClass() {
+        return mainTabs.getSelection();
+    }
+
+    private ClassData getCurrentClassData() {
+        return (ClassData) getCurrentClass().getData();
+    }
+
+    private CTabFolder getCurrentTransformers() {
+        return (CTabFolder) getCurrentClass().getControl();
+    }
+
+    private ClassTransformationData getCurrentTransformerData() {
+        return (ClassTransformationData) getCurrentTransformers().getData();
+    }
+
+    private CTabItem getCurrentTransformer() {
+        return getCurrentTransformers().getSelection();
+    }
+
+    private CustomSwingControl getCurrentSwingControl() {
+        return (CustomSwingControl) getCurrentTransformer().getControl();
+    }
+
+    private Transformer getTransformer() {
+        return (Transformer) getCurrentTransformer().getData();
+    }
 
     class CustomSwingControl extends SwingControl {
         private JComponent component;

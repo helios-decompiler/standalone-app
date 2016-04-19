@@ -28,6 +28,10 @@ import com.samczsun.helios.utils.FileChooserUtil;
 import com.samczsun.helios.utils.SWTUtil;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -51,10 +55,9 @@ public class DecompileAndSaveTask implements Runnable {
         this.data = data == null ? Collections.emptyList() : data;
     }
 
-
     @Override
     public void run() {
-        File file = FileChooserUtil.chooseSaveLocation(Settings.LAST_DIRECTORY.get().asString(), Arrays.asList("zip"));
+        File file = FileChooserUtil.chooseSaveLocation(Settings.LAST_DIRECTORY.get().asString(), Collections.singletonList("zip"));
         if (file == null) return;
         if (file.exists()) {
             boolean delete = SWTUtil.promptForYesNo(Constants.REPO_NAME + " - Overwrite existing file",
@@ -67,21 +70,48 @@ public class DecompileAndSaveTask implements Runnable {
         AtomicReference<Transformer> transformer = new AtomicReference<>();
 
         Display display = Display.getDefault();
-        display.syncExec(() -> {
+        display.asyncExec(() -> {
             Shell shell = new Shell(Display.getDefault());
-            Combo combo = new Combo(shell, SWT.DROP_DOWN | SWT.BORDER);
-            List<Transformer> transformers = new ArrayList<>();
-            transformers.addAll(Decompiler.getAllDecompilers());
-            transformers.addAll(Disassembler.getAllDisassemblers());
-            for (Transformer t : transformers) {
-                combo.add(t.getName());
-            }
+            FillLayout layout = new FillLayout();
+            layout.type = SWT.VERTICAL;
+            shell.setLayout(layout);
+            Transformer.getAllTransformers(t -> {
+                return t instanceof Decompiler
+                        || t instanceof Disassembler;
+            }).forEach(t -> {
+                Button button = new Button(shell, SWT.RADIO);
+                button.setText(t.getName());
+                button.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        transformer.set(t);
+                    }
+                });
+            });
+            Button ok = new Button(shell, SWT.NONE);
+            ok.setText("OK");
+            ok.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    shell.close();
+                    shell.dispose();
+                    synchronized (transformer) {
+                        transformer.notify();
+                    }
+                }
+            });
             shell.pack();
+            SWTUtil.center(shell);
             shell.open();
-            System.out.println(Arrays.toString(combo.getItems()));
         });
 
-        // TODO: Ask for list of decompilers
+        synchronized(transformer) {
+            try {
+                transformer.wait();
+            } catch (InterruptedException e) {
+                ExceptionHandler.handle(e);
+            }
+        }
 
         FileOutputStream fileOutputStream = null;
         ZipOutputStream zipOutputStream = null;
@@ -90,17 +120,24 @@ public class DecompileAndSaveTask implements Runnable {
             fileOutputStream = new FileOutputStream(file);
             zipOutputStream = new ZipOutputStream(fileOutputStream);
             for (Pair<String, String> pair : data) {
-                StringBuilder buffer = new StringBuilder();
                 LoadedFile loadedFile = Helios.getLoadedFile(pair.getValue0());
                 if (loadedFile != null) {
                     String innerName = pair.getValue1();
                     byte[] bytes = loadedFile.getData().get(innerName);
                     if (bytes != null) {
-                        Decompiler.getById("cfr-decompiler").decompile(null, bytes, buffer);
-                        zipOutputStream.putNextEntry(
-                                new ZipEntry(innerName.substring(0, innerName.length() - 6) + ".java"));
-                        zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
-                        zipOutputStream.closeEntry();
+                        if (loadedFile.getClassNode(pair.getValue1()) != null) {
+                            StringBuilder buffer = new StringBuilder();
+                            transformer.get().transform(loadedFile.getClassNode(pair.getValue1()), bytes, buffer);
+                            zipOutputStream.putNextEntry(
+                                    new ZipEntry(innerName.substring(0, innerName.length() - 6) + ".java"));
+                            zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
+                            zipOutputStream.closeEntry();
+                        } else {
+                            zipOutputStream.putNextEntry(
+                                    new ZipEntry(pair.getValue1()));
+                            zipOutputStream.write(loadedFile.getData().get(pair.getValue1()));
+                            zipOutputStream.closeEntry();
+                        }
                     }
                 }
             }

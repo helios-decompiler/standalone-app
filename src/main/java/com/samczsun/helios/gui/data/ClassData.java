@@ -22,7 +22,7 @@ public class ClassData {
     }
 
     public ClassTransformationData open(Transformer transformer) {
-        return this.transformers.computeIfAbsent(transformer, t -> new ClassTransformationData());
+        return this.transformers.computeIfAbsent(transformer, t -> new ClassTransformationData(transformer));
     }
 
     public boolean hasOpen(Transformer transformer) {
