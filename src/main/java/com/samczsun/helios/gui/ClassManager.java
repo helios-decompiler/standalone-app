@@ -208,26 +208,30 @@ public class ClassManager {
         this.opened.clear();
     }
 
+    private boolean isFileOpen() {
+        return mainTabs.getSelection() != null;
+    }
+
     public void handleNewTabRequest() {
         Display display = mainTabs.getDisplay();
-        if (mainTabs.getSelection() == null) {
+        if (!isFileOpen()) {
             return;
         }
         display.asyncExec(() -> {
-            CTabItem item = mainTabs.getSelection();
-            ClassData data = (ClassData) item.getData();
-            CTabFolder nested = (CTabFolder) item.getControl();
+            CTabItem selectedFile = mainTabs.getSelection();
+            ClassData selectedFileData = (ClassData) selectedFile.getData();
+            CTabFolder nested = (CTabFolder) selectedFile.getControl();
             Menu menu = new Menu(shell, SWT.POP_UP);
             Stream.of(Decompiler.getAllDecompilers(), Disassembler.getAllDisassemblers(), Arrays.asList(Transformer.HEX, Transformer.TEXT))
                     .flatMap(Collection::stream)
                     .forEach(transformer -> {
-                        if (!transformer.isApplicable(data.getClassName())) {
+                        if (!transformer.isApplicable(selectedFileData.getClassName())) {
                             return;
                         }
                         MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
                         menuItem.setText(transformer.getName());
                         menuItem.addListener(SWT.Selection, event -> {
-                            ClassTransformationData transformerData = data.open(transformer);
+                            ClassTransformationData transformerData = selectedFileData.open(transformer);
                             if (transformerData.isInitialized()) {
                                 nested.setSelection(transformerData.getTransformerTab());
                                 return;
@@ -237,11 +241,11 @@ public class ClassManager {
                             decompilerTab.setData(transformer);
                             transformerData.setTransformerTab(decompilerTab);
 
-                            JComponent component = transformer.open(this, data);
+                            JComponent component = transformer.open(this, selectedFileData);
                             if (component instanceof RTextScrollPane) {
                                 RTextScrollPane scrollPane = (RTextScrollPane) component;
                                 if (scrollPane.getTextArea() instanceof ClickableSyntaxTextArea) {
-                                    Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
+                                    Future<?> future = Helios.submitBackgroundTask(new DecompileTask(selectedFileData.getFileName(), selectedFileData.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
                                     transformerData.futures.add(future);
                                 }
                             }
