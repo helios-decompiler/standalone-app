@@ -16,10 +16,14 @@
 
 package com.samczsun.helios.handler;
 
+import com.samczsun.helios.Constants;
 import com.samczsun.helios.Helios;
+import com.samczsun.helios.api.Addon;
+import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.utils.SWTUtil;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -42,6 +46,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -94,12 +99,28 @@ public class ExceptionHandler {
         throwable.printStackTrace(new PrintWriter(stringWriter));
         reportMessage.append(stringWriter.toString());
         reportMessage.append("\n");
+        reportMessage.append("Helios Version: ").append(Constants.REPO_VERSION).append("\n");
+        reportMessage.append("Krakatau Verson: ").append(Constants.KRAKATAU_VERSION).append("\n");
+        reportMessage.append("Enjarify Version: ").append(Constants.ENJARIFY_VERSION).append("\n");
+        reportMessage.append("Enabled addons: ").append("\n");
+        for (Addon addon : AddonHandler.getAllAddons()) {
+            reportMessage.append("\t").append(addon.getName()).append("\n");
+        }
+        reportMessage.append("\n");
+
+        List<String> args = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        reportMessage.append("Input Arguments\n");
+        for (String arg : args) {
+            reportMessage.append("\t").append(arg).append("\n");
+        }
+        reportMessage.append("\n");
+        reportMessage.append("sun.java.command ").append(System.getProperty("sun.java.command")).append("\n");
         reportMessage.append("System properties\n");
         for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
             reportMessage.append("\t").append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
         }
         reportMessage.append("\n");
-        reportMessage.append("Command line parameters\n");
+        reportMessage.append("Diagnostic Options\n");
         for (VMOption option : hotspotMBean.getDiagnosticOptions()) {
             reportMessage.append("\t").append(option.toString()).append("\n");
         }
