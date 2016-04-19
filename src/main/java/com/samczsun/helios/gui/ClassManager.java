@@ -240,8 +240,10 @@ public class ClassManager {
                             JComponent component = transformer.open(this, data);
                             if (component instanceof RTextScrollPane) {
                                 RTextScrollPane scrollPane = (RTextScrollPane) component;
-                                Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
-                                transformerData.futures.add(future);
+                                if (scrollPane.getTextArea() instanceof ClickableSyntaxTextArea) {
+                                    Future<?> future = Helios.submitBackgroundTask(new DecompileTask(data.getFileName(), data.getClassName(), (ClickableSyntaxTextArea) scrollPane.getTextArea(), transformer, null));
+                                    transformerData.futures.add(future);
+                                }
                             }
                             SwingControl control = new SwingControl(nested, SWT.NONE) {
                                 protected JComponent createSwingComponent() {

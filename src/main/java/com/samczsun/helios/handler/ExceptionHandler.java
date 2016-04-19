@@ -16,7 +16,10 @@
 
 package com.samczsun.helios.handler;
 
+import com.samczsun.helios.Helios;
 import com.samczsun.helios.utils.SWTUtil;
+import com.sun.management.HotSpotDiagnosticMXBean;
+import com.sun.management.VMOption;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -27,8 +30,20 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.management.MBeanServer;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
 
 public class ExceptionHandler {
 
@@ -44,10 +59,11 @@ public class ExceptionHandler {
             Button send = new Button(composite, SWT.PUSH);
             send.setText("Send Error Report");
             Button dontsend = new Button(composite, SWT.PUSH);
-            dontsend.setText("Don't Send");
+            dontsend.setText("Don't Send (Not recommended)");
             send.addSelectionListener(new SelectionAdapter() {
                 @Override
                 public void widgetSelected(SelectionEvent e) {
+                    Helios.getBackgroundTaskHandler().submit(() -> sendErrorReport(exception));
                     shell.close();
                 }
             });
@@ -59,7 +75,83 @@ public class ExceptionHandler {
             });
             composite.pack();
             shell.pack();
+            SWTUtil.center(shell);
             shell.open();
         });
+    }
+
+    /*
+     * Please do not try to spam the email
+     */
+    private static void sendErrorReport(Throwable throwable) {
+        initHotspotMBean();
+        Date date = new Date();
+        StringBuilder reportMessage = new StringBuilder();
+        reportMessage.append("Report generated on ").append(date).append(" (").append(System.currentTimeMillis()).append(")\n");
+        reportMessage.append("\n");
+        reportMessage.append("Error:\n");
+        StringWriter stringWriter = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(stringWriter));
+        reportMessage.append(stringWriter.toString());
+        reportMessage.append("\n");
+        reportMessage.append("System properties\n");
+        for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
+            reportMessage.append("\t").append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+        }
+        reportMessage.append("\n");
+        reportMessage.append("Command line parameters\n");
+        for (VMOption option : hotspotMBean.getDiagnosticOptions()) {
+            reportMessage.append("\t").append(option.toString()).append("\n");
+        }
+        String to = "errorreport@heliosdecompiler.com";
+        String from = "heliosdecompilerclient@heliosdecompiler.com";
+        String host = "smtp.heliosdecompiler.com";
+        Properties properties = new Properties();
+        properties.setProperty("mail.smtp.host", host);
+        Session session = Session.getDefaultInstance(properties);
+
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+            message.setSubject("Error report");
+            message.setText(reportMessage.toString());
+            Transport.send(message);
+        } catch (MessagingException mex) {
+            SWTUtil.showMessage("Could not send error report. " + mex.getMessage());
+        }
+    }
+
+    private static final String HOTSPOT_BEAN_NAME =
+            "com.sun.management:type=HotSpotDiagnostic";
+
+    // field to store the hotspot diagnostic MBean
+    private static volatile HotSpotDiagnosticMXBean hotspotMBean;
+
+    // initialize the hotspot diagnostic MBean field
+    private static void initHotspotMBean() {
+        if (hotspotMBean == null) {
+            synchronized (ExceptionHandler.class) {
+                if (hotspotMBean == null) {
+                    hotspotMBean = getHotspotMBean();
+                }
+            }
+        }
+    }
+
+    // get the hotspot diagnostic MBean from the
+    // platform MBean server
+    private static HotSpotDiagnosticMXBean getHotspotMBean() {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            HotSpotDiagnosticMXBean bean =
+                    ManagementFactory.newPlatformMXBeanProxy(server,
+                            HOTSPOT_BEAN_NAME, HotSpotDiagnosticMXBean.class);
+            return bean;
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception exp) {
+            throw new RuntimeException(exp);
+        }
     }
 }

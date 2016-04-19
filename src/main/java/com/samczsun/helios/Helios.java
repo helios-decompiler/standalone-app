@@ -25,7 +25,7 @@ import com.samczsun.helios.api.events.requests.RefreshViewRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.bootloader.BootSequence;
 import com.samczsun.helios.bootloader.Splash;
-import com.samczsun.helios.gui.BackgroundTaskGui;
+import com.samczsun.helios.gui.popups.BackgroundTaskPopup;
 import com.samczsun.helios.gui.GUI;
 import com.samczsun.helios.handler.BackgroundTaskHandler;
 import com.samczsun.helios.handler.ExceptionHandler;
@@ -54,15 +54,11 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.objectweb.asm.tree.ClassNode;
 
-import javax.swing.UIManager;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
 import java.net.URISyntaxException;
-import java.security.Permission;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -77,14 +73,14 @@ public class Helios {
     private static Boolean javaRtVerified = null;
     private static GUI gui;
     private static BackgroundTaskHandler backgroundTaskHandler;
-    private static BackgroundTaskGui backgroundTaskGui;
+    private static BackgroundTaskPopup backgroundTaskPopup;
 
     private static volatile Map<String, LoadedFile> path = new HashMap<>();
 
     public static void main(String[] args, Shell shell, Splash splashScreen) {
         splashScreen.updateState(BootSequence.LOADING_SETTINGS);
         Settings.loadSettings();
-        backgroundTaskGui = new BackgroundTaskGui();
+        backgroundTaskPopup = new BackgroundTaskPopup();
         backgroundTaskHandler = new BackgroundTaskHandler();
         splashScreen.updateState(BootSequence.LOADING_ADDONS);
         AddonHandler.registerPreloadedAddons();

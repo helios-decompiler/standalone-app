@@ -14,9 +14,9 @@
  *    limitations under the License.
  */
 
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.popups;
 
-public class BackgroundTaskGui {
+public class BackgroundTaskPopup {
     public void open() {
 
     }

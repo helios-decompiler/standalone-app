@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.popups;
 
 import com.samczsun.helios.Resources;
 import com.samczsun.helios.api.events.Events;
@@ -34,7 +34,7 @@ public class SearchPopup {
     private final Display display = Display.getDefault();
     private Shell shell;
 
-    SearchPopup() {
+    public SearchPopup() {
         display.asyncExec(() -> {
             shell = new Shell(display, SWT.CLOSE | SWT.BORDER);
             shell.setImage(Resources.ICON.getImage());

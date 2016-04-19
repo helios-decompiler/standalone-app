@@ -25,6 +25,8 @@ import com.samczsun.helios.api.Addon;
 import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.gui.data.FiletypeAssociationData;
+import com.samczsun.helios.gui.popups.AddFiletypeAssociationPopup;
+import com.samczsun.helios.gui.popups.SearchPopup;
 import com.samczsun.helios.handler.addons.AddonHandler;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.TransformerSettings;

@@ -1,4 +1,4 @@
-package com.samczsun.helios.gui;
+package com.samczsun.helios.gui.popups;
 
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.FiletypeAssociationCreateEvent;
@@ -25,7 +25,6 @@ public class AddFiletypeAssociationPopup {
     }
 
     public AddFiletypeAssociationPopup(MenuItem item) {
-
         display.asyncExec(() -> {
             FiletypeAssociationData data = item == null ? null : (FiletypeAssociationData) item.getData();
 
@@ -42,14 +41,21 @@ public class AddFiletypeAssociationPopup {
                 }
             };
 
-            shell.setLayout(new FillLayout());
+            FillLayout shellLayout = new FillLayout();
+            shellLayout.type = SWT.VERTICAL;
+            shell.setLayout(shellLayout);
+
+            Composite top = new Composite(shell, SWT.NONE);
+            top.setLayout(new FillLayout());
+            Composite bottom = new Composite(shell, SWT.NONE);
+            bottom.setLayout(new FillLayout());
 
             GC gc = new GC(shell);
-            Text text = new Text(shell, SWT.BORDER | (data != null ? SWT.READ_ONLY : 0));
+            Text text = new Text(top, SWT.BORDER | (data != null ? SWT.READ_ONLY : 0));
             text.setSize(gc.getFontMetrics().getAverageCharWidth() * 50, gc.getFontMetrics().getHeight() * 2);
             text.setText(data == null ? ".extension" : data.getExtension());
 
-            Combo comboDropDown = new Combo(shell, SWT.DROP_DOWN | SWT.READ_ONLY);
+            Combo comboDropDown = new Combo(top, SWT.DROP_DOWN | SWT.READ_ONLY);
             comboDropDown.add("Select a transformer");
             comboDropDown.select(0);
 
@@ -61,10 +67,10 @@ public class AddFiletypeAssociationPopup {
                 comboDropDown.select(comboDropDown.indexOf(data.getTransformer().getName()));
             }
 
-            Button ok = new Button(shell, SWT.PUSH);
+            Button ok = new Button(bottom, SWT.PUSH);
             ok.setText("Ok");
             if (item != null) {
-                Button delete = new Button(shell, SWT.PUSH);
+                Button delete = new Button(bottom, SWT.PUSH);
                 delete.setText("Delete");
                 delete.addSelectionListener(new SelectionAdapter() {
                     @Override
@@ -77,7 +83,7 @@ public class AddFiletypeAssociationPopup {
                     }
                 });
             }
-            Button cancel = new Button(shell, SWT.PUSH);
+            Button cancel = new Button(bottom, SWT.PUSH);
             cancel.setText("Cancel");
             cancel.addSelectionListener(new SelectionAdapter() {
                 @Override
