@@ -30,6 +30,7 @@ import com.samczsun.helios.gui.data.ClassTransformationData;
 import com.samczsun.helios.handler.ExceptionHandler;
 import com.samczsun.helios.tasks.DecompileTask;
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.Viewable;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
 import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.SWTUtil;
@@ -49,6 +50,7 @@ import org.fife.ui.rtextarea.SearchEngine;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
+import javax.swing.text.View;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -192,26 +194,23 @@ public class ClassManager {
             CTabFolder transformerTabs = (CTabFolder) selectedFile.getControl();
             Menu menu = new Menu(shell, SWT.POP_UP);
             menu.setLocation(SWTUtil.getMouseLocation());
-            Transformer.getAllTransformers(transformer -> {
-                return transformer instanceof Decompiler ||
-                        transformer instanceof Disassembler ||
-                        transformer == Transformer.HEX ||
-                        transformer == Transformer.TEXT;
-            }).forEach(transformer -> {
-                if (!transformer.isApplicable(selectedFileData.getClassName())) {
-                    return;
-                }
-                MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
-                menuItem.setText(transformer.getName());
-                menuItem.addListener(SWT.Selection, event -> {
-                    openViewWithTransformer(selectedFileData, transformerTabs, transformer);
-                });
-            });
+            Transformer.getAllTransformers(transformer -> transformer instanceof Viewable)
+                    .forEach(transformer -> {
+                        if (!((Viewable) transformer).isApplicable(selectedFileData.getClassName())) {
+                            return;
+                        }
+                        MenuItem menuItem = new MenuItem(menu, SWT.PUSH);
+                        menuItem.setText(transformer.getName());
+                        menuItem.addListener(SWT.Selection, event -> {
+                            openViewWithTransformer(selectedFileData, transformerTabs, transformer);
+                        });
+                    });
             menu.setVisible(true);
         });
     }
 
     private void openViewWithTransformer(ClassData selectedFileData, CTabFolder transformerTabs, Transformer transformer) {
+        if (!(transformer instanceof Viewable)) throw new IllegalArgumentException("Transformer is not viewable");
         ClassTransformationData transformerData = selectedFileData.open(transformer);
         if (transformerData.isInitialized()) {
             transformerTabs.setSelection(transformerData.getTransformerTab());
@@ -222,7 +221,7 @@ public class ClassManager {
         transformerTab.setData(transformer);
         transformerData.setTransformerTab(transformerTab);
 
-        JComponent component = transformer.open(this, selectedFileData);
+        JComponent component = ((Viewable) transformer).open(this, selectedFileData);
         if (component instanceof RTextScrollPane) {
             RTextScrollPane scrollPane = (RTextScrollPane) component;
             if (scrollPane.getTextArea() instanceof ClickableSyntaxTextArea) {
@@ -245,23 +244,9 @@ public class ClassManager {
         if (transformerItem == null) {
             return;
         }
-        LoadedFile loadedFile = Helios.getLoadedFile(classData.getFileName());
         Transformer transformer = getTransformer();
-        if (transformer == Transformer.HEX) {
-            HexEditor hexEditor = (HexEditor) getCurrentSwingControl().getSwingComponent();
-            try {
-                hexEditor.open(new ByteArrayInputStream(loadedFile.getFiles().get(classData.getClassName())));
-            } catch (IOException e) {
-                ExceptionHandler.handle(e);
-            }
-        } else if (transformer == Transformer.TEXT) {
-            RTextScrollPane rTextScrollPane = (RTextScrollPane) getCurrentSwingControl().getSwingComponent();
-            RSyntaxTextArea rSyntaxTextArea = (RSyntaxTextArea) rTextScrollPane.getTextArea();
-            rSyntaxTextArea.setText(new String(loadedFile.getFiles().get(classData.getClassName())));
-        } else {
-            closeCurrentInnerTab();
-            openViewWithTransformer(classData, getCurrentTransformers(), transformer);
-        }
+        closeCurrentInnerTab();
+        openViewWithTransformer(classData, getCurrentTransformers(), transformer);
     }
 
     private void search(SearchRequest request) {

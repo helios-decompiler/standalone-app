@@ -16,13 +16,19 @@
 
 package com.samczsun.helios.transformers.disassemblers;
 
+import com.samczsun.helios.gui.ClassManager;
+import com.samczsun.helios.gui.ClickableSyntaxTextArea;
+import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.TransformerSettings;
+import com.samczsun.helios.transformers.Viewable;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.tree.ClassNode;
 
+import javax.swing.JComponent;
 import java.util.*;
 
-public abstract class Disassembler extends Transformer {
+public abstract class Disassembler extends Transformer implements Viewable {
     private static final Map<String, Disassembler> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Disassembler> BY_NAME = new LinkedHashMap<>();
 
@@ -61,8 +67,19 @@ public abstract class Disassembler extends Transformer {
     }
 
     @Override
-    public final TransformerType getType() {
-        return TransformerType.DISASSEMBLER;
+    public boolean isApplicable(String className) {
+        return className.endsWith(".class");
+    }
+
+    @Override
+    public JComponent open(ClassManager cm, ClassData data) {
+        ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(cm, this, data.getFileName(), data.getClassName());
+        area.getCaret().setSelectionVisible(true);
+        area.setText("Disassembling... this may take a while");
+        RTextScrollPane scrollPane = new RTextScrollPane(area);
+        scrollPane.setLineNumbersEnabled(true);
+        scrollPane.setFoldIndicatorEnabled(true);
+        return scrollPane;
     }
 
     public Object transform(Object... args) {

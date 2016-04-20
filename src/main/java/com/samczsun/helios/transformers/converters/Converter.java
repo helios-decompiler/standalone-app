@@ -52,11 +52,6 @@ public abstract class Converter extends Transformer {
                 }
             }
         }
-
-        @Override
-        public boolean isApplicable(String className) {
-            return true;
-        }
     };
 
     public static final Converter DEX2JAR = new Converter("dex2jar", "Dex2Jar") {
@@ -69,11 +64,6 @@ public abstract class Converter extends Transformer {
                 ExceptionHandler.handle(e);
             }
         }
-
-        @Override
-        public boolean isApplicable(String className) {
-            return className.endsWith(".dex");
-        }
     };
 
     public static final Converter JAR2DEX = new Converter("jar2dex", "Jar2Dex") {
@@ -81,21 +71,11 @@ public abstract class Converter extends Transformer {
         public void convert(File in, File out) {
             throw new IllegalArgumentException("TODO: Use dx from BaksmaliDisassembler");
         }
-
-        @Override
-        public boolean isApplicable(String className) {
-            return className.endsWith(".jar");
-        }
     };
 
     public static final Converter NONE = new Converter("none", "None") {
         @Override
         public void convert(File in, File out) {
-        }
-
-        @Override
-        public boolean isApplicable(String className) {
-            return false;
         }
     };
 

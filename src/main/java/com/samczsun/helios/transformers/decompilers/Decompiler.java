@@ -16,13 +16,19 @@
 
 package com.samczsun.helios.transformers.decompilers;
 
+import com.samczsun.helios.gui.ClassManager;
+import com.samczsun.helios.gui.ClickableSyntaxTextArea;
+import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.TransformerSettings;
+import com.samczsun.helios.transformers.Viewable;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.tree.ClassNode;
 
+import javax.swing.JComponent;
 import java.util.*;
 
-public abstract class Decompiler extends Transformer {
+public abstract class Decompiler extends Transformer implements Viewable {
     private static final Map<String, Decompiler> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Decompiler> BY_NAME = new LinkedHashMap<>();
 
@@ -63,6 +69,17 @@ public abstract class Decompiler extends Transformer {
     @Override
     public boolean isApplicable(String className) {
         return className.endsWith(".class");
+    }
+
+    @Override
+    public JComponent open(ClassManager cm, ClassData data) {
+        ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(cm, this, data.getFileName(), data.getClassName());
+        area.getCaret().setSelectionVisible(true);
+        area.setText("Decompiling... this may take a while");
+        RTextScrollPane scrollPane = new RTextScrollPane(area);
+        scrollPane.setLineNumbersEnabled(true);
+        scrollPane.setFoldIndicatorEnabled(true);
+        return scrollPane;
     }
 
     public Object transform(Object... args) {

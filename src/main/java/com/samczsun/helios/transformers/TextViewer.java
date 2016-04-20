@@ -23,16 +23,17 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import javax.swing.text.View;
 import java.nio.charset.StandardCharsets;
 
-public class TextViewer extends Transformer {
+public class TextViewer extends Transformer implements Viewable {
     public TextViewer() {
         super("text", "Text");
     }
 
     @Override
     public boolean isApplicable(String className) {
-        return !className.endsWith(".class");
+        return true;
     }
 
     @Override

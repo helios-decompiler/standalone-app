@@ -98,7 +98,6 @@ public abstract class Transformer {
         return this;
     }
 
-
     public final TransformerSettings getSettings() {
         return this.settings;
     }
@@ -115,12 +114,6 @@ public abstract class Transformer {
         return getSettings().size() > 0;
     }
 
-    public TransformerType getType() {
-        return TransformerType.OTHER;
-    }
-
-    public abstract boolean isApplicable(String className);
-
     protected String buildPath(File inputJar) {
         return Settings.RT_LOCATION.get().asString() + ";" + inputJar.getAbsolutePath() + (Settings.PATH
                 .get()
@@ -136,26 +129,18 @@ public abstract class Transformer {
         return "An exception occured while performing this task. Please open a GitHub issue with the details below.\n\n" + exception;
     }
 
+    @Deprecated
     protected byte[] fixBytes(byte[] in) {
-        ClassReader reader = new ClassReader(in);
-        ClassNode node = new ClassNode();
-        reader.accept(node, ClassReader.EXPAND_FRAMES);
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        node.accept(writer);
-        return writer.toByteArray();
+//        ClassReader reader = new ClassReader(in);
+//        ClassNode node = new ClassNode();
+//        reader.accept(node, ClassReader.EXPAND_FRAMES);
+//        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        node.accept(writer);
+//        return writer.toByteArray();
+        return in; // TODO: Report to author of decompiler
     }
 
     public abstract Object transform(Object... args);
-
-    public JComponent open(ClassManager cm, ClassData data) {
-        ClickableSyntaxTextArea area = new ClickableSyntaxTextArea(cm, this, data.getFileName(), data.getClassName());
-        area.getCaret().setSelectionVisible(true);
-        area.setText("Decompiling... this may take a while");
-        RTextScrollPane scrollPane = new RTextScrollPane(area);
-        scrollPane.setLineNumbersEnabled(true);
-        scrollPane.setFoldIndicatorEnabled(true);
-        return scrollPane;
-    }
 
     // Should be singletons
     @Override
@@ -182,25 +167,6 @@ public abstract class Transformer {
 
     public static Collection<Transformer> getAllTransformers(Predicate<Transformer> filter) {
         return BY_ID.values().stream().filter(filter).collect(Collectors.toList());
-    }
-
-    public enum TransformerType {
-        DECOMPILER("decompiler"),
-        DISASSEMBLER("disassembler"),
-        COMPILER("compiler"),
-        ASSEMBLER("assembler"),
-        CUSTOM("custom"),
-        OTHER("other");
-
-        private String id;
-
-        TransformerType(String id) {
-            this.id = id;
-        }
-
-        public String getId() {
-            return this.id;
-        }
     }
 
     private void checkLegalId(String request) {

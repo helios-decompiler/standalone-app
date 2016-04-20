@@ -20,13 +20,14 @@ import com.samczsun.helios.Helios;
 import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.gui.ClassManager;
 import com.samczsun.helios.gui.GenericClickListener;
+import com.samczsun.helios.handler.ExceptionHandler;
 import org.fife.ui.hex.swing.HexEditor;
 
 import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public class HexViewer extends Transformer {
+public class HexViewer extends Transformer implements Viewable {
     public HexViewer() {
         super("hex", "Hex");
     }
@@ -38,7 +39,7 @@ public class HexViewer extends Transformer {
 
     @Override
     public boolean isApplicable(String className) {
-        return className.endsWith(".class");
+        return true;
     }
 
     @Override
@@ -47,7 +48,7 @@ public class HexViewer extends Transformer {
         try {
             editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));
         } catch (IOException e1) {
-            e1.printStackTrace();
+            ExceptionHandler.handle(e1);
         }
         editor.getViewport().getView().addMouseListener(new GenericClickListener((clickType, doubleClick) -> {
             cm.handleNewTabRequest();
