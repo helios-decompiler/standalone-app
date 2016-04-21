@@ -138,8 +138,8 @@ public class ClassManager {
     public void closeCurrentTab() {
         CTabItem item = mainTabs.getSelection();
         if (item != null) {
-            ClassData data = (ClassData) item.getData();
-            CTabFolder nested = (CTabFolder) item.getControl();
+            ClassData data = getCurrentClassData();
+            CTabFolder nested = getCurrentTransformers();
             for (CTabItem decompilerTab : nested.getItems()) {
                 Transformer transformer = (Transformer) decompilerTab.getData();
                 ClassTransformationData ctd = data.close(transformer);
@@ -155,8 +155,8 @@ public class ClassManager {
     public void closeCurrentInnerTab() {
         CTabItem item = mainTabs.getSelection();
         if (item != null) {
-            ClassData data = (ClassData) item.getData();
-            CTabFolder nested = (CTabFolder) item.getControl();
+            ClassData data = getCurrentClassData();
+            CTabFolder nested = getCurrentTransformers();
             CTabItem nestedItem = nested.getSelection();
             if (nestedItem != null) {
                 Transformer transformer = (Transformer) nestedItem.getData();
@@ -190,8 +190,8 @@ public class ClassManager {
         }
         display.asyncExec(() -> {
             CTabItem selectedFile = mainTabs.getSelection();
-            ClassData selectedFileData = (ClassData) selectedFile.getData();
-            CTabFolder transformerTabs = (CTabFolder) selectedFile.getControl();
+            ClassData selectedFileData = getCurrentClassData();
+            CTabFolder transformerTabs = getCurrentTransformers();
             Menu menu = new Menu(shell, SWT.POP_UP);
             menu.setLocation(SWTUtil.getMouseLocation());
             Transformer.getAllTransformers(transformer -> transformer instanceof Viewable)
@@ -229,8 +229,16 @@ public class ClassManager {
                 transformerData.futures.add(future);
             }
         }
-        CustomSwingControl control = new CustomSwingControl(transformerTabs, transformerTab, component);
+
+
+        Composite composite = new Composite(transformerTabs, SWT.NONE);
+        FillLayout compositeLayout = new FillLayout();
+        compositeLayout.type = SWT.VERTICAL;
+        composite.setLayout(compositeLayout);
+//        Text text = new Text(composite, SWT.NONE);
+        CustomSwingControl control = new CustomSwingControl(composite, transformerTabs, transformerTab, component);
         control.setLayout(new FillLayout());
+
         transformerTab.setControl(control);
     }
 
@@ -338,6 +346,8 @@ public class ClassManager {
     }
 
     private CustomSwingControl getCurrentSwingControl() {
+//        Control[] ctrl = ((Composite) getCurrentTransformer().getControl()).getChildren();
+//        return (CustomSwingControl) ctrl[ctrl.length - 1];
         return (CustomSwingControl) getCurrentTransformer().getControl();
     }
 
@@ -350,7 +360,7 @@ public class ClassManager {
         private CTabFolder transformerTabs;
         private CTabItem transformerTab;
 
-        CustomSwingControl(CTabFolder transformerTabs, CTabItem transformerTab, JComponent component) {
+        CustomSwingControl(Composite composite, CTabFolder transformerTabs, CTabItem transformerTab, JComponent component) {
             super(transformerTabs, SWT.NONE);
             this.component = component;
             this.transformerTabs = transformerTabs;

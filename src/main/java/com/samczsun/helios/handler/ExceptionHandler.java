@@ -43,6 +43,7 @@ import javax.management.MBeanServer;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +139,7 @@ public class ExceptionHandler {
             Transport.send(message);
         } catch (MessagingException mex) {
             SWTUtil.showMessage("Could not send error report. " + mex.getMessage());
+            mex.printStackTrace();
         }
     }
 

@@ -66,6 +66,12 @@
                                         <include>**</include>
                                     </includes>
                                 </filter>
+                                <filter>
+                                    <artifact>com.sun.mail:javax.mail</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
                             </filters>
                             <minimizeJar>true</minimizeJar>
                         </configuration>
@@ -133,12 +139,6 @@
             <artifactId>commons-cli</artifactId>
             <version>1.3.1</version>
             <!--Apache 2.0-->
-        </dependency>
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>javax.mail-api</artifactId>
-            <version>1.5.5</version>
-            <!-- Classpath exception -->
         </dependency>
         <dependency>
             <groupId>com.sun.mail</groupId>
