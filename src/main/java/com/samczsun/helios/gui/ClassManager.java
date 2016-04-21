@@ -24,6 +24,7 @@ import com.samczsun.helios.Settings;
 import com.samczsun.helios.api.events.*;
 import com.samczsun.helios.api.events.Listener;
 import com.samczsun.helios.api.events.requests.RefreshViewRequest;
+import com.samczsun.helios.api.events.requests.SearchBarRequest;
 import com.samczsun.helios.api.events.requests.SearchRequest;
 import com.samczsun.helios.gui.data.ClassData;
 import com.samczsun.helios.gui.data.ClassTransformationData;
@@ -80,10 +81,62 @@ public class ClassManager {
             }
         });
 
+
+        Composite searchBar = new Composite(tabs.getParent(), SWT.BORDER);
+        GridData searchBarData = new GridData(SWT.FILL, SWT.FILL, true, false);
+        searchBarData.exclude = true;
+        searchBar.setLayoutData(searchBarData);
+        GridLayout searchBarLayout = new GridLayout();
+        searchBarLayout.numColumns = 10;
+        searchBar.setLayout(searchBarLayout);
+        Text text = new Text(searchBar, SWT.SEARCH | SWT.ICON_SEARCH);
+        text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        text.setFocus();
+
+        Button wrap = new Button(searchBar, SWT.CHECK);
+        wrap.setText("&Wrap");
+        wrap.setSelection(true);
+        Button regex = new Button(searchBar, SWT.CHECK);
+        regex.setText("&Regex");
+        Button matchCase = new Button(searchBar, SWT.CHECK);
+        matchCase.setText("Match &Case");
+        Button liveSearch = new Button(searchBar, SWT.CHECK);
+        liveSearch.setText("&Live Search");
+
+        Button searchUp = new Button(searchBar, SWT.RADIO);
+        searchUp.setText("Search &Up");
+        Button searchDown = new Button(searchBar, SWT.RADIO);
+        searchDown.setText("Search &Down");
+        searchDown.setSelection(true);
+
+        text.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (SWTUtil.isEnter(e.keyCode) || liveSearch.getSelection()) {
+                    Events.callEvent(new SearchRequest(text.getText(), matchCase.getSelection(), wrap.getSelection(), regex.getSelection(), searchDown.getSelection()));
+                }
+            }
+        });
+
+        tabs.getParent().layout();
+
         Events.registerListener(new Listener() {
             @Override
             public void handleSearchRequest(SearchRequest request) {
                 shell.getDisplay().asyncExec(() -> search(request));
+            }
+
+            @Override
+            public void handleSearchBarRequest(SearchBarRequest request) {
+                display.syncExec(() -> {
+                    if (request.shouldClose()) {
+                        request.setSuccessful(tryCloseSearchBar());
+                    } else if (request.shouldOpen()) {
+                        request.setSuccessful(tryShowSearchBar());
+                    } else {
+                        throw new IllegalArgumentException("?");
+                    }
+                });
             }
 
             @Override
@@ -240,62 +293,34 @@ public class ClassManager {
         transformerTab.setControl(composite);
     }
 
-    public void addSearchBar() {
+    private boolean tryShowSearchBar() {
         Composite composite = mainTabs.getParent();
-        if (composite.getChildren().length == 1) {
-            Composite searchBar = new Composite(composite, SWT.BORDER);
-            searchBar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-            GridLayout searchBarLayout = new GridLayout();
-            searchBarLayout.numColumns = 10;
-            searchBar.setLayout(searchBarLayout);
-            Text text = new Text(searchBar, SWT.SEARCH | SWT.ICON_SEARCH);
-            text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-            text.setFocus();
-
-            Button wrap = new Button(searchBar, SWT.CHECK);
-            wrap.setText("&Wrap");
-            wrap.setSelection(true);
-            Button regex = new Button(searchBar, SWT.CHECK);
-            regex.setText("&Regex");
-            Button matchCase = new Button(searchBar, SWT.CHECK);
-            matchCase.setText("Match &Case");
-            Button liveSearch = new Button(searchBar, SWT.CHECK);
-            liveSearch.setText("&Live Search");
-
-            Button searchUp = new Button(searchBar, SWT.RADIO);
-            searchUp.setText("Search &Up");
-            searchUp.setSelection(true);
-            Button searchDown = new Button(searchBar, SWT.RADIO);
-            searchDown.setText("Search &Down");
-
-            text.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyReleased(KeyEvent e) {
-                    if (SWTUtil.isEnter(e.keyCode) || liveSearch.getSelection()) {
-                        Events.callEvent(new SearchRequest(text.getText(), matchCase.getSelection(), wrap.getSelection(), regex.getSelection(), searchUp.getSelection()));
-                    }
-                }
-            });
-
-            composite.layout();
-        } else {
-            Composite searchBar = (Composite) composite.getChildren()[1];
-            ((GridData) composite.getChildren()[1].getLayoutData()).exclude = false;
-            Text text = (Text) searchBar.getChildren()[0];
-            text.setFocus();
-            composite.layout();
+        Composite searchBar = (Composite) composite.getChildren()[1];
+        GridData data = (GridData) searchBar.getLayoutData();
+        boolean wasSuccessful = false;
+        if (data.exclude) {
+            data.exclude = false;
+            wasSuccessful = true;
         }
+        Text text = (Text) searchBar.getChildren()[0];
+        text.setFocus();
+        composite.layout();
+        return wasSuccessful;
     }
 
-    public boolean tryCloseSearchBar() {
+    private boolean tryCloseSearchBar() {
         Composite composite = mainTabs.getParent();
-        if (composite.getChildren().length > 1) {
-            ((GridData) composite.getChildren()[1].getLayoutData()).exclude = true;
+        GridData data = ((GridData) composite.getChildren()[1].getLayoutData());
+        if (!data.exclude) {
+            data.exclude = true;
             composite.layout();
-            SwingControl control = getCurrentSwingControl();
-            if (control.getSwingComponent() instanceof RTextScrollPane) {
-                RTextScrollPane pane = (RTextScrollPane) control.getSwingComponent();
-                SearchEngine.find(pane.getTextArea(), new SearchContext());
+            if (getCurrentClass() != null && getCurrentTransformer() != null) {
+                SwingControl control = getCurrentSwingControl();
+                if (control.getSwingComponent() instanceof RTextScrollPane) {
+                    RTextScrollPane pane = (RTextScrollPane) control.getSwingComponent();
+                    SearchEngine.find(pane.getTextArea(), new SearchContext());
+                }
+                control.setFocus();
             }
             return true;
         }
@@ -356,7 +381,6 @@ public class ClassManager {
                                 if (!SearchEngine.find(textArea, context).wasFound()) {
                                     dotField.setInt(textArea.getCaret(), old);
                                     markField.setInt(textArea.getCaret(), omark);
-                                    shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
                                 }
                             } else {
                                 dotField.setInt(textArea.getCaret(), textArea.getDocument().getLength() - 1);
@@ -364,26 +388,23 @@ public class ClassManager {
                                 if (!SearchEngine.find(textArea, context).wasFound()) {
                                     dotField.setInt(textArea.getCaret(), old);
                                     markField.setInt(textArea.getCaret(), omark);
-                                    shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
                                 }
                             }
-                        } else {
-                            shell.getDisplay().asyncExec(() -> mainTabs.getDisplay().beep());
                         }
                     }
                 } catch (Throwable t) {
                     ExceptionHandler.handle(t);
                 }
             });
-        } else {
-            mainTabs.getDisplay().beep();
         }
     }
 
     public void openFileAndDecompile(String fileName, String className, Transformer currentTransformer, String jumpTo) {
-        System.out.println("Opening " + fileName + " " + className);
-        openFile(fileName, className);
-        openViewWithTransformer(getCurrentClassData(), getCurrentTransformers(), currentTransformer);
+        display.asyncExec(() -> {
+            System.out.println("Opening " + fileName + " " + className);
+            openFile(fileName, className);
+            openViewWithTransformer(getCurrentClassData(), getCurrentTransformers(), currentTransformer);
+        });
     }
 
     private CTabItem getCurrentClass() {
@@ -409,7 +430,6 @@ public class ClassManager {
     private CustomSwingControl getCurrentSwingControl() {
         Control[] ctrl = ((Composite) getCurrentTransformer().getControl()).getChildren();
         return (CustomSwingControl) ctrl[ctrl.length - 1];
-//        return (CustomSwingControl) getCurrentTransformer().getControl();
     }
 
     private Transformer getTransformer() {

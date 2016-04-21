@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.requests.RecentFileRequest;
 import com.samczsun.helios.api.events.requests.RefreshViewRequest;
+import com.samczsun.helios.api.events.requests.SearchBarRequest;
 import com.samczsun.helios.api.events.requests.TreeUpdateRequest;
 import com.samczsun.helios.bootloader.BootSequence;
 import com.samczsun.helios.bootloader.Splash;
@@ -492,11 +493,7 @@ public class Helios {
                     }
                     e.doit = false;
                 } else if (e.keyCode == 'f') {
-                    if ((e.stateMask & SWT.SHIFT) == SWT.SHIFT) {
-                        getGui().getSearchPopup().open();
-                    } else {
-                        getGui().getClassManager().addSearchBar();
-                    }
+                    Events.callEvent(new SearchBarRequest(true));
                     e.doit = false;
                 }
             } else {
@@ -508,7 +505,11 @@ public class Helios {
                     }
                     e.doit = false;
                 } else if (e.keyCode == SWT.ESC) {
-                    if (getGui().getClassManager().tryCloseSearchBar()) {
+                    SearchBarRequest closeRequest = new SearchBarRequest(false);
+                    Events.callEvent(closeRequest);
+                    if (closeRequest.wasSuccessful()) {
+                        e.doit = false;
+                    } else {
                         // Otherwise try closing other things
                     }
                 }
