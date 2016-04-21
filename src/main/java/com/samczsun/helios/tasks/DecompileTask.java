@@ -167,7 +167,7 @@ public class DecompileTask implements Runnable {
             }
             textArea.setText(output.toString());
             if (jumpTo != null) {
-                Events.callEvent(new SearchRequest(jumpTo,false, false ,true));
+                Events.callEvent(new SearchRequest(jumpTo, false, false, false, true));
             }
         } else if (transformer instanceof Disassembler) {
             if (((Disassembler) transformer).disassembleClassNode(loadedFile.getClassNode(className), classFile,

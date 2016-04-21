@@ -36,14 +36,14 @@ import com.samczsun.helios.transformers.disassemblers.Disassembler;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.albireo.core.SwingControl;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CTabFolder;
-import org.eclipse.swt.custom.CTabFolder2Adapter;
-import org.eclipse.swt.custom.CTabFolderEvent;
-import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.*;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 import org.fife.ui.hex.swing.HexEditor;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rtextarea.RTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.fife.ui.rtextarea.SearchContext;
 import org.fife.ui.rtextarea.SearchEngine;
@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -230,16 +231,75 @@ public class ClassManager {
             }
         }
 
-
         Composite composite = new Composite(transformerTabs, SWT.NONE);
-        FillLayout compositeLayout = new FillLayout();
-        compositeLayout.type = SWT.VERTICAL;
+        GridLayout compositeLayout = new GridLayout();
+        compositeLayout.numColumns = 1;
         composite.setLayout(compositeLayout);
-//        Text text = new Text(composite, SWT.NONE);
         CustomSwingControl control = new CustomSwingControl(composite, transformerTabs, transformerTab, component);
-        control.setLayout(new FillLayout());
+        control.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        transformerTab.setControl(composite);
+    }
 
-        transformerTab.setControl(control);
+    public void addSearchBar() {
+        Composite composite = mainTabs.getParent();
+        if (composite.getChildren().length == 1) {
+            Composite searchBar = new Composite(composite, SWT.BORDER);
+            searchBar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+            GridLayout searchBarLayout = new GridLayout();
+            searchBarLayout.numColumns = 10;
+            searchBar.setLayout(searchBarLayout);
+            Text text = new Text(searchBar, SWT.SEARCH | SWT.ICON_SEARCH);
+            text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+            text.setFocus();
+
+            Button wrap = new Button(searchBar, SWT.CHECK);
+            wrap.setText("&Wrap");
+            wrap.setSelection(true);
+            Button regex = new Button(searchBar, SWT.CHECK);
+            regex.setText("&Regex");
+            Button matchCase = new Button(searchBar, SWT.CHECK);
+            matchCase.setText("Match &Case");
+            Button liveSearch = new Button(searchBar, SWT.CHECK);
+            liveSearch.setText("&Live Search");
+
+            Button searchUp = new Button(searchBar, SWT.RADIO);
+            searchUp.setText("Search &Up");
+            searchUp.setSelection(true);
+            Button searchDown = new Button(searchBar, SWT.RADIO);
+            searchDown.setText("Search &Down");
+
+            text.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyReleased(KeyEvent e) {
+                    if (SWTUtil.isEnter(e.keyCode) || liveSearch.getSelection()) {
+                        Events.callEvent(new SearchRequest(text.getText(), matchCase.getSelection(), wrap.getSelection(), regex.getSelection(), searchUp.getSelection()));
+                    }
+                }
+            });
+
+            composite.layout();
+        } else {
+            Composite searchBar = (Composite) composite.getChildren()[1];
+            ((GridData) composite.getChildren()[1].getLayoutData()).exclude = false;
+            Text text = (Text) searchBar.getChildren()[0];
+            text.setFocus();
+            composite.layout();
+        }
+    }
+
+    public boolean tryCloseSearchBar() {
+        Composite composite = mainTabs.getParent();
+        if (composite.getChildren().length > 1) {
+            ((GridData) composite.getChildren()[1].getLayoutData()).exclude = true;
+            composite.layout();
+            SwingControl control = getCurrentSwingControl();
+            if (control.getSwingComponent() instanceof RTextScrollPane) {
+                RTextScrollPane pane = (RTextScrollPane) control.getSwingComponent();
+                SearchEngine.find(pane.getTextArea(), new SearchContext());
+            }
+            return true;
+        }
+        return false;
     }
 
     private void refreshCurrentView() {
@@ -266,7 +326,7 @@ public class ClassManager {
         if (decompiler == null) {
             return;
         }
-        SwingControl control = (SwingControl) decompiler.getControl();
+        SwingControl control = getCurrentSwingControl();
         if (!decompiler.getData().equals(Transformer.HEX)) {
             RTextScrollPane scrollPane = (RTextScrollPane) control.getSwingComponent();
             RSyntaxTextArea textArea = (RSyntaxTextArea) scrollPane.getTextArea();
@@ -284,6 +344,7 @@ public class ClassManager {
                 SearchContext context = new SearchContext();
                 context.setSearchFor(request.getText());
                 context.setMatchCase(request.isMatchCase());
+                context.setRegularExpression(request.isRegex());
                 try {
                     if (!SearchEngine.find(textArea, context).wasFound()) {
                         if (request.isWrap()) {
@@ -346,9 +407,9 @@ public class ClassManager {
     }
 
     private CustomSwingControl getCurrentSwingControl() {
-//        Control[] ctrl = ((Composite) getCurrentTransformer().getControl()).getChildren();
-//        return (CustomSwingControl) ctrl[ctrl.length - 1];
-        return (CustomSwingControl) getCurrentTransformer().getControl();
+        Control[] ctrl = ((Composite) getCurrentTransformer().getControl()).getChildren();
+        return (CustomSwingControl) ctrl[ctrl.length - 1];
+//        return (CustomSwingControl) getCurrentTransformer().getControl();
     }
 
     private Transformer getTransformer() {
@@ -361,7 +422,7 @@ public class ClassManager {
         private CTabItem transformerTab;
 
         CustomSwingControl(Composite composite, CTabFolder transformerTabs, CTabItem transformerTab, JComponent component) {
-            super(transformerTabs, SWT.NONE);
+            super(composite, SWT.NONE);
             this.component = component;
             this.transformerTabs = transformerTabs;
             this.transformerTab = transformerTab;

@@ -425,7 +425,12 @@ public class GUI {
     }
 
     private void setupTabs(SashForm sashForm) {
-        CTabFolder tabFolder = new CTabFolder(sashForm, SWT.BORDER);
+        Composite classHolder = new Composite(sashForm, SWT.NONE);
+        classHolder.setLayoutData(new GridData(GridData.FILL_BOTH));
+        GridLayout classHolderLayout = new GridLayout();
+        classHolderLayout.numColumns = 1;
+        classHolder.setLayout(classHolderLayout);
+        CTabFolder tabFolder = new CTabFolder(classHolder, SWT.BORDER);
         tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         this.classManager = new ClassManager(shell, tabFolder);

@@ -492,7 +492,11 @@ public class Helios {
                     }
                     e.doit = false;
                 } else if (e.keyCode == 'f') {
-                    getGui().getSearchPopup().open();
+                    if ((e.stateMask & SWT.SHIFT) == SWT.SHIFT) {
+                        getGui().getSearchPopup().open();
+                    } else {
+                        getGui().getClassManager().addSearchBar();
+                    }
                     e.doit = false;
                 }
             } else {
@@ -503,6 +507,10 @@ public class Helios {
                         promptForRefresh();
                     }
                     e.doit = false;
+                } else if (e.keyCode == SWT.ESC) {
+                    if (getGui().getClassManager().tryCloseSearchBar()) {
+                        // Otherwise try closing other things
+                    }
                 }
             }
         }

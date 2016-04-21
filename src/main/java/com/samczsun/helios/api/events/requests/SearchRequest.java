@@ -5,12 +5,14 @@ public class SearchRequest {
     private final boolean matchCase;
     private final boolean wrap;
     private final boolean searchForward;
+    private final boolean regex;
 
-    public SearchRequest(String text, boolean matchCase, boolean wrap, boolean searchForward) {
+    public SearchRequest(String text, boolean matchCase, boolean wrap, boolean regex, boolean searchForward) {
         this.text = text;
         this.matchCase = matchCase;
         this.wrap = wrap;
         this.searchForward = searchForward;
+        this.regex = regex;
     }
 
     public String getText() {
@@ -27,5 +29,9 @@ public class SearchRequest {
 
     public boolean isSearchForward() {
         return this.searchForward;
+    }
+
+    public boolean isRegex() {
+        return this.regex;
     }
 }

@@ -84,7 +84,7 @@ public class SearchPopup {
                 @Override
                 public void keyReleased(KeyEvent e) {
                     if (SWTUtil.isEnter(e.keyCode)) {
-                        Events.callEvent(new SearchRequest(text.getText(), caseSensitive.getSelection(), wrap.getSelection(), up.getSelection()));
+                        Events.callEvent(new SearchRequest(text.getText(), caseSensitive.getSelection(), wrap.getSelection(),false, up.getSelection()));
                     }
                 }
             });
