@@ -165,7 +165,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>java-decompiler</artifactId>
-            <version>da49161</version>
+            <version>2a89fd4</version>
             <!--Apache 2.0-->
             <!--helios-->
         </dependency>
