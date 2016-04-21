@@ -44,7 +44,7 @@ Otherwise, feel free to check out the [bootstrapper repo](https://github.com/hel
 
 Thanks for wanting to help! This project is currently licensed under the Apache 2.0 license.
 
-First, you should [sign the CLA](https://www.clahub.com/agreements/samczsun/Helios).This is for the good of
+First, you should [sign the CLA](https://www.clahub.com/agreements/helios-decompiler/Helios).This is for the good of
 everyone - contributors, distributors, and end users.
 
 Here are some basic conventions you should follow. Your coding style is your own but requirements may also change.
