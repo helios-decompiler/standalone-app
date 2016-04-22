@@ -34,6 +34,7 @@ import com.heliosdecompiler.helios.utils.FileChooserUtil;
 import com.heliosdecompiler.helios.gui.GUI;
 import com.heliosdecompiler.helios.handler.BackgroundTaskHandler;
 import com.heliosdecompiler.helios.utils.SWTUtil;
+import com.heliosdecompiler.helios.utils.Utils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -630,18 +631,25 @@ public class Helios {
         writer.println("Set objFile = objFSO.GetFile(strPath)");
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-        writer.println("UAC.ShellExecute \"\"\"" + javawLocation.getAbsolutePath() + "\"\"\", \"-jar \"\"" + currentJarLocation.getAbsolutePath() + " \"\"-a\"\" \"\"-ctx\"\"\", strFolder, \"runas\", 1");
+
+        String args = "-jar ``%s`` -a -ctx";
+        args = String.format(args, currentJarLocation.getAbsolutePath()).replace('`', '"');
+
+        String uacCommand = "UAC.ShellExecute ```%s```, `%s`, strFolder, `runas`, 1";
+        uacCommand = String.format(uacCommand, javawLocation.getAbsolutePath(), args).replace('`', '"');
+        writer.println(uacCommand);
         writer.println("WScript.Quit 0");
         writer.close();
 
         Process process = Runtime.getRuntime().exec("cscript " + tempVBSFile.getAbsolutePath());
         process.waitFor();
+        System.out.println(Utils.readProcess(process));
         System.exit(process.exitValue());
     }
 
     private static File getJarLocation() throws URISyntaxException {
         File currentJarLocation = (File) System.getProperties().get("com.heliosdecompiler.bootstrapperFile");
-        while (!currentJarLocation.exists() || !currentJarLocation.isFile()) {
+        while (currentJarLocation == null || !currentJarLocation.exists() || !currentJarLocation.isFile()) {
             SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
             List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
             if (chosen.size() == 0) {
