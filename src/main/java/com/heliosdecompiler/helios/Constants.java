@@ -21,7 +21,9 @@ import java.util.function.Supplier;
 
 public class Constants {
     public static final String REPO_NAME = "Helios";
-    public static final String REPO_VERSION = "0.0.4" +(System.getProperty("com.heliosdecompiler.buildNumber") != null ? " (Build " + System.getProperty("com.heliosdecompiler.buildNumber") + ")" : "");
+    public static final String REPO_VERSION =
+            (System.getProperty("com.heliosdecompiler.version") != null ? System.getProperty("com.heliosdecompiler.version") : "Dev")
+            + (System.getProperty("com.heliosdecompiler.buildNumber") != null ? " (Build " + System.getProperty("com.heliosdecompiler.buildNumber") + ")" : "");
     public static final String REPO_BASE = "https://github.com/samczsun/" + REPO_NAME + "/";
     public static final String RAW_REPO_BASE = "https://raw.github.com/samczsun/" + REPO_NAME + "/";
 
