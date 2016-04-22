@@ -17,6 +17,7 @@
 package com.samczsun.helios.handler.addons.builtin;
 
 import com.samczsun.helios.Helios;
+import com.samczsun.helios.Resources;
 import com.samczsun.helios.api.Addon;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
@@ -24,6 +25,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
@@ -52,14 +54,11 @@ public class FindEntryPoints extends Addon {
 
                     display.syncExec(() -> {
                         Shell shell = new Shell(display);
+                        shell.setImage(Resources.ICON.getImage());
+                        shell.setText("Addon | Find Entry Points");
+                        shell.setLayout(new FillLayout());
                         Text text = new Text(shell, SWT.V_SCROLL | SWT.H_SCROLL);
                         text.setText(stringBuilder.toString());
-                        GC gc = new GC(shell);
-                        FontMetrics fm = gc.getFontMetrics();
-                        int width = 128 * fm.getAverageCharWidth();
-                        int height = fm.getHeight() * 32;
-                        text.setSize(width, height);
-                        shell.pack();
                         SWTUtil.center(shell);
                         shell.open();
                     });

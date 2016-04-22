@@ -30,7 +30,7 @@ import java.nio.file.Files;
 public class SmaliAssembler extends Assembler {
 
     SmaliAssembler() {
-        super("smali-assembler", "Smali Assembler");
+        super("smali", "Smali");
     }
 
     @Override

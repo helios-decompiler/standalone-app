@@ -1,11 +1,13 @@
 package com.samczsun.helios.gui.popups;
 
+import com.samczsun.helios.Resources;
 import com.samczsun.helios.api.events.Events;
 import com.samczsun.helios.api.events.FiletypeAssociationCreateEvent;
 import com.samczsun.helios.api.events.FiletypeAssociationDeleteEvent;
 import com.samczsun.helios.api.events.FiletypeAssociationEditEvent;
 import com.samczsun.helios.gui.data.FiletypeAssociationData;
 import com.samczsun.helios.transformers.Transformer;
+import com.samczsun.helios.transformers.Viewable;
 import com.samczsun.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -29,6 +31,7 @@ public class AddFiletypeAssociationPopup {
             FiletypeAssociationData data = item == null ? null : (FiletypeAssociationData) item.getData();
 
             shell = new Shell(display, SWT.CLOSE | SWT.BORDER);
+            shell.setImage(Resources.ICON.getImage());
             shell.setText("Add Filetype Association");
 
             KeyAdapter adapter = new KeyAdapter() {
@@ -37,6 +40,7 @@ public class AddFiletypeAssociationPopup {
                     if (e.keyCode == SWT.ESC) {
                         shell.setVisible(false);
                         shell.dispose();
+                        e.doit = false;
                     }
                 }
             };
@@ -59,7 +63,7 @@ public class AddFiletypeAssociationPopup {
             comboDropDown.add("Select a transformer");
             comboDropDown.select(0);
 
-            for (Transformer transformer : Transformer.getAllTransformers()) {
+            for (Transformer transformer : Transformer.getAllTransformers(t -> t instanceof Viewable)) {
                 comboDropDown.add(transformer.getName());
             }
 

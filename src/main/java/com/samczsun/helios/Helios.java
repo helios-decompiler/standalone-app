@@ -493,6 +493,7 @@ public class Helios {
                     }
                     e.doit = false;
                 } else if (e.keyCode == 'f') {
+                    System.out.println(getGui().getShell().getDisplay().getFocusControl().getShell());
                     Events.callEvent(new SearchBarRequest(true));
                     e.doit = false;
                 }

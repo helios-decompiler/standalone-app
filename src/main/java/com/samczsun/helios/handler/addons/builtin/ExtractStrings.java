@@ -17,8 +17,10 @@
 package com.samczsun.helios.handler.addons.builtin;
 
 import com.samczsun.helios.Helios;
+import com.samczsun.helios.Resources;
 import com.samczsun.helios.api.Addon;
 import com.samczsun.helios.utils.SWTUtil;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -26,6 +28,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.*;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -53,7 +56,7 @@ public class ExtractStrings extends Addon {
                                 if (!s.isEmpty()) {
                                     stringBuilder.append(
                                             String.format("%s.%s%s -> \"%s\"\n", classNode.name, fieldNode.name, fieldNode.desc,
-                                                    s.replaceAll("\\n", "\\\\n").replaceAll("\\r", "\\\\r")));
+                                                    StringEscapeUtils.escapeJava(s)));
                                 }
                             }
                             if (v instanceof String[]) {
@@ -62,7 +65,7 @@ public class ExtractStrings extends Addon {
                                     if (!s.isEmpty()) {
                                         stringBuilder.append(
                                                 String.format("%s.%s%s[%s] -> \"%s\"\n", classNode.name, fieldNode.name, fieldNode.desc,
-                                                        i, s.replaceAll("\\n", "\\\\n").replaceAll("\\r", "\\\\r")));
+                                                        i, StringEscapeUtils.escapeJava(s)));
                                     }
                                 }
                             }
@@ -76,7 +79,7 @@ public class ExtractStrings extends Addon {
                                         if (!s.isEmpty()) {
                                             stringBuilder.append(
                                                     String.format("%s.%s%s -> \"%s\"\n", classNode.name, m.name, m.desc,
-                                                            s.replaceAll("\\n", "\\\\n").replaceAll("\\r", "\\\\r")));
+                                                            StringEscapeUtils.escapeJava(s)));
                                         }
                                     }
                                 }
@@ -85,20 +88,17 @@ public class ExtractStrings extends Addon {
                     }
                     display.syncExec(() -> {
                         Shell shell = new Shell(display);
+                        shell.setImage(Resources.ICON.getImage());
+                        shell.setText("Addon | Extract Strings");
+                        shell.setLayout(new FillLayout());
                         Text text = new Text(shell, SWT.V_SCROLL | SWT.H_SCROLL);
-                        text.setText(stringBuilder.toString().replace("\0", "{NUL}"));
-                        GC gc = new GC(shell);
-                        FontMetrics fm = gc.getFontMetrics();
-                        int width = 128 * fm.getAverageCharWidth();
-                        int height = fm.getHeight() * 32;
-                        text.setSize(width, height);
+                        text.setText(stringBuilder.toString());
                         text.addListener(SWT.KeyDown, event -> {
                             if (event.keyCode == 'a' && (event.stateMask & SWT.CTRL) != 0) {
                                 text.selectAll();
                                 event.doit = false;
                             }
                         });
-                        shell.pack();
                         SWTUtil.center(shell);
                         shell.open();
                     });

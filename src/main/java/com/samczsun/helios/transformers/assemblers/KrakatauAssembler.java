@@ -31,7 +31,7 @@ import java.nio.file.Files;
 public class KrakatauAssembler extends Assembler {
 
     KrakatauAssembler() {
-        super("krakatau-assembler", "Krakatau Assembler");
+        super("krakatau", "Krakatau");
     }
 
     @Override
