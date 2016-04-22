@@ -1,6 +1,7 @@
 package com.samczsun.helios.gui;
 
 import com.samczsun.helios.Helios;
+import com.samczsun.helios.tasks.CompileTask;
 import com.samczsun.helios.transformers.Transformer;
 import com.samczsun.helios.transformers.assemblers.Assembler;
 import com.samczsun.helios.transformers.decompilers.Decompiler;
@@ -93,6 +94,15 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
             decompileWith.add(decomp);
         }
         menu.add(decompileWith);
+        menu.addSeparator();
+        JMenu disassembleWith = new JMenu("Disassemble with");
+        for (Disassembler decompiler : Disassembler.getAllDisassemblers()) {
+            JMenuItem decomp = new JMenuItem(decompiler.getName());
+            decomp.setEnabled(true);
+            decomp.addActionListener(e -> Helios.getGui().getClassManager().openFileAndDecompile(this.fileName, this.className, decompiler, null));
+            disassembleWith.add(decomp);
+        }
+        menu.add(disassembleWith);
         menu.addSeparator();
         if (currentTransformer instanceof Decompiler) {
             JMenu compileMenu = new JMenu("Compile with");
