@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.samczsun</groupId>
+    <groupId>com.heliosdecompiler</groupId>
     <artifactId>helios</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <!--Refer to http://semver.org-->
 
     <properties>
@@ -47,6 +47,7 @@
                                     <manifestEntries>
                                         <Main-Class>com.samczsun.helios.bootloader.Bootloader</Main-Class>
                                         <Implementation-Version>${build.number}</Implementation-Version>
+                                        <Version>${project.version}</Version>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
