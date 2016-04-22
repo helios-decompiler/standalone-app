@@ -35,7 +35,7 @@ public class Constants {
     public static final File DATA_DIR = new File(
             System.getProperty("user.home") + File.separator + "." + Constants.REPO_NAME.toLowerCase());
     public static final File KRAKATAU_DIR = new File(DATA_DIR,
-            "krakatau" + File.separator + Constants.KRAKATAU_VERSION);
+            "Krakatau" + File.separator + Constants.KRAKATAU_VERSION);
     public static final File ENJARIFY_DIR = new File(DATA_DIR,
             "enjarify" + File.separator + Constants.ENJARIFY_VERSION);
     public static final File ADDONS_DIR = new File(DATA_DIR, "addons");
