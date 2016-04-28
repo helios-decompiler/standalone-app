@@ -76,6 +76,7 @@ public class Helios {
     private static GUI gui;
     private static BackgroundTaskHandler backgroundTaskHandler;
     private static BackgroundTaskPopup backgroundTaskPopup;
+    private static LocalSocket socket;
 
     private static volatile Map<String, LoadedFile> path = new HashMap<>();
 
@@ -103,10 +104,52 @@ public class Helios {
             getBackgroundTaskHandler().shutdown();
             processes.forEach(Process::destroy);
         }));
+        try {
+            socket = new LocalSocket();
+        } catch (IOException e) { // Maybe allow the user to force open a second instance?
+            ExceptionHandler.handle(e);
+        }
+
+        handleCommandLine(args);
+
+        submitBackgroundTask(() -> {
+            Map<String, LoadedFile> newPath = new HashMap<>();
+            for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
+                File file = new File(strFile);
+                if (file.exists()) {
+                    try {
+                        LoadedFile loadedFile = new LoadedFile(file);
+                        newPath.put(loadedFile.getName(), loadedFile);
+                    } catch (IOException e1) {
+                        ExceptionHandler.handle(e1);
+                    }
+                }
+            }
+            File file = new File(Settings.RT_LOCATION.get().asString());
+            if (file.exists()) {
+                try {
+                    LoadedFile loadedFile = new LoadedFile(file);
+                    newPath.put(loadedFile.getName(), loadedFile);
+                } catch (IOException e1) {
+                    ExceptionHandler.handle(e1);
+                }
+            }
+            synchronized (Helios.class) {
+                path.clear();
+                path.putAll(newPath);
+            }
+        });
+
+
         splashScreen.updateState(BootSequence.COMPLETE);
         while (!splashScreen.isDisposed()) ;
-        Display.getDefault().syncExec(() -> getGui().getShell().open());
+        Display.getDefault().syncExec(() -> {
+            shell.open();
+            shell.setFocus();
+        });
+    }
 
+    public static void handleCommandLine(String[] args) {
         List<File> open = new ArrayList<>();
 
         Options options = new Options();
@@ -151,34 +194,6 @@ public class Helios {
         } catch (ParseException e) {
             ExceptionHandler.handle(e);
         }
-
-        submitBackgroundTask(() -> {
-            Map<String, LoadedFile> newPath = new HashMap<>();
-            for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
-                File file = new File(strFile);
-                if (file.exists()) {
-                    try {
-                        LoadedFile loadedFile = new LoadedFile(file);
-                        newPath.put(loadedFile.getName(), loadedFile);
-                    } catch (IOException e1) {
-                        ExceptionHandler.handle(e1);
-                    }
-                }
-            }
-            File file = new File(Settings.RT_LOCATION.get().asString());
-            if (file.exists()) {
-                try {
-                    LoadedFile loadedFile = new LoadedFile(file);
-                    newPath.put(loadedFile.getName(), loadedFile);
-                } catch (IOException e1) {
-                    ExceptionHandler.handle(e1);
-                }
-            }
-            synchronized (Helios.class) {
-                path.clear();
-                path.putAll(newPath);
-            }
-        });
 
         if (open.size() > 0) {
             openFiles(open.toArray(new File[open.size()]), true);
@@ -641,9 +656,16 @@ public class Helios {
         writer.println("WScript.Quit 0");
         writer.close();
 
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (Throwable t) {
+                ExceptionHandler.handle(t);
+            }
+        }
+
         Process process = Runtime.getRuntime().exec("cscript " + tempVBSFile.getAbsolutePath());
         process.waitFor();
-        System.out.println(Utils.readProcess(process));
         System.exit(process.exitValue());
     }
 
