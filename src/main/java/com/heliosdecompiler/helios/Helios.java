@@ -177,7 +177,7 @@ public class Helios {
             CommandLine commandLine = parser.parse(options, args);
             if (commandLine.hasOption("help")) {
                 HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp("java -jar bootstrapper.jar -a [options]", options);
+                formatter.printHelp("java -jar bootstrapper.jar [options]", options);
             } else {
                 if (commandLine.hasOption("addtocontextmenu")) {
                     addToContextMenu();
@@ -588,22 +588,28 @@ public class Helios {
     public static void addToContextMenu() {
         try {
             if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
-                Process process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /f");
+                Process process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios\\command /f");
                 process.waitFor();
                 if (process.exitValue() == 0) {
-                    process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios /ve /d \"Open with Helios\" /f");
+                    process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios /ve /d \"Open with Helios\" /f");
                     process.waitFor();
                     if (process.exitValue() == 0) {
                         File currentJarLocation = getJarLocation();
                         if (currentJarLocation != null) {
                             File javaw = getJavawLocation();
                             if (javaw != null) {
-                                process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" -a \\\"--open \\\\\\\"%1\\\\\\\"\\\"\" /f");
+                                process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios /v MultiSelectModel /d \"Single\" /f"); //Don't allow opening 2 at once... sorry
                                 process.waitFor();
                                 if (process.exitValue() == 0) {
-                                    SWTUtil.showMessage("Done");
+                                    process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" --open \\\"%1\\\"\" /f");
+                                    process.waitFor();
+                                    if (process.exitValue() == 0) {
+                                        SWTUtil.showMessage("Done");
+                                    } else {
+                                        SWTUtil.showMessage("Failed to set context menu - 4");
+                                    }
                                 } else {
-                                    SWTUtil.showMessage("Failed to set context menu");
+                                    SWTUtil.showMessage("Failed to set context menu - 3");
                                 }
                             } else {
                                 SWTUtil.showMessage("Could not set context menu - unable to find javaw.exe");
@@ -612,12 +618,10 @@ public class Helios {
                             SWTUtil.showMessage("Could not set context menu - unable to find Helios.jar");
                         }
                     } else {
-                        SWTUtil.showMessage("Failed to set context menu");
+                        SWTUtil.showMessage("Failed to set context menu - 2");
                     }
                 } else {
-                    if (SWTUtil.promptForYesNo("UAC", "Helios must be run as an administrator to do this. Relaunch as administrator?")) {
-                        relaunchAsAdmin();
-                    }
+                    SWTUtil.showMessage("Failed to set context menu - 1");
                 }
             } else {
                 SWTUtil.showMessage("You may only do this on Windows");
@@ -627,7 +631,7 @@ public class Helios {
         }
     }
 
-    public static void relaunchAsAdmin() throws IOException, InterruptedException, URISyntaxException {
+    public static void relaunchAsAdmin(String arg) throws IOException, InterruptedException, URISyntaxException {
         File currentJarLocation = getJarLocation();
         File javawLocation = getJavawLocation();
         if (currentJarLocation == null) {
@@ -647,7 +651,7 @@ public class Helios {
         writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
         writer.println("Set UAC = CreateObject(\"Shell.Application\")");
 
-        String args = "-jar ``%s`` -a -ctx";
+        String args = "-jar ``%s`` " + arg;
         args = String.format(args, currentJarLocation.getAbsolutePath()).replace('`', '"');
 
         String uacCommand = "UAC.ShellExecute ```%s```, `%s`, strFolder, `runas`, 1";
