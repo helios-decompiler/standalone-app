@@ -33,8 +33,8 @@ import com.heliosdecompiler.helios.tasks.AddFilesTask;
 import com.heliosdecompiler.helios.utils.FileChooserUtil;
 import com.heliosdecompiler.helios.gui.GUI;
 import com.heliosdecompiler.helios.handler.BackgroundTaskHandler;
+import com.heliosdecompiler.helios.utils.OSUtils;
 import com.heliosdecompiler.helios.utils.SWTUtil;
-import com.heliosdecompiler.helios.utils.Utils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -587,7 +587,7 @@ public class Helios {
 
     public static void addToContextMenu() {
         try {
-            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
                 Process process = Runtime.getRuntime().exec("reg add HKCR\\*\\shell\\helios\\command /f");
                 process.waitFor();
                 if (process.exitValue() == 0) {
@@ -635,7 +635,7 @@ public class Helios {
             return;
         }
         if (javawLocation == null) {
-            SWTUtil.showMessage("Could not relaunch as admin - unable to find javaw.exe");
+            SWTUtil.showMessage("Could not relaunch as admin - unable to find java(w)");
             return;
         }
         File tempVBSFile = File.createTempFile("tmpvbs", ".vbs");
@@ -673,7 +673,7 @@ public class Helios {
         File currentJarLocation = (File) System.getProperties().get("com.heliosdecompiler.bootstrapperFile");
         while (currentJarLocation == null || !currentJarLocation.exists() || !currentJarLocation.isFile()) {
             SWTUtil.showMessage("Could not determine location of Helios. Please select the JAR file", true);
-            List<File> chosen = FileChooserUtil.chooseFiles(".", Arrays.asList("jar"), false);
+            List<File> chosen = FileChooserUtil.chooseFiles(".", Collections.singletonList("jar"), false);
             if (chosen.size() == 0) {
                 return null;
             }
@@ -683,10 +683,19 @@ public class Helios {
     }
 
     private static File getJavawLocation() {
-        File javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw.exe");
-        while (!javaw.exists() || !javaw.isFile()) {
-            SWTUtil.showMessage("Could not determine location of javaw. Please select the location of the executable", true);
-            List<File> chosen = FileChooserUtil.chooseFiles(System.getProperty("java.home"), Arrays.asList("exe"), false);
+        File javaw = null;
+        String name = "java";
+
+        OSUtils.OS os = OSUtils.getOS();
+        if (os == OSUtils.OS.WINDOWS) {
+            javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw.exe");
+            name = "javaw";
+        } else if (os == OSUtils.OS.LINUX || os == OSUtils.OS.MAC) {
+            javaw = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+        }
+        while (javaw == null || !javaw.exists() || !javaw.isFile()) {
+            SWTUtil.showMessage("Could not determine location of " + name + ". Please select the location of the executable", true);
+            List<File> chosen = FileChooserUtil.chooseFiles(System.getProperty("java.home"), Collections.singletonList("exe"), false);
             if (chosen.size() == 0) {
                 return null;
             }
