@@ -144,4 +144,16 @@ public class SWTUtil {
     public static boolean isCtrl(int stateMask) {
         return (stateMask & SWT.CTRL) != 0;
     }
+    
+    public static void runTaskOnMainThread(Runnable task, boolean async) {
+        if (Thread.currentThread() == Display.getDefault().getThread()) {
+            task.run();
+        } else {
+            if (async) {
+                Display.getDefault().asyncExec(task);
+            } else {
+                Display.getDefault().syncExec(task);
+            }
+        }
+    }
 }

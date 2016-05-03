@@ -126,10 +126,10 @@ public class LoadedFile {
             try {
                 ClassReader reader = new ClassReader(outputStream.toByteArray());
                 ClassNode classNode = new ClassNode();
-                reader.accept(classNode, ClassReader.EXPAND_FRAMES);
+                reader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
                 emptyClasses.put(classNode.name, new WrappedClassNode(this, classNode));
-                classes.put(classNode.name, emptyClasses.get(classNode.name));
             } catch (Exception e) { //Malformed class
+                
             }
         }
     }

@@ -44,6 +44,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ShellAdapter;
@@ -63,6 +64,7 @@ import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -112,25 +114,25 @@ public class Helios {
 
         handleCommandLine(args);
 
-        submitBackgroundTask(() -> {
-            Map<String, LoadedFile> newPath = new HashMap<>();
-            for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
-                File file = new File(strFile);
-                if (file.exists()) {
-                    LoadedFile loadedFile = new LoadedFile(file, true);
-                    newPath.put(loadedFile.getName(), loadedFile);
-                }
-            }
-            File file = new File(Settings.RT_LOCATION.get().asString());
+//        submitBackgroundTask(() -> {
+        Map<String, LoadedFile> newPath = new HashMap<>();
+        for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
+            File file = new File(strFile);
             if (file.exists()) {
                 LoadedFile loadedFile = new LoadedFile(file, true);
                 newPath.put(loadedFile.getName(), loadedFile);
             }
-            synchronized (Helios.class) {
-                path.clear();
-                path.putAll(newPath);
-            }
-        });
+        }
+        File file = new File(Settings.RT_LOCATION.get().asString());
+        if (file.exists()) {
+            LoadedFile loadedFile = new LoadedFile(file, true);
+            newPath.put(loadedFile.getName(), loadedFile);
+        }
+        synchronized (Helios.class) {
+            path.clear();
+            path.putAll(newPath);
+        }
+//        });
 
 
         splashScreen.updateState(BootSequence.COMPLETE);
@@ -273,96 +275,76 @@ public class Helios {
     }
 
     public static void promptForFilesToOpen() {
-        submitBackgroundTask(() -> {
-            List<String> validExtensions = Arrays.asList("jar", "zip", "class", "apk", "dex");
-            List<File> files1 = FileChooserUtil.chooseFiles(Settings.LAST_DIRECTORY.get().asString(), validExtensions,
-                    true);
-            if (files1.size() > 0) {
-                Settings.LAST_DIRECTORY.set(files1.get(0).getAbsolutePath());
-                try {
-                    Helios.openFiles(files1.toArray(new File[files1.size()]), true);
-                } catch (Exception e1) {
-                    ExceptionHandler.handle(e1);
-                }
+        List<String> validExtensions = Arrays.asList("jar", "zip", "class", "apk", "dex");
+        List<File> files1 = FileChooserUtil.chooseFiles(Settings.LAST_DIRECTORY.get().asString(), validExtensions,
+                true);
+        if (files1.size() > 0) {
+            Settings.LAST_DIRECTORY.set(files1.get(0).getAbsolutePath());
+            try {
+                Helios.openFiles(files1.toArray(new File[files1.size()]), true);
+            } catch (Exception e1) {
+                ExceptionHandler.handle(e1);
             }
-        });
+        }
     }
 
     public static void promptForRefresh() {
         if (SWTUtil.promptForYesNo(Constants.REPO_NAME + " - Refresh", "Are you sure you wish to refresh?")) {
-            for (LoadedFile loadedFile : Helios.files.values())
-            {
-                loadedFile.reset();
-            }
+            Helios.files.values().forEach(LoadedFile::reset);
             Events.callEvent(new TreeUpdateRequest());
         }
     }
 
-    private static volatile Shell customPathShell;
-
     public static void promptForCustomPath() {
-        synchronized (Helios.class) {
-            if (customPathShell != null) {
-                customPathShell.setFocus();
-                return;
-            }
-        }
-        Display.getDefault().asyncExec(() -> {
-            synchronized (Helios.class) {
-                Display display = Display.getDefault();
-                Shell shell = new Shell(display);
-                shell.setLayout(new GridLayout());
-                shell.setImage(Resources.ICON.getImage());
-                shell.setText("Set your PATH variable");
-                final Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
-                text.setText(Settings.PATH.get().asString());
-                GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
-                gridData.heightHint = text.getLineHeight();
-                gridData.widthHint = 512;
-                text.setLayoutData(gridData);
-                shell.addShellListener(new ShellAdapter() {
-                    @Override
-                    public void shellClosed(ShellEvent e) {
-                        synchronized (Helios.class) {
-                            customPathShell = null;
-                        }
-                        String oldPath = Settings.PATH.get().asString();
-                        if (!oldPath.equals(text.getText())) {
-                            Settings.PATH.set(text.getText());
-                            Future<?> future = submitBackgroundTask(() -> {
-                                Map<String, LoadedFile> newPath = new HashMap<>();
-                                for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
-                                    File file = new File(strFile);
-                                    if (file.exists()) {
-                                        LoadedFile loadedFile = new LoadedFile(file, true);
-                                        newPath.put(loadedFile.getName(), loadedFile);
-                                    }
+        SWTUtil.runTaskOnMainThread(() -> {
+            Shell shell = new Shell(Display.getDefault(), SWT.ON_TOP | SWT.DIALOG_TRIM);
+            shell.setLayout(new GridLayout());
+            shell.setImage(Resources.ICON.getImage());
+            shell.setText("File paths delimited by ;");
+            Text text = new Text(shell, SWT.BORDER | SWT.MULTI | SWT.WRAP);
+            text.setText(Settings.PATH.get().asString());
+            GridData gridData = new GridData(GridData.FILL_BOTH);
+            gridData.heightHint = text.getLineHeight();
+            gridData.widthHint = 512;
+            text.setLayoutData(gridData);
+            shell.addShellListener(new ShellAdapter() {
+                @Override
+                public void shellClosed(ShellEvent e) {
+                    String oldPath = Settings.PATH.get().asString();
+                    if (!oldPath.equals(text.getText())) {
+                        Settings.PATH.set(text.getText());
+                        Future<?> future = submitBackgroundTask(() -> {
+                            Map<String, LoadedFile> newPath = new HashMap<>();
+                            for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
+                                File file = new File(strFile);
+                                if (file.exists()) {
+                                    LoadedFile loadedFile = new LoadedFile(file, true);
+                                    newPath.put(loadedFile.getName(), loadedFile);
                                 }
-                                synchronized (Helios.class) {
-                                    path.clear();
-                                    path.putAll(newPath);
-                                }
-                            });
-                        }
+                            }
+                            synchronized (Helios.class) {
+                                path.clear();
+                                path.putAll(newPath);
+                            }
+                        });
                     }
-                });
-                text.addKeyListener(new KeyAdapter() {
-                    @Override
-                    public void keyPressed(KeyEvent e) {
-                        if (e.keyCode == SWT.ESC || SWTUtil.isEnter(e.keyCode)) {
-                            shell.close();
-                        } else if (e.keyCode == 'a' && SWTUtil.isCtrl(e.stateMask)) {
-                            text.selectAll();
-                            e.doit = false;
-                        }
+                }
+            });
+            text.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.keyCode == SWT.ESC || SWTUtil.isEnter(e.keyCode)) {
+                        shell.close();
+                    } else if (e.keyCode == 'a' && SWTUtil.isCtrl(e.stateMask)) {
+                        text.selectAll();
+                        e.doit = false;
                     }
-                });
-                shell.pack();
-                SWTUtil.center(shell);
-                shell.open();
-                customPathShell = shell;
-            }
-        });
+                }
+            });
+            shell.pack();
+            SWTUtil.center(shell);
+            shell.open();
+        }, true);
     }
 
     public static synchronized Map<String, LoadedFile> getPathFiles() {
@@ -477,7 +459,7 @@ public class Helios {
 
     public static void checkHotKey(Event e) {
         if (e.doit) {
-            if ((e.stateMask & SWT.CTRL) == SWT.CTRL) {
+            if (SWTUtil.isCtrl(e.stateMask)) {
                 if (e.keyCode == 'o') {
                     promptForFilesToOpen();
                     e.doit = false;
@@ -525,7 +507,7 @@ public class Helios {
     }
 
     public static Future<?> submitBackgroundTask(Runnable runnable) {
-        return getBackgroundTaskHandler().submit(runnable);
+        return backgroundTaskHandler.submit(runnable);
     }
 
     public static Collection<LoadedFile> getAllFiles() {

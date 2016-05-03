@@ -48,10 +48,10 @@ public class BackgroundTaskHandler {
                 ExceptionHandler.handle(t);
             }
 //            System.out.println("DONE EXECUTING " + System.identityHashCode(runnable));
-            while (thread.isAlive()) {
+//            while (thread.isAlive()) {
 //                StackTraceElement[] e = Thread.getAllStackTraces().get(thread);
 //                System.out.println(e.length + " " + Arrays.toString(e));
-            }
+//            }
 //            System.out.println("THREAD DIED " + System.identityHashCode(runnable));
             runningTasks--;
         });

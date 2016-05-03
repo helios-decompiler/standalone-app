@@ -16,6 +16,7 @@
 
 package com.heliosdecompiler.helios.utils;
 
+import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Resources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -25,55 +26,60 @@ import org.eclipse.swt.widgets.Shell;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class FileChooserUtil {
-    public static List<File> chooseFiles(final String startingPath, final List<String> extensions, final boolean multi) {
-        final AtomicReference<List<File>> returnValue = new AtomicReference<>();
-        Display.getDefault().syncExec(() -> {
-            Shell shell = new Shell(Display.getDefault());
-            Image image = new Image(Display.getDefault(), Resources.ICON.getData());
-            shell.setImage(image);
-            FileDialog dialog = new FileDialog(shell, SWT.OPEN | (multi ? SWT.MULTI : 0));
-            if (!extensions.isEmpty()) {
-                StringBuilder extension = new StringBuilder();
-                for (String extension1 : extensions) {
-                    extension.append("*.").append(extension1).append(";");
-                }
-                dialog.setFilterExtensions(new String[]{extension.toString(), "*.*"});
-            } else {
-                dialog.setFilterExtensions(new String[]{"*.*"});
-            }
-            File file = new File(startingPath);
-            if (file.exists()) {
-                dialog.setFilterPath(file.isDirectory() ? startingPath : file.getParent());
-                if (file.isFile()) {
-                    dialog.setFileName(file.getName());
-                }
-            }
-            dialog.open();
-            String[] selectedFileNames = dialog.getFileNames();
-            shell.close();
-            image.dispose();
-            if (!shell.isDisposed()) {
-                System.out.println("Shell did not dispose properly");
-            }
-            if (selectedFileNames.length > 0) {
-                List<File> files = new ArrayList<>();
-                for (String selectedFileName : selectedFileNames) {
-                    StringBuilder buf = new StringBuilder(dialog.getFilterPath());
-                    if (buf.charAt(buf.length() - 1) != File.separatorChar) buf.append(File.separatorChar);
-                    buf.append(selectedFileName);
-                    files.add(new File(buf.toString()));
-                }
-                returnValue.set(files);
-            } else {
-                returnValue.set(Collections.<File>emptyList());
-            }
-        });
+    public static List<File> chooseFiles(String startingPath, List<String> extensions, boolean multi) {
+        AtomicReference<List<File>> returnValue = new AtomicReference<>();
+        if (Thread.currentThread() == Display.getDefault().getThread()) {
+            chooseFiles0(startingPath, extensions, multi, returnValue);
+        } else {
+            Display.getDefault().syncExec(() -> chooseFiles0(startingPath, extensions, multi, returnValue));
+        }
         return returnValue.get();
+    }
+
+    private static void chooseFiles0(String startingPath, List<String> extensions, boolean multi, AtomicReference<List<File>> result) {
+        Shell shell = Helios.getGui().getShell();
+        FileDialog dialog = new FileDialog(shell, SWT.PRIMARY_MODAL | SWT.OPEN | (multi ? SWT.MULTI : 0));
+        if (!extensions.isEmpty()) {
+            StringBuilder extension = new StringBuilder();
+            for (String extension1 : extensions) {
+                extension.append("*.").append(extension1).append(";");
+            }
+            dialog.setFilterExtensions(new String[]{extension.toString(), "*.*"});
+        } else {
+            dialog.setFilterExtensions(new String[]{"*.*"});
+        }
+        File file = new File(startingPath);
+        if (file.exists()) {
+            dialog.setFilterPath(file.isDirectory() ? startingPath : file.getParent());
+            if (file.isFile()) {
+                dialog.setFileName(file.getName());
+            }
+        }
+        Future<?> future = Helios.submitBackgroundTask(dialog::open);
+        while (!future.isDone()) {
+            shell.getDisplay().readAndDispatch();
+        }
+        String[] selectedFileNames = dialog.getFileNames();
+        if (selectedFileNames.length > 0) {
+            List<File> files = new ArrayList<>();
+            for (String selectedFileName : selectedFileNames) {
+                StringBuilder buf = new StringBuilder(dialog.getFilterPath());
+                if (buf.charAt(buf.length() - 1) != File.separatorChar) buf.append(File.separatorChar);
+                buf.append(selectedFileName);
+                files.add(new File(buf.toString()));
+            }
+            result.set(files);
+        } else {
+            result.set(Collections.emptyList());
+        }
+
     }
 
     public static File chooseSaveLocation(final String startingPath, final List<String> extensions) {
