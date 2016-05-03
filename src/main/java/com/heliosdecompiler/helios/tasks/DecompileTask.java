@@ -94,7 +94,7 @@ public class DecompileTask implements Runnable {
     @Override
     public void run() {
         LoadedFile loadedFile = Helios.getLoadedFile(fileName);
-        byte[] classFile = loadedFile.getFiles().get(className);
+        byte[] classFile = loadedFile.getAllData().get(className);
         PreDecompileEvent event = new PreDecompileEvent(transformer, classFile);
         Events.callEvent(event);
         classFile = event.getBytes();
@@ -192,7 +192,7 @@ public class DecompileTask implements Runnable {
             check.addAll(Helios.getAllFiles());
             check.addAll(Helios.getPathFiles().values());
             for (LoadedFile loadedFile : check) {
-                if (loadedFile.getData().containsKey(internalName + ".class")) {
+                if (loadedFile.getAllData().containsKey(internalName + ".class")) {
                     Pair<Integer, Integer> offsets = getOffsets(lineSizes, decl.getName());
                     ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(decl.getName().getBeginLine(), decl.getName().getBeginColumn(), offsets.getValue0(), offsets.getValue1());
                     link.fileName = loadedFile.getName();
@@ -1001,14 +1001,14 @@ public class DecompileTask implements Runnable {
 
                     String fileName = internalName + ".class";
                     LoadedFile file = Helios.getLoadedFile(this.fileName);
-                    if (file.getData().get(fileName) != null) {
+                    if (file.getAllData().get(fileName) != null) {
                         readFrom = file;
                     } else {
                         Set<LoadedFile> check = new HashSet<>();
                         check.addAll(Helios.getAllFiles());
                         check.addAll(Helios.getPathFiles().values());
                         for (LoadedFile loadedFile : check) {
-                            if (loadedFile.getData().get(fileName) != null) {
+                            if (loadedFile.getAllData().get(fileName) != null) {
                                 readFrom = loadedFile;
                                 break;
                             }
@@ -1083,14 +1083,14 @@ public class DecompileTask implements Runnable {
 
                 String fileName = internalName + ".class";
                 LoadedFile file = Helios.getLoadedFile(this.fileName);
-                if (file.getData().get(fileName) != null) {
+                if (file.getAllData().get(fileName) != null) {
                     readFrom = file;
                 } else {
                     Set<LoadedFile> check = new HashSet<>();
                     check.addAll(Helios.getAllFiles());
                     check.addAll(Helios.getPathFiles().values());
                     for (LoadedFile loadedFile : check) {
-                        if (loadedFile.getData().get(fileName) != null) {
+                        if (loadedFile.getAllData().get(fileName) != null) {
                             readFrom = loadedFile;
                             break;
                         }
@@ -1241,14 +1241,14 @@ public class DecompileTask implements Runnable {
 
     private LoadedFile getFileFor(String fileName) {
         LoadedFile file = Helios.getLoadedFile(this.fileName);
-        if (file.getData().get(fileName) != null) {
+        if (file.getAllData().get(fileName) != null) {
             return file;
         } else {
             Set<LoadedFile> check = new HashSet<>();
             check.addAll(Helios.getAllFiles());
             check.addAll(Helios.getPathFiles().values());
             for (LoadedFile loadedFile : check) {
-                if (loadedFile.getData().get(fileName) != null) {
+                if (loadedFile.getAllData().get(fileName) != null) {
                     return loadedFile;
                 }
             }

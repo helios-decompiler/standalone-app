@@ -46,7 +46,7 @@ public class HexViewer extends Transformer implements Viewable {
     public JComponent open(ClassManager cm, ClassData data) {
         final HexEditor editor = new HexEditor();
         try {
-            editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getFiles().get(data.getClassName())));
+            editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getAllData().get(data.getClassName())));
         } catch (IOException e1) {
             ExceptionHandler.handle(e1);
         }

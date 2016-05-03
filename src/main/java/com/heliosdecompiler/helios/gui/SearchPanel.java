@@ -152,7 +152,7 @@ class SearchPanel {
                         Predicate<String> matches = (str) -> usePattern ? p.matcher(str).find() : str.toLowerCase().contains(lookup);
 
                         for (LoadedFile loadedFile : Helios.getAllFiles()) {
-                            loadedFile.getFiles().keySet().forEach(loadedFile::getClassNode);
+                            loadedFile.getAllData().keySet().forEach(loadedFile::getClassNode);
                             List<Result> results = new ArrayList<>();
                             for (ClassNode classNode : loadedFile.getAllClassNodes()) {
                                 for (FieldNode fieldNode : classNode.fields) {

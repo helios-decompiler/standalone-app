@@ -265,7 +265,7 @@ public class TreeManager {
             SpoofedTreeItem root = new SpoofedTreeItem();
             roots.add(root);
             root.name = loadedFile.getName();
-            for (Map.Entry<String, byte[]> entry : loadedFile.getFiles().entrySet()) {
+            for (Map.Entry<String, byte[]> entry : loadedFile.getAllData().entrySet()) {
                 final String[] spl = entry.getKey().split("/");
                 SpoofedTreeItem last = root;
                 for (int i = 0; i < spl.length; i++) {

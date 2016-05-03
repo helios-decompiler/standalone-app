@@ -60,7 +60,7 @@ public class FernflowerDecompiler extends Decompiler {
                         for (LoadedFile file : files) {
                             if (file.getClassNode(className) != null) {
                                 if (!importantClasses.containsKey(className + ".class")) {
-                                    importantClasses.put(className + ".class", file.getData().get(className + ".class"));
+                                    importantClasses.put(className + ".class", file.getAllData().get(className + ".class"));
                                 }
                                 ClassNode node = file.getClassNode(className);
                                 if (node.innerClasses != null) {

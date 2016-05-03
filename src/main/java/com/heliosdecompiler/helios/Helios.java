@@ -117,13 +117,13 @@ public class Helios {
             for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
                 File file = new File(strFile);
                 if (file.exists()) {
-                    LoadedFile loadedFile = new LoadedFile(file);
+                    LoadedFile loadedFile = new LoadedFile(file, true);
                     newPath.put(loadedFile.getName(), loadedFile);
                 }
             }
             File file = new File(Settings.RT_LOCATION.get().asString());
             if (file.exists()) {
-                LoadedFile loadedFile = new LoadedFile(file);
+                LoadedFile loadedFile = new LoadedFile(file, true);
                 newPath.put(loadedFile.getName(), loadedFile);
             }
             synchronized (Helios.class) {
@@ -196,7 +196,7 @@ public class Helios {
         return files
                 .values()
                 .stream()
-                .filter(loadedFile -> loadedFile.getFiles().containsKey(fileName))
+                .filter(loadedFile -> loadedFile.getAllData().containsKey(fileName))
                 .collect(Collectors.toList());
     }
 
@@ -208,7 +208,7 @@ public class Helios {
     public static List<ClassNode> loadAllClasses() {
         List<ClassNode> classNodes = new ArrayList<>();
         for (LoadedFile loadedFile : files.values()) {
-            for (String s : loadedFile.getFiles().keySet()) {
+            for (String s : loadedFile.getAllData().keySet()) {
                 ClassNode loaded = loadedFile.getClassNode(s);
                 if (loaded != null) {
                     classNodes.add(loaded);
@@ -334,7 +334,7 @@ public class Helios {
                                 for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
                                     File file = new File(strFile);
                                     if (file.exists()) {
-                                        LoadedFile loadedFile = new LoadedFile(file);
+                                        LoadedFile loadedFile = new LoadedFile(file, true);
                                         newPath.put(loadedFile.getName(), loadedFile);
                                     }
                                 }
@@ -535,10 +535,10 @@ public class Helios {
     public static Map<String, byte[]> getAllLoadedData() {
         Map<String, byte[]> data = new HashMap<>();
         for (LoadedFile loadedFile : files.values()) {
-            data.putAll(loadedFile.getData());
+            data.putAll(loadedFile.getAllData());
         }
         for (LoadedFile loadedFile : path.values()) {
-            data.putAll(loadedFile.getData());
+            data.putAll(loadedFile.getAllData());
         }
         return data;
     }

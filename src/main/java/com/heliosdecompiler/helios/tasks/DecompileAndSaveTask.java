@@ -120,7 +120,7 @@ public class DecompileAndSaveTask implements Runnable {
                 LoadedFile loadedFile = Helios.getLoadedFile(pair.getValue0());
                 if (loadedFile != null) {
                     String innerName = pair.getValue1();
-                    byte[] bytes = loadedFile.getData().get(innerName);
+                    byte[] bytes = loadedFile.getAllData().get(innerName);
                     if (bytes != null) {
                         if (loadedFile.getClassNode(pair.getValue1()) != null) {
                             StringBuilder buffer = new StringBuilder();
@@ -132,7 +132,7 @@ public class DecompileAndSaveTask implements Runnable {
                         } else {
                             zipOutputStream.putNextEntry(
                                     new ZipEntry(pair.getValue1()));
-                            zipOutputStream.write(loadedFile.getData().get(pair.getValue1()));
+                            zipOutputStream.write(loadedFile.getAllData().get(pair.getValue1()));
                             zipOutputStream.closeEntry();
                         }
                     }
