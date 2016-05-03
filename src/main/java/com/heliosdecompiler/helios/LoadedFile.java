@@ -23,9 +23,11 @@ import org.objectweb.asm.tree.ClassNode;
 
 import java.io.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -36,9 +38,9 @@ public class LoadedFile {
     private final File file;
     private final String name; /* The name of the file. No directory */
 
-    private final Map<String, byte[]> files = new HashMap<>(); /* Map of ZIP-style path with extension to byte */
-    private final Map<String, WrappedClassNode> classes = new HashMap<>(); /* Map of internal class name with ClassNode */
-    private final Map<String, WrappedClassNode> emptyClasses = new HashMap<>(); /* Map of classnodes without code */
+    private Map<String, byte[]> files; /* Map of ZIP-style path with extension to byte */
+    private Map<String, ClassNode> classes; /* Map of internal class name with ClassNode */
+    private Map<String, ClassNode> emptyClasses; /* Map of classnodes without code */
 
     private boolean isPath;
 
@@ -53,42 +55,62 @@ public class LoadedFile {
         reset();
     }
 
-    public ClassNode getClassNode(String name) {
-        if (name.endsWith(".class")) {
-            name = name.substring(0, name.length() - 6);
-        }
-        if (!classes.containsKey(name)) {
-            byte[] bytes = getAllData().get(name + ".class");
-            if (bytes != null) {
-                try {
-                    ClassReader reader = new ClassReader(bytes);
-                    ClassNode classNode = new ClassNode();
-                    reader.accept(classNode, ClassReader.EXPAND_FRAMES);
-                    classes.put(name, new WrappedClassNode(this, classNode));
-                } catch (Exception t) {
-                    ExceptionHandler.handle(t);
-                }
-            }
-        }
-        return classes.get(name) != null ? classes.get(name).getClassNode() : null;
-    }
-
-    public boolean remove(ClassNode classNode) {
-        return classes.remove(classNode.name) != null;
-    }
-
+    /*
+     * Reset everything in this LoadedFile (eg all the data)
+     */
     public void reset() {
         readDataQuick();
         if (files.size() > 0) {
+            // Read all data of potential class files
             Helios.submitBackgroundTask(() -> {
-                classes.clear();
-                for (Map.Entry<String, byte[]> ent : files.entrySet()) {
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    outputStream.write(ent.getValue(), 0, ent.getValue().length);
-                    load(ent.getKey(), outputStream);
-                }
+                this.emptyClasses = new HashMap<>();
+                files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
+                    try {
+                        ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
+                        ClassNode classNode = new ClassNode();
+                        classReader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+
+                        // Store by ClassNode name
+                        emptyClasses.put(classNode.name, classNode);
+                        // Also store by path
+                        emptyClasses.put(ent.getKey(), classNode);
+                    } catch (Exception ignored) { //Malformed class
+                    }
+                });
+                // Lock the map
+                this.emptyClasses = Collections.unmodifiableMap(this.emptyClasses);
             });
+            if (!this.isPath) {
+                // Read the code as well
+                // fixme If path jars are guarenteed to not require code then maybe we can merge emptyClasses and classes
+                Helios.submitBackgroundTask(() -> {
+                    this.classes = new HashMap<>();
+                    int x = files.size();
+                    AtomicInteger y = new AtomicInteger(0);
+                    files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
+                        try {
+                            ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
+                            ClassNode classNode = new ClassNode();
+                            classReader.accept(classNode, 0);
+
+                            // Store by ClassNode name
+                            this.classes.put(classNode.name, classNode);
+                            // Also store by path
+                            this.classes.put(ent.getKey(), classNode);
+//                            Thread.sleep(1);
+                            System.out.println(y.incrementAndGet() + "/" + x);
+                        } catch (Exception ignored) { //Malformed class
+                        }
+                    });
+                    // Lock the map
+                    this.classes = Collections.unmodifiableMap(this.classes);
+                });
+            }
         }
+    }
+
+    public ClassNode getClassNode(String name) {
+        return this.classes.get(name);
     }
 
     /*
@@ -105,40 +127,30 @@ public class LoadedFile {
             return;
         }
         // And now we can take our time. The file has been unlocked (unless something went seriously wrong)
-        this.files.clear();
+        this.files = new HashMap<>();
         try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(data))) {
-            ZipEntry entry = null;
+            ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 this.files.put(entry.getName(), IOUtils.toByteArray(zipInputStream));
             }
         } catch (Throwable ex) {
             // This should never happen
             ExceptionHandler.handle(new RuntimeException("Error while parsing file (!)", ex));
+            return;
         }
-        // If files is still empty, then it's not a zip file
+        // If files is still empty, then it's not a zip file (or something weird happened)
         if (this.files.size() == 0) {
             this.files.put(file.getName(), data);
         }
-    }
-
-    private void load(String entryName, ByteArrayOutputStream outputStream) {
-        if (entryName.endsWith(".class")) {
-            try {
-                ClassReader reader = new ClassReader(outputStream.toByteArray());
-                ClassNode classNode = new ClassNode();
-                reader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
-                emptyClasses.put(classNode.name, new WrappedClassNode(this, classNode));
-            } catch (Exception e) { //Malformed class
-                
-            }
-        }
+        // Lock the map
+        this.files = Collections.unmodifiableMap(this.files);
     }
 
     public Collection<ClassNode> getAllClassNodes() {
-        return classes.values().stream().map(WrappedClassNode::getClassNode).collect(Collectors.toList());
+        return classes.values();
     }
-    
-    public Map<String, WrappedClassNode> getEmptyClasses() {
+
+    public Map<String, ClassNode> getEmptyClasses() {
         return emptyClasses;
     }
 

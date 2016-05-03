@@ -35,6 +35,7 @@ public class DisplayPumper implements Runnable {
         shell = new Shell(display);
         Resources.loadAllImages();
         ready.set(true);
+        int i = 0;
         while (!display.isDisposed()) {
             try {
                 while (display.readAndDispatch()) ;

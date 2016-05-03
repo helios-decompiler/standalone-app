@@ -29,7 +29,6 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.WrappedClassNode;
 import com.heliosdecompiler.helios.api.events.Events;
 import com.heliosdecompiler.helios.api.events.PreDecompileEvent;
 import com.heliosdecompiler.helios.gui.ClickableSyntaxTextArea;
@@ -1021,9 +1020,9 @@ public class DecompileTask implements Runnable {
                         link.jumpTo = " " + nameExpr.getName() + "(";
                         textArea.links.add(link);
 
-                        WrappedClassNode classNode = readFrom.getEmptyClasses().get(internalName);
+                        ClassNode classNode = readFrom.getEmptyClasses().get(internalName);
                         print(depth, "Looking for method with name " + methodCallExpr.getName() + " in " + internalName + " " + classNode);
-                        MethodNode node = classNode.getClassNode().methods.stream().filter(mn -> mn.name.equals(methodCallExpr.getName())).findFirst().orElse(null);
+                        MethodNode node = classNode.methods.stream().filter(mn -> mn.name.equals(methodCallExpr.getName())).findFirst().orElse(null);
                         if (node != null) {
                             link.className = internalName + ".class";
                             Type returnType = Type.getType(node.desc);
@@ -1041,7 +1040,7 @@ public class DecompileTask implements Runnable {
                         if (internalName.equals("java/lang/Object")) {
                             break;
                         }
-                        internalName = classNode.getClassNode().superName;
+                        internalName = classNode.superName;
                     } else {
                         print(depth, "Could not find readfrom ");
                         break;
@@ -1103,9 +1102,9 @@ public class DecompileTask implements Runnable {
                     link.jumpTo = " " + fieldAccessExpr.getField();
                     textArea.links.add(link);
 
-                    WrappedClassNode classNode = readFrom.getEmptyClasses().get(internalName);
+                    ClassNode classNode = readFrom.getEmptyClasses().get(internalName);
                     print(depth, "Looking for field with name " + fieldAccessExpr.getField() + " in " + internalName + " " + classNode);
-                    List<FieldNode> fields = classNode.getClassNode().fields.stream().filter(f -> f.name.equals(fieldAccessExpr.getField())).collect(Collectors.toList());
+                    List<FieldNode> fields = classNode.fields.stream().filter(f -> f.name.equals(fieldAccessExpr.getField())).collect(Collectors.toList());
                     if (fields.size() > 0) {
                         link.className = internalName + ".class";
                         for (FieldNode fieldNode : fields) {
@@ -1119,7 +1118,7 @@ public class DecompileTask implements Runnable {
                     if (internalName.equals("java/lang/Object")) {
                         break;
                     }
-                    internalName = classNode.getClassNode().superName;
+                    internalName = classNode.superName;
                 } else {
                     print(depth, "Could not find readfrom ");
                     break;
