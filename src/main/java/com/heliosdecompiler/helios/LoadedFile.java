@@ -69,35 +69,32 @@ public class LoadedFile {
     }
 
     public void reset() throws IOException {
-        files.clear();
+        readDataQuick();
         classes.clear();
-        ZipFile zipFile = null;
-        try {
-            zipFile = new ZipFile(file);
+        for (Map.Entry<String, byte[]> ent : files.entrySet()) {
+            load(ent.getKey(), new ByteArrayInputStream(ent.getValue()));
+        }
+    }
+
+    private void readDataQuick() {
+        this.files.clear();
+        try (ZipFile zipFile = new ZipFile(file)){
             Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
             while (enumeration.hasMoreElements()) {
                 ZipEntry zipEntry = enumeration.nextElement();
                 if (!zipEntry.isDirectory()) {
-                    load(zipEntry.getName(), zipFile.getInputStream(zipEntry));
+                    byte[] bytes = IOUtils.toByteArray(zipFile.getInputStream(zipEntry));
+                    this.files.put(zipEntry.getName(), bytes);
                 }
             }
         } catch (ZipException e) { //Probably not a ZIP file
-            FileInputStream inputStream = null;
-            try {
-                inputStream = new FileInputStream(file);
-                load(this.name, inputStream);
-            } finally {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
+            try (FileInputStream inputStream = new FileInputStream(file)) {
+                this.files.put(file.getName(), IOUtils.toByteArray(inputStream));
+            } catch (IOException ex) {
+                ExceptionHandler.handle(ex);
             }
-        } finally {
-            if (zipFile != null) {
-                try {
-                    zipFile.close();
-                } catch (IOException e) {
-                }
-            }
+        } catch (IOException ex) {
+            ExceptionHandler.handle(ex);
         }
     }
 
