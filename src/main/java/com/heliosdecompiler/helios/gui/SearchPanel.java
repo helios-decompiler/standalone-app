@@ -221,8 +221,13 @@ class SearchPanel {
                                 item.setExpanded(false);
                                 item.dispose();
                             }
-                            for (TempTreeItem root : roots) {
-                                update(new TreeItem(outputTree, SWT.NONE), root);
+                            try {
+                                outputTree.setRedraw(false);
+                                for (TempTreeItem root : roots) {
+                                    update(new TreeItem(outputTree, SWT.NONE), root);
+                                }
+                            } finally {
+                                outputTree.setRedraw(true);
                             }
                         });
                     });

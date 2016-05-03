@@ -271,8 +271,13 @@ public class TreeManager {
         update(roots);
         sort(roots);
         display.syncExec(() -> {
-            for (SpoofedTreeItem root : roots) { //TODO: Update root if file changed?
-                update(new TreeItem(tree, SWT.NONE), root);
+            try {
+                tree.setRedraw(false);
+                for (SpoofedTreeItem root : roots) { //TODO: Update root if file changed?
+                    update(new TreeItem(tree, SWT.NONE), root);
+                }
+            } finally {
+                tree.setRedraw(true);
             }
         });
     }
