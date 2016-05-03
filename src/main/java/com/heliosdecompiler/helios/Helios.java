@@ -117,22 +117,14 @@ public class Helios {
             for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
                 File file = new File(strFile);
                 if (file.exists()) {
-                    try {
-                        LoadedFile loadedFile = new LoadedFile(file);
-                        newPath.put(loadedFile.getName(), loadedFile);
-                    } catch (IOException e1) {
-                        ExceptionHandler.handle(e1);
-                    }
+                    LoadedFile loadedFile = new LoadedFile(file);
+                    newPath.put(loadedFile.getName(), loadedFile);
                 }
             }
             File file = new File(Settings.RT_LOCATION.get().asString());
             if (file.exists()) {
-                try {
-                    LoadedFile loadedFile = new LoadedFile(file);
-                    newPath.put(loadedFile.getName(), loadedFile);
-                } catch (IOException e1) {
-                    ExceptionHandler.handle(e1);
-                }
+                LoadedFile loadedFile = new LoadedFile(file);
+                newPath.put(loadedFile.getName(), loadedFile);
             }
             synchronized (Helios.class) {
                 path.clear();
@@ -298,12 +290,9 @@ public class Helios {
 
     public static void promptForRefresh() {
         if (SWTUtil.promptForYesNo(Constants.REPO_NAME + " - Refresh", "Are you sure you wish to refresh?")) {
-            for (LoadedFile loadedFile : Helios.files.values()) {
-                try {
-                    loadedFile.reset();
-                } catch (IOException e) {
-                    ExceptionHandler.handle(e);
-                }
+            for (LoadedFile loadedFile : Helios.files.values())
+            {
+                loadedFile.reset();
             }
             Events.callEvent(new TreeUpdateRequest());
         }
@@ -340,17 +329,13 @@ public class Helios {
                         String oldPath = Settings.PATH.get().asString();
                         if (!oldPath.equals(text.getText())) {
                             Settings.PATH.set(text.getText());
-                            submitBackgroundTask(() -> {
+                            Future<?> future = submitBackgroundTask(() -> {
                                 Map<String, LoadedFile> newPath = new HashMap<>();
                                 for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
                                     File file = new File(strFile);
                                     if (file.exists()) {
-                                        try {
-                                            LoadedFile loadedFile = new LoadedFile(file);
-                                            newPath.put(loadedFile.getName(), loadedFile);
-                                        } catch (IOException e1) {
-                                            ExceptionHandler.handle(e1);
-                                        }
+                                        LoadedFile loadedFile = new LoadedFile(file);
+                                        newPath.put(loadedFile.getName(), loadedFile);
                                     }
                                 }
                                 synchronized (Helios.class) {

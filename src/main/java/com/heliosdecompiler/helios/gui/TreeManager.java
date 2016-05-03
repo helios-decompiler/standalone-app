@@ -74,6 +74,17 @@ public class TreeManager {
                 }
             }
         });
+        tree.addListener(SWT.SetData, event -> {
+            TreeItem item = (TreeItem) event.item;
+            List<SpoofedTreeItem> list = (List<SpoofedTreeItem>) (item.getParentItem() == null ? tree.getData() : item.getParentItem().getData());
+            SpoofedTreeItem spoofedTreeItem = list.get(event.index);
+            item.setText(spoofedTreeItem.name);
+            item.setImage(spoofedTreeItem.icon);
+            if (spoofedTreeItem.children.size()>  0) {
+                item.setItemCount(spoofedTreeItem.children.size());
+                item.setData(spoofedTreeItem.children);
+            }
+        });
         tree.addListener(SWT.Expand, event -> {
             TreeItem current = (TreeItem) event.item;
             TreeItem[] children;
@@ -168,7 +179,7 @@ public class TreeManager {
                     }
 
                     new MenuItem(menu, SWT.SEPARATOR);
-                    
+
                     MenuItem disassembleMenuLabel = new MenuItem(menu, SWT.CASCADE);
                     disassembleMenuLabel.setText("Disassemble With");
                     disassembleMenuLabel.setEnabled(item != null && item.getText().endsWith(".class"));
@@ -217,10 +228,14 @@ public class TreeManager {
     }
 
     public void reset() {
+        tree.getDisplay().syncExec(this::reset0);
+    }
+
+    private void reset0() {
         for (TreeItem item : tree.getItems()) {
             item.setExpanded(false);
+            item.dispose();
         }
-        tree.getDisplay().syncExec(() -> dispose(tree.getItems()));
     }
 
     public void click(TreeItem item) {
@@ -244,7 +259,6 @@ public class TreeManager {
 
     private void update() {
         Display display = tree.getDisplay();
-        display.syncExec(this::reset);
         List<SpoofedTreeItem> roots = new ArrayList<>();
         for (LoadedFile loadedFile : Helios.getAllFiles()) {
             Map<String, SpoofedTreeItem> map = new HashMap<>();
@@ -273,9 +287,9 @@ public class TreeManager {
         display.syncExec(() -> {
             try {
                 tree.setRedraw(false);
-                for (SpoofedTreeItem root : roots) { //TODO: Update root if file changed?
-                    update(new TreeItem(tree, SWT.NONE), root);
-                }
+                reset0();
+                tree.setData(roots);
+                tree.setItemCount(roots.size());
             } finally {
                 tree.setRedraw(true);
             }
@@ -290,15 +304,6 @@ public class TreeManager {
         });
         for (SpoofedTreeItem spoof : items) {
             sort(spoof.children);
-        }
-    }
-
-    private void update(TreeItem last, SpoofedTreeItem lastspoof) {
-        while (last.getDisplay().readAndDispatch()) ; //Is there any way we can make this better? (so GUI doesn't hang)
-        last.setText(lastspoof.name);
-        last.setImage(lastspoof.icon);
-        for (SpoofedTreeItem child : lastspoof.children) {
-            update(new TreeItem(last, SWT.NONE), child);
         }
     }
 
@@ -318,22 +323,6 @@ public class TreeManager {
             render(treeItem);
             update(treeItem.children);
         }
-    }
-
-    private void dispose(TreeItem[] items) {
-        for (TreeItem treeItem : items) {
-            dispose(treeItem.getItems());
-            treeItem.dispose();
-        }
-    }
-
-    private TreeItem findChild(TreeItem root, String name) {
-        for (TreeItem item : root.getItems()) {
-            if (item.getText().equals(name)) {
-                return item;
-            }
-        }
-        return null;
     }
 
     private void render(SpoofedTreeItem item) {

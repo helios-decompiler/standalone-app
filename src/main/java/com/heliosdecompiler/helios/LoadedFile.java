@@ -21,7 +21,10 @@ import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,7 +41,7 @@ public class LoadedFile {
     private final Map<String, WrappedClassNode> classes = new HashMap<>(); /* Map of internal class name with ClassNode */
     private final Map<String, WrappedClassNode> emptyClasses = new HashMap<>(); /* Map of classnodes without code */
 
-    public LoadedFile(File file) throws IOException {
+    public LoadedFile(File file) {
         this.file = file;
         this.name = file.getName();
         reset();
@@ -68,17 +71,21 @@ public class LoadedFile {
         return classes.remove(classNode.name) != null;
     }
 
-    public void reset() throws IOException {
+    public void reset() {
         readDataQuick();
-        classes.clear();
-        for (Map.Entry<String, byte[]> ent : files.entrySet()) {
-            load(ent.getKey(), new ByteArrayInputStream(ent.getValue()));
-        }
+        Helios.submitBackgroundTask(() -> {
+            classes.clear();
+            for (Map.Entry<String, byte[]> ent : files.entrySet()) {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(ent.getValue(), 0, ent.getValue().length);
+                load(ent.getKey(), outputStream);
+            }
+        });
     }
 
     private void readDataQuick() {
         this.files.clear();
-        try (ZipFile zipFile = new ZipFile(file)){
+        try (ZipFile zipFile = new ZipFile(file)) {
             Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
             while (enumeration.hasMoreElements()) {
                 ZipEntry zipEntry = enumeration.nextElement();
@@ -98,9 +105,7 @@ public class LoadedFile {
         }
     }
 
-    private void load(String entryName, InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        IOUtils.copy(inputStream, outputStream);
+    private void load(String entryName, ByteArrayOutputStream outputStream) {
         if (entryName.endsWith(".class")) {
             try {
                 ClassReader reader = new ClassReader(outputStream.toByteArray());
@@ -109,11 +114,6 @@ public class LoadedFile {
                 emptyClasses.put(classNode.name, new WrappedClassNode(this, classNode));
             } catch (Exception e) { //Malformed class
             }
-        }
-        if (!files.containsKey(entryName)) {
-            files.put(entryName, outputStream.toByteArray());
-        } else {
-            System.out.println("Uh oh. Duplicate file...");
         }
     }
 

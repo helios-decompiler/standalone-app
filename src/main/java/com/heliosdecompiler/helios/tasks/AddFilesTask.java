@@ -45,27 +45,27 @@ public class AddFilesTask implements Runnable {
     @Override
     public void run() {
         try {
-            Arrays.stream(files).filter(Objects::nonNull).filter(File::exists).map(file -> {
-                try {
-                    return file.getCanonicalFile();
-                } catch (Exception exception) {
-                    return file;
-                }
-            }).forEach(file -> {
-                try {
+            for (File file : files) {
+                if (file != null && file.exists()) {
+                    try {
+                        file = file.getCanonicalFile();
+                    } catch (IOException ignored) {
+                    }
                     if (addToRecentFiles) Helios.addRecentFile(file);
-                    handle(file);
-                } catch (IOException e) {
-                    ExceptionHandler.handle(e);
+                    try {
+                        handle(file);
+                    } catch (IOException e) {
+                        ExceptionHandler.handle(e);
+                    }
                 }
-            });
+            }
         } finally {
             Events.callEvent(new TreeUpdateRequest());
         }
     }
 
     private void handle(File file) throws IOException {
-        if (file.getCanonicalFile().isDirectory()) {
+        if (file.isDirectory()) {
             handleDirectory(file);
         } else {
             handleFile(file);
