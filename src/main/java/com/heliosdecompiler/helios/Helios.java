@@ -109,7 +109,7 @@ public class Helios {
         try {
             socket = new LocalSocket();
         } catch (IOException e) { // Maybe allow the user to force open a second instance?
-            ExceptionHandler.handle(e);
+//            ExceptionHandler.handle(e);
         }
 
         handleCommandLine(args);

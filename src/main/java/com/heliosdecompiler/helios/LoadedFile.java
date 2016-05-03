@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -63,7 +64,7 @@ public class LoadedFile {
         if (files.size() > 0) {
             // Read all data of potential class files
             Helios.submitBackgroundTask(() -> {
-                this.emptyClasses = new HashMap<>();
+                Map<String, ClassNode> emptyClasses = new HashMap<>();
                 files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
                     try {
                         ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
@@ -78,13 +79,14 @@ public class LoadedFile {
                     }
                 });
                 // Lock the map
-                this.emptyClasses = Collections.unmodifiableMap(this.emptyClasses);
+                this.emptyClasses = Collections.unmodifiableMap(emptyClasses);
             });
             if (!this.isPath) {
                 // Read the code as well
                 // fixme If path jars are guarenteed to not require code then maybe we can merge emptyClasses and classes
+                // fixme this seems to hog cpu cycles or something
                 Helios.submitBackgroundTask(() -> {
-                    this.classes = new HashMap<>();
+                    Map<String, ClassNode> classes = new HashMap<>();
                     int x = files.size();
                     AtomicInteger y = new AtomicInteger(0);
                     files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
@@ -94,16 +96,15 @@ public class LoadedFile {
                             classReader.accept(classNode, 0);
 
                             // Store by ClassNode name
-                            this.classes.put(classNode.name, classNode);
+                            classes.put(classNode.name, classNode);
                             // Also store by path
-                            this.classes.put(ent.getKey(), classNode);
-//                            Thread.sleep(1);
+                            classes.put(ent.getKey(), classNode);
                             System.out.println(y.incrementAndGet() + "/" + x);
                         } catch (Exception ignored) { //Malformed class
                         }
                     });
                     // Lock the map
-                    this.classes = Collections.unmodifiableMap(this.classes);
+                    this.classes = Collections.unmodifiableMap(classes);
                 });
             }
         }

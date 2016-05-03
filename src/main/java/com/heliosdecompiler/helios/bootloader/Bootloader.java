@@ -90,6 +90,7 @@ public class Bootloader {
                 }
             } else {
                 Thread pumpThread = new Thread(displayPumper);
+                pumpThread.setName("Display Pumper");
                 pumpThread.start();
             }
             while (!displayPumper.isReady()) ;
@@ -111,9 +112,10 @@ public class Bootloader {
             }
 
             Helios.main(args, shell, splashScreen);
-            while (!displayPumper.isDone()) {
-                Thread.sleep(100);
+            synchronized (displayPumper.getSynchronizer()) {
+                displayPumper.getSynchronizer().wait();
             }
+            System.exit(0);
         } catch (Throwable t) {
             displayError(t);
             System.exit(1);
@@ -272,7 +274,6 @@ public class Bootloader {
 
         return data;
     }
-
 
 
     private static void displayError(Throwable t) {

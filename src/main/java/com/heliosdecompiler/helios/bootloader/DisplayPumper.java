@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DisplayPumper implements Runnable {
     private final AtomicBoolean ready = new AtomicBoolean(false);
-    private final AtomicBoolean done = new AtomicBoolean(false);
+    private final Object synchronizer = new Object();
 
     private Display display;
     private Shell shell;
@@ -36,7 +36,7 @@ public class DisplayPumper implements Runnable {
         Resources.loadAllImages();
         ready.set(true);
         int i = 0;
-        while (!display.isDisposed()) {
+        while (!display.isDisposed() && !shell.isDisposed()) {
             try {
                 while (display.readAndDispatch()) ;
             } catch (Throwable e) {
@@ -44,7 +44,9 @@ public class DisplayPumper implements Runnable {
             }
             display.sleep();
         }
-        done.set(true);
+        synchronized (synchronizer) {
+            synchronizer.notifyAll();
+        }
     }
 
     public Display getDisplay() {
@@ -59,7 +61,7 @@ public class DisplayPumper implements Runnable {
         return ready.get();
     }
 
-    public boolean isDone() {
-        return done.get();
+    public Object getSynchronizer() {
+        return this.synchronizer;
     }
 }

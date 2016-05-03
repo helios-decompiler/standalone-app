@@ -10,7 +10,7 @@ import java.net.Socket;
 public class LocalSocket extends ServerSocket implements Runnable {
     public LocalSocket() throws IOException {
         super(21354);
-        new Thread(this).start();
+        new Thread(this, "Inter-Process Communications Socket").start();
     }
 
     public void run() {

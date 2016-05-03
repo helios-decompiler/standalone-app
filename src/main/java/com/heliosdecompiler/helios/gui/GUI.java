@@ -502,23 +502,11 @@ public class GUI {
                     }
                 });
                 try {
-                    Thread.sleep(100);
-                } catch (Throwable e) {
+                    Thread.sleep(500);
+                } catch (Throwable ignored) {
                 }
             }
-        }).start();
-        new Thread(() -> {
-            while (!shell.isDisposed()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (Throwable e) {
-                }
-            }
-            display.asyncExec(() -> {
-                display.dispose();
-                System.exit(0);
-            });
-        }).start();
+        }, "Memory and Task Updater").start();
     }
 
     public ClassManager getClassManager() {

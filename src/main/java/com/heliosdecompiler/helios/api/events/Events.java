@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Events {
-    private static final ExecutorService EVENT_LOOP = Executors.newFixedThreadPool(4);
+    private static final ExecutorService EVENT_LOOP = Executors.newFixedThreadPool(4, r -> new Thread("Event Thread"));
 
     private static final Map<Class<?>, Method> METHOD_MAP;
 
