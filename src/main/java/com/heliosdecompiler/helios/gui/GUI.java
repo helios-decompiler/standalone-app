@@ -53,6 +53,8 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -61,6 +63,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 
 import java.io.File;
@@ -85,12 +88,14 @@ public class GUI {
             setupMenuBar();
             setupSashForm();
 
-            Monitor primary = display.getPrimaryMonitor();
-            Rectangle bounds = primary.getBounds();
-            Rectangle rect = shell.getBounds();
-            int x = bounds.x + (bounds.width - rect.width) / 2;
-            int y = bounds.y + (bounds.height - rect.height) / 2;
-            shell.setLocation(x, y);
+//            Monitor primary = display.getPrimaryMonitor();
+//            Rectangle bounds = primary.getBounds();
+//            Rectangle rect = shell.getBounds();
+//            int x = bounds.x + (bounds.width - rect.width) / 2;
+//            int y = bounds.y + (bounds.height - rect.height) / 2;
+//            shell.setLocation(x, y);
+
+            shell.setMaximized(true);
 
             searchPopup = new SearchPopup();
         });
@@ -400,10 +405,27 @@ public class GUI {
 
         setupTree(sashForm);
         setupTabs(sashForm);
+        setupRight(sashForm);
 
-        sashForm.setWeights(new int[]{20, 80});
+        sashForm.setWeights(new int[]{20, 65, 15});
 
         setupStatusBar();
+    }
+
+    private void setupRight(SashForm outer) {
+        SashForm sashForm = new SashForm(outer, SWT.VERTICAL);
+        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+        sashForm.setLayout(new FillLayout());
+
+        setupHierachy(sashForm);
+        new SearchPanel(sashForm);
+
+        sashForm.setWeights(new int[] {30, 70});
+    }
+
+    private void setupHierachy(SashForm sashForm) {
+        Composite comp = new Composite(sashForm, SWT.BORDER);
+
     }
 
     private void setupTree(SashForm sashForm) {

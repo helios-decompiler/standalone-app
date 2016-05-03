@@ -227,6 +227,7 @@ public class Helios {
     }
 
     public static void openFiles(final File[] files, final boolean recentFiles) {
+        //TODO Loading everything as ClassNode async, handle thread safety, show popup if action requires loaded file but not completely loaded
         submitBackgroundTask(new AddFilesTask(files, recentFiles));
     }
 
