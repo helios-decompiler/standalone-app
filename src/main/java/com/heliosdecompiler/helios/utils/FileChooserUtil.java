@@ -45,7 +45,7 @@ public class FileChooserUtil {
 
     private static void chooseFiles0(String startingPath, List<String> extensions, boolean multi, AtomicReference<List<File>> result) {
         Shell shell = Helios.getGui().getShell();
-        FileDialog dialog = new FileDialog(shell, SWT.PRIMARY_MODAL | SWT.OPEN | (multi ? SWT.MULTI : 0));
+        FileDialog dialog = new FileDialog(shell, SWT.OPEN | (multi ? SWT.MULTI : 0));
         if (!extensions.isEmpty()) {
             StringBuilder extension = new StringBuilder();
             for (String extension1 : extensions) {
@@ -62,10 +62,7 @@ public class FileChooserUtil {
                 dialog.setFileName(file.getName());
             }
         }
-        Future<?> future = Helios.submitBackgroundTask(dialog::open);
-        while (!future.isDone()) {
-            shell.getDisplay().readAndDispatch();
-        }
+        dialog.open();
         String[] selectedFileNames = dialog.getFileNames();
         if (selectedFileNames.length > 0) {
             List<File> files = new ArrayList<>();
