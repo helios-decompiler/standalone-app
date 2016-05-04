@@ -102,13 +102,32 @@ public class LoadedFile {
                         // Lock the map
                         this.classes = Collections.unmodifiableMap(classes);
                     });
+                } else {
+                    this.classes = Collections.synchronizedMap(new HashMap<>());
                 }
             });
         }
     }
 
     public ClassNode getClassNode(String name) {
-        return this.classes.get(name);
+        if (!this.isPath) {
+            return this.classes.get(name);
+        } else {
+            if (!this.classes.containsKey(name)) {
+                try {
+                    ClassReader classReader = new ClassReader(new ByteArrayInputStream(files.get(name)));
+                    ClassNode classNode = new ClassNode();
+                    classReader.accept(classNode, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+
+                    // Store by ClassNode name
+                    classes.put(classNode.name, classNode);
+                    // Also store by path
+                    classes.put(name, classNode);
+                } catch (Exception ignored) { //Malformed class
+                }
+            }
+            return this.classes.get(name);
+        }
     }
 
     /*
