@@ -86,8 +86,6 @@ public class LoadedFile {
                     // fixme this seems to hog cpu cycles or something
                     Helios.submitBackgroundTask(() -> {
                         Map<String, ClassNode> classes = new HashMap<>();
-                        int x = files.size();
-                        AtomicInteger y = new AtomicInteger(0);
                         files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
                             try {
                                 ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
@@ -98,7 +96,6 @@ public class LoadedFile {
                                 classes.put(classNode.name, classNode);
                                 // Also store by path
                                 classes.put(ent.getKey(), classNode);
-                                System.out.println(y.incrementAndGet() + "/" + x);
                             } catch (Exception ignored) { //Malformed class
                             }
                         });
