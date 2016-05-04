@@ -80,33 +80,30 @@ public class LoadedFile {
                 });
                 // Lock the map
                 this.emptyClasses = Collections.unmodifiableMap(emptyClasses);
-            });
-            if (!this.isPath) {
-                // Read the code as well
-                // fixme If path jars are guarenteed to not require code then maybe we can merge emptyClasses and classes
-                // fixme this seems to hog cpu cycles or something
-                Helios.submitBackgroundTask(() -> {
-                    Map<String, ClassNode> classes = new HashMap<>();
-                    int x = files.size();
-                    AtomicInteger y = new AtomicInteger(0);
-                    files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
-                        try {
-                            ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
-                            ClassNode classNode = new ClassNode();
-                            classReader.accept(classNode, 0);
+                if (!this.isPath || true) {
+                    // Read the code as well
+                    // fixme If path jars are guarenteed to not require code then maybe we can merge emptyClasses and classes
+                    // fixme this seems to hog cpu cycles or something
+                    Helios.submitBackgroundTask(() -> {
+                        Map<String, ClassNode> classes = new HashMap<>();
+                        files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
+                            try {
+                                ClassReader classReader = new ClassReader(new ByteArrayInputStream(ent.getValue()));
+                                ClassNode classNode = new ClassNode();
+                                classReader.accept(classNode, 0);
 
-                            // Store by ClassNode name
-                            classes.put(classNode.name, classNode);
-                            // Also store by path
-                            classes.put(ent.getKey(), classNode);
-                            System.out.println(y.incrementAndGet() + "/" + x);
-                        } catch (Exception ignored) { //Malformed class
-                        }
+                                // Store by ClassNode name
+                                classes.put(classNode.name, classNode);
+                                // Also store by path
+                                classes.put(ent.getKey(), classNode);
+                            } catch (Exception ignored) { //Malformed class
+                            }
+                        });
+                        // Lock the map
+                        this.classes = Collections.unmodifiableMap(classes);
                     });
-                    // Lock the map
-                    this.classes = Collections.unmodifiableMap(classes);
-                });
-            }
+                }
+            });
         }
     }
 
