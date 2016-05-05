@@ -133,13 +133,17 @@ public class Helios {
             path.putAll(newPath);
         }
 //        });
-
-
+        
         splashScreen.updateState(BootSequence.COMPLETE);
         while (!splashScreen.isDisposed()) ;
         Display.getDefault().syncExec(() -> {
             shell.open();
             shell.setFocus();
+            if (!shell.isFocusControl()) {
+                shell.forceFocus();
+            }
+            shell.setActive();
+            shell.forceActive();
         });
     }
 

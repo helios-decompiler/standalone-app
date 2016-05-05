@@ -35,11 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FileChooserUtil {
     public static List<File> chooseFiles(String startingPath, List<String> extensions, boolean multi) {
         AtomicReference<List<File>> returnValue = new AtomicReference<>();
-        if (Thread.currentThread() == Display.getDefault().getThread()) {
-            chooseFiles0(startingPath, extensions, multi, returnValue);
-        } else {
-            Display.getDefault().syncExec(() -> chooseFiles0(startingPath, extensions, multi, returnValue));
-        }
+        SWTUtil.runTaskOnMainThread(() -> chooseFiles0(startingPath, extensions, multi, returnValue), false);
         return returnValue.get();
     }
 
@@ -76,35 +72,31 @@ public class FileChooserUtil {
         } else {
             result.set(Collections.emptyList());
         }
-
     }
 
-    public static File chooseSaveLocation(final String startingPath, final List<String> extensions) {
-        final AtomicReference<File> returnValue = new AtomicReference<>();
-        Display.getDefault().syncExec(() -> {
-            String[] validExtensions = new String[extensions.size()];
-            for (int index = 0; index < extensions.size(); index++) {
-                validExtensions[index] = "*." + extensions.get(index);
-            }
-            Shell shell = new Shell(Display.getDefault());
-            FileDialog dialog = new FileDialog(shell, SWT.OPEN | SWT.SAVE);
-            dialog.setFilterExtensions(validExtensions);
-            dialog.setFilterPath(startingPath);
-            dialog.open();
-            String selectedName = dialog.getFileName();
-            shell.close();
-            if (!shell.isDisposed()) {
-                System.out.println("Shell did not dispose properly");
-            }
-            if (!selectedName.isEmpty()) {
-                StringBuilder buf = new StringBuilder(dialog.getFilterPath());
-                if (buf.charAt(buf.length() - 1) != File.separatorChar) buf.append(File.separatorChar);
-                buf.append(selectedName);
-                returnValue.set(new File(buf.toString()));
-            } else {
-                returnValue.set(null);
-            }
-        });
+    public static File chooseSaveLocation(String startingPath, List<String> extensions) {
+        AtomicReference<File> returnValue = new AtomicReference<>();
+        SWTUtil.runTaskOnMainThread(() -> chooseSaveLocation0(startingPath, extensions, returnValue), false);
         return returnValue.get();
+    }
+    
+    private static void chooseSaveLocation0(String startingPath, List<String> extensions, AtomicReference<File> returnValue) {
+        String[] validExtensions = new String[extensions.size()];
+        for (int index = 0; index < extensions.size(); index++) {
+            validExtensions[index] = "*." + extensions.get(index);
+        }
+        Shell shell = Helios.getGui().getShell();
+        FileDialog dialog = new FileDialog(shell, SWT.OPEN | SWT.SAVE);
+        dialog.setFilterExtensions(validExtensions);
+        dialog.setFilterPath(startingPath);
+        String selectedName = dialog.open();
+        if (!selectedName.isEmpty()) {
+            StringBuilder buf = new StringBuilder(dialog.getFilterPath());
+            if (buf.charAt(buf.length() - 1) != File.separatorChar) buf.append(File.separatorChar);
+            buf.append(selectedName);
+            returnValue.set(new File(buf.toString()));
+        } else {
+            returnValue.set(null);
+        }
     }
 }

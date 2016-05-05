@@ -146,8 +146,12 @@ public class SWTUtil {
     }
     
     public static void runTaskOnMainThread(Runnable task, boolean async) {
-        if (Thread.currentThread() == Display.getDefault().getThread()) {
-            task.run();
+        if (isMainThread()) {
+            if (async) {
+                Display.getDefault().asyncExec(task);
+            } else {
+                task.run();
+            }
         } else {
             if (async) {
                 Display.getDefault().asyncExec(task);
@@ -155,5 +159,9 @@ public class SWTUtil {
                 Display.getDefault().syncExec(task);
             }
         }
+    }
+    
+    public static boolean isMainThread() {
+        return Thread.currentThread() == Display.getDefault().getThread();
     }
 }

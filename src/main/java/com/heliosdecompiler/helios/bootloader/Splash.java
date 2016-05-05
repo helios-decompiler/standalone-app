@@ -41,37 +41,38 @@ public class Splash {
 
     public Splash(final Display display) {
         this.display = display;
-        display.syncExec(new Runnable() {
-            @Override
-            public void run() {
-                splash = new Shell(display, SWT.ON_TOP);
-                splash.setBackground(new Color(display, 255, 255, 255));
+        display.syncExec(() -> {
+            Color color = /*new Color(display, 255,255,255);
+            color = */new Color(display, 135,206, 250);
+            splash = new Shell(display, SWT.ON_TOP);
+            splash.setBackground(color);
+            splash.setBackgroundMode(SWT.INHERIT_FORCE);
 
-                Label label = new Label(splash, SWT.NONE);
-                image = new Image(display, Bootloader.class.getResourceAsStream("/res/256.png"));
-                label.setImage(image);
-                label.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+            Label label = new Label(splash, SWT.NONE);
+            image = new Image(display, Bootloader.class.getResourceAsStream("/res/256.png"));
+            image.setBackground(color);
+            label.setImage(image);
+            label.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
 
-                bar = new ProgressBar(splash, SWT.NONE);
-                bar.setMaximum(SPLASH_MAX);
-                bar.setLayoutData(new GridData(GridData.FILL_BOTH));
+            bar = new ProgressBar(splash, SWT.NONE);
+            bar.setMaximum(SPLASH_MAX);
+            bar.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-                text = new Label(splash, SWT.NONE);
-                text.setSize(splash.getSize());
-                text.setBackground(new Color(display, 255, 255, 255));
-                text.setFont(new Font(display, display.getSystemFont().getFontData()[0].getName(), 12, SWT.NONE));
-                text.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER | GridData.FILL_BOTH));
+            text = new Label(splash, SWT.NONE);
+            text.setSize(splash.getSize());
+            text.setBackground(color);
+            text.setFont(new Font(display, display.getSystemFont().getFontData()[0].getName(), 12, SWT.NONE));
+            text.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER | GridData.FILL_BOTH));
 
-                splash.setLayout(new GridLayout(1, false));
-                splash.pack();
+            splash.setLayout(new GridLayout(1, false));
+            splash.pack();
 
-                Rectangle splashRect = splash.getBounds();
-                Rectangle displayRect = display.getPrimaryMonitor().getBounds();
-                int x = (displayRect.width - splashRect.width) / 2;
-                int y = (displayRect.height - splashRect.height) / 2;
-                splash.setLocation(x, y);
-                splash.open();
-            }
+            Rectangle splashRect = splash.getBounds();
+            Rectangle displayRect = display.getPrimaryMonitor().getBounds();
+            int x = (displayRect.width - splashRect.width) / 2;
+            int y = (displayRect.height - splashRect.height) / 2;
+            splash.setLocation(x, y);
+            splash.open();
         });
     }
 
