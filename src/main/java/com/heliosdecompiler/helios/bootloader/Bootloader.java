@@ -66,9 +66,11 @@ public class Bootloader {
                 throw new RuntimeException("Settings file is directory");
 
             try {
-                Class.forName("org.eclipse.swt.widgets.Display");
+                Class<?> clazz = Class.forName("org.eclipse.swt.widgets.Event");
+                Object location = clazz.getProtectionDomain() != null && clazz.getProtectionDomain().getCodeSource() != null ? clazz.getProtectionDomain().getCodeSource().getLocation() : "";
+                throw new RuntimeException("SWT should not be loaded. Instead, it was loaded from " + location);
             } catch (ClassNotFoundException ignored) {
-                loadSWTLibrary(); // For debugging purposes
+                loadSWTLibrary();
             }
 
             DisplayPumper displayPumper = new DisplayPumper();
