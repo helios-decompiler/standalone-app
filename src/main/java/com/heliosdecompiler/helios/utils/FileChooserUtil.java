@@ -90,7 +90,7 @@ public class FileChooserUtil {
         dialog.setFilterExtensions(validExtensions);
         dialog.setFilterPath(startingPath);
         String selectedName = dialog.open();
-        if (!selectedName.isEmpty()) {
+        if (selectedName != null && !selectedName.isEmpty()) {
             StringBuilder buf = new StringBuilder(dialog.getFilterPath());
             if (buf.charAt(buf.length() - 1) != File.separatorChar) buf.append(File.separatorChar);
             buf.append(selectedName);
