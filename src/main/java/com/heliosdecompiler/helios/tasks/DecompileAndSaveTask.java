@@ -114,6 +114,7 @@ public class DecompileAndSaveTask implements Runnable {
         ZipOutputStream zipOutputStream = null;
 
         try {
+            file.createNewFile();
             fileOutputStream = new FileOutputStream(file);
             zipOutputStream = new ZipOutputStream(fileOutputStream);
             for (Pair<String, String> pair : data) {
