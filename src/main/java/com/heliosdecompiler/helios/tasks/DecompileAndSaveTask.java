@@ -40,7 +40,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -102,7 +104,7 @@ public class DecompileAndSaveTask implements Runnable {
             shell.open();
         });
 
-        synchronized(transformer) {
+        synchronized (transformer) {
             try {
                 transformer.wait();
             } catch (InterruptedException e) {
@@ -117,6 +119,7 @@ public class DecompileAndSaveTask implements Runnable {
             file.createNewFile();
             fileOutputStream = new FileOutputStream(file);
             zipOutputStream = new ZipOutputStream(fileOutputStream);
+            Set<String> written = new HashSet<>();
             for (Pair<String, String> pair : data) {
                 LoadedFile loadedFile = Helios.getLoadedFile(pair.getValue0());
                 if (loadedFile != null) {
@@ -126,15 +129,24 @@ public class DecompileAndSaveTask implements Runnable {
                         if (loadedFile.getClassNode(pair.getValue1()) != null) {
                             StringBuilder buffer = new StringBuilder();
                             transformer.get().transform(loadedFile.getClassNode(pair.getValue1()), bytes, buffer);
-                            zipOutputStream.putNextEntry(
-                                    new ZipEntry(innerName.substring(0, innerName.length() - 6) + ".java"));
-                            zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
-                            zipOutputStream.closeEntry();
+                            String name = innerName.substring(0, innerName.length() - 6) + ".java";
+                            if (written.add(name)) {
+                                zipOutputStream.putNextEntry(
+                                        new ZipEntry(name));
+                                zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
+                                zipOutputStream.closeEntry();
+                            } else {
+                                SWTUtil.showMessage("Duplicate entry occured: " + name);
+                            }
                         } else {
-                            zipOutputStream.putNextEntry(
-                                    new ZipEntry(pair.getValue1()));
-                            zipOutputStream.write(loadedFile.getAllData().get(pair.getValue1()));
-                            zipOutputStream.closeEntry();
+                            if (written.add(pair.getValue1())) {
+                                zipOutputStream.putNextEntry(
+                                        new ZipEntry(pair.getValue1()));
+                                zipOutputStream.write(loadedFile.getAllData().get(pair.getValue1()));
+                                zipOutputStream.closeEntry();
+                            } else {
+                                SWTUtil.showMessage("Duplicate entry occured: " + pair.getValue1());
+                            }
                         }
                     }
                 }
