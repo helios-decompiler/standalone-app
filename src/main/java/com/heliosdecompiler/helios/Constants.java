@@ -30,8 +30,8 @@ public class Constants {
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
     public static final String SWT_VERSION = "4.5.2";
-    public static final String KRAKATAU_VERSION = "a000009e6fea1af91917cda4721462b5238cb561";
-    public static final String ENJARIFY_VERSION = "ad8d64f6e564922bbe1f08f488cf7f51c961422d";
+    public static final String KRAKATAU_VERSION = "4a63a028ec354613212a995037d1c00028518f9f";
+    public static final String ENJARIFY_VERSION = "82d72ee92730e858b6ec3615d6dc74c9331e56e8";
 
     public static final int MB = 1024 * 1024;
     public static final File DATA_DIR = new File(
