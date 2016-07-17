@@ -773,8 +773,8 @@ public class DecompileTask implements Runnable {
                             public void visit(MultiTypeParameter n, Node arg) {
                                 if (n.getId().getName().equals(((NameExpr) fnode).getName())) {
                                     print(depth, "Found VariableDeclarationExpr " + n);
-                                    print(depth, "This is it! Type is " + n.getTypes());
-                                    ref.addAll(n.getTypes());
+                                    print(depth, "This is it! Type is " + n.getType());
+                                    ref.addAll(n.getType().getElements());
                                 }
                             }
 
