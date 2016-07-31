@@ -36,8 +36,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Listener;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.fife.ui.rtextarea.SearchContext;
@@ -68,6 +70,91 @@ public class ClassManager {
             }
         });
 
+        Listener dragListener = new Listener() {
+            private CTabItem dragItem;
+
+            public void handleEvent(Event event) {
+                Point mouseLocation = new Point(event.x, event.y);
+                switch (event.type) {
+                    case SWT.DragDetect: {
+                        CTabItem item = mainTabs.getItem(mouseLocation);
+                        if (dragItem == null && item != null) {
+                            dragItem = item;
+                            mainTabs.setCapture(true);
+                        }
+                        break;
+                    }
+                    case SWT.MouseUp: {
+                        if (dragItem != null) {
+                            CTabItem item = mainTabs.getItem(mouseLocation);
+
+                            CTabItem[] allItems = mainTabs.getItems();
+
+                            int index = -1;
+
+                            if (item != null) {
+                                for (int i = 0; i < allItems.length; i++) {
+                                    if (allItems[i] == item) {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                int xmid = (int) (item.getBounds().x + (item.getBounds().width / 2.0));
+
+                                if (mouseLocation.x > xmid) index++;
+                            } else {
+                                item = allItems[allItems.length - 1];
+                                int minY = item.getBounds().y;
+                                int maxY = minY + item.getBounds().height;
+
+                                if (mouseLocation.y >= minY && mouseLocation.y <= maxY) {
+                                    index = mainTabs.getItemCount();
+                                }
+                            }
+
+                            if (index != -1) {
+                                Control control = dragItem.getControl();
+                                CTabItem newItem = new CTabItem(mainTabs, SWT.BORDER | SWT.CLOSE, index);
+
+                                ClassData data = (ClassData) dragItem.getData();
+                                data.setFileTab(newItem);
+                                newItem.setData(data);
+                                newItem.setText(dragItem.getText());
+                                newItem.setControl(control);
+
+                                mainTabs.setSelection(newItem);
+                                mainTabs.setInsertMark(null, true);
+
+                                dragItem.dispose();
+                                dragItem = null;
+                            }
+                        }
+                        break;
+                    }
+                    case SWT.MouseMove: {
+                        if (dragItem != null) {
+                            CTabItem item = mainTabs.getItem(mouseLocation);
+
+                            int index = 0;
+                            for (CTabItem possible : mainTabs.getItems()) {
+                                if (possible == item)
+                                    break;
+                                index++;
+                            }
+
+                            if (index < mainTabs.getItemCount()) {
+                                mainTabs.setInsertMark(index, true);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        };
+        mainTabs.addListener(SWT.DragDetect, dragListener);
+        mainTabs.addListener(SWT.MouseMove, dragListener);
+        mainTabs.addListener(SWT.MouseUp, dragListener);
 
         Composite searchBar = new Composite(tabs.getParent(), SWT.BORDER);
         GridData searchBarData = new GridData(SWT.FILL, SWT.FILL, true, false);
