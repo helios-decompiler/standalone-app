@@ -29,7 +29,7 @@ public class Constants {
 
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
-    public static final String SWT_VERSION = "4.5.2";
+    public static final String SWT_VERSION = "4.6";
     public static final String KRAKATAU_VERSION = "d3d4b422acc7190b542f5b317e37a9b6d795024e";
     public static final String ENJARIFY_VERSION = "82d72ee92730e858b6ec3615d6dc74c9331e56e8";
 

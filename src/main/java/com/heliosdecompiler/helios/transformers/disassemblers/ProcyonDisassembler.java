@@ -8,6 +8,7 @@ import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
 import com.strobel.decompiler.languages.Languages;
+import com.strobel.decompiler.languages.java.JavaFormattingOptions;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.StringWriter;
@@ -50,7 +51,7 @@ public class ProcyonDisassembler extends Disassembler {
             });
             TypeReference type = metadataSystem.lookupType(classNode.name);
             DecompilationOptions decompilationOptions = new DecompilationOptions();
-            decompilationOptions.setSettings(DecompilerSettings.javaDefaults());
+            decompilationOptions.setSettings(settings);
             decompilationOptions.setFullDecompilation(true);
             TypeDefinition resolvedType = null;
             if (type == null || ((resolvedType = type.resolve()) == null)) {
@@ -81,6 +82,7 @@ public class ProcyonDisassembler extends Disassembler {
         } else {
             settings.setLanguage(Languages.bytecode());
         }
+        settings.setJavaFormattingOptions(JavaFormattingOptions.createDefault());
         return settings;
     }
 

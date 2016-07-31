@@ -6,12 +6,12 @@
 
     <groupId>com.heliosdecompiler</groupId>
     <artifactId>helios</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
     <!--Refer to http://semver.org-->
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <swt.version>4.5.2</swt.version>
+        <swt.version>4.6</swt.version>
         <build.number>999</build.number>
     </properties>
 

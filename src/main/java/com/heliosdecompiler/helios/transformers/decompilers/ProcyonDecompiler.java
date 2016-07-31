@@ -36,6 +36,7 @@ import com.strobel.assembler.metadata.TypeReference;
 import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
+import com.strobel.decompiler.languages.java.JavaFormattingOptions;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.StringWriter;
@@ -79,7 +80,7 @@ public class ProcyonDecompiler extends Decompiler {
             });
             TypeReference type = metadataSystem.lookupType(classNode.name);
             DecompilationOptions decompilationOptions = new DecompilationOptions();
-            decompilationOptions.setSettings(DecompilerSettings.javaDefaults());
+            decompilationOptions.setSettings(settings);
             decompilationOptions.setFullDecompilation(true);
             TypeDefinition resolvedType = null;
             if (type == null || ((resolvedType = type.resolve()) == null)) {
@@ -97,7 +98,6 @@ public class ProcyonDecompiler extends Decompiler {
     }
 
     public DecompilerSettings getDecompilerSettings() {
-//        CommandLineOptions options = new CommandLineOptions();
         DecompilerSettings settings = new DecompilerSettings();
         settings.setFlattenSwitchBlocks(Settings.FLATTEN_SWITCH_BLOCKS.isEnabled());
         settings.setForceExplicitTypeArguments(Settings.FORCE_EXPLICIT_TYPE_ARGS.isEnabled());
@@ -107,9 +107,10 @@ public class ProcyonDecompiler extends Decompiler {
         settings.setRetainPointlessSwitches(Settings.RETAIN_POINTLESS_SWITCHES.isEnabled());
         settings.setUnicodeOutputEnabled(Settings.UNICODE_OUTPUT.isEnabled());
         settings.setMergeVariables(Settings.MERGE_VARIABLES.isEnabled());
-//        settings.setShowDebugLineNumbers(Settings.SHOW_DEBUG_LINE_NUMBERS.isEnabled()); // Not supported
+        settings.setShowDebugLineNumbers(Settings.SHOW_DEBUG_LINE_NUMBERS.isEnabled()); // Not supported
         settings.setSimplifyMemberReferences(Settings.SIMPLIFY_MEMBER_REFERENCES.isEnabled());
         settings.setDisableForEachTransforms(Settings.DISABLE_FOREACH.isEnabled());
+        settings.setJavaFormattingOptions(JavaFormattingOptions.createDefault());
         settings.setTypeLoader(new InputTypeLoader());
         return settings;
     }
