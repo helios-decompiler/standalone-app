@@ -6,7 +6,7 @@
 
     <groupId>com.heliosdecompiler</groupId>
     <artifactId>helios</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.6</version>
     <!--Refer to http://semver.org-->
 
     <properties>
