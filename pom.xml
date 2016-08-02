@@ -254,11 +254,5 @@
             <scope>provided</scope>
             <!--EPL 1.0-->
         </dependency>
-        <dependency>
-            <groupId>org.eclipse.albireo</groupId>
-            <artifactId>core</artifactId>
-            <version>0.0.3</version>
-            <!--EPL 1.0-->
-        </dependency>
     </dependencies>
 </project>
