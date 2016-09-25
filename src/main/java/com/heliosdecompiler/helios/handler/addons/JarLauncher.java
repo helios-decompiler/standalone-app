@@ -18,9 +18,9 @@ package com.heliosdecompiler.helios.handler.addons;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.api.Addon;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
-import com.heliosdecompiler.helios.Helios;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;

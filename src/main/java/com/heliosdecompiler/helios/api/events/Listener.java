@@ -16,11 +16,7 @@
 
 package com.heliosdecompiler.helios.api.events;
 
-import com.heliosdecompiler.helios.api.events.requests.RecentFileRequest;
-import com.heliosdecompiler.helios.api.events.requests.RefreshViewRequest;
-import com.heliosdecompiler.helios.api.events.requests.SearchBarRequest;
-import com.heliosdecompiler.helios.api.events.requests.SearchRequest;
-import com.heliosdecompiler.helios.api.events.requests.TreeUpdateRequest;
+import com.heliosdecompiler.helios.api.events.requests.*;
 
 public class Listener {
     public void handlePreDecompile(PreDecompileEvent event) {

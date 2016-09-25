@@ -16,15 +16,17 @@
 
 package com.heliosdecompiler.helios.tasks;
 
+import com.heliosdecompiler.helios.Constants;
+import com.heliosdecompiler.helios.FileManager;
+import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
-import com.heliosdecompiler.helios.utils.FileChooserUtil;
-import com.heliosdecompiler.helios.Constants;
-import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.FileChooserUtil;
+import com.heliosdecompiler.helios.utils.Result;
 import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
@@ -121,19 +123,18 @@ public class DecompileAndSaveTask implements Runnable {
             zipOutputStream = new ZipOutputStream(fileOutputStream);
             Set<String> written = new HashSet<>();
             for (Pair<String, String> pair : data) {
-                LoadedFile loadedFile = Helios.getLoadedFile(pair.getValue0());
+                LoadedFile loadedFile = FileManager.getLoadedFile(pair.getValue0());
                 if (loadedFile != null) {
                     String innerName = pair.getValue1();
                     byte[] bytes = loadedFile.getAllData().get(innerName);
                     if (bytes != null) {
                         if (loadedFile.getClassNode(pair.getValue1()) != null) {
-                            StringBuilder buffer = new StringBuilder();
-                            transformer.get().transform(loadedFile.getClassNode(pair.getValue1()), bytes, buffer);
+                            Either<Result, String> result = (Either<Result, String>) transformer.get().transform(loadedFile.getClassNode(pair.getValue1()), bytes);
                             String name = innerName.substring(0, innerName.length() - 6) + ".java";
                             if (written.add(name)) {
                                 zipOutputStream.putNextEntry(
                                         new ZipEntry(name));
-                                zipOutputStream.write(buffer.toString().getBytes(StandardCharsets.UTF_8));
+                                zipOutputStream.write(result.right().getBytes(StandardCharsets.UTF_8));
                                 zipOutputStream.closeEntry();
                             } else {
                                 SWTUtil.showMessage("Duplicate entry occured: " + name);

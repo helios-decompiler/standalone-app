@@ -16,10 +16,12 @@
 
 package com.heliosdecompiler.helios.transformers.decompilers;
 
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
+import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
-import com.heliosdecompiler.helios.LoadedFile;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
@@ -33,12 +35,12 @@ import java.util.jar.Manifest;
 
 public class FernflowerDecompiler extends Decompiler {
 
-    FernflowerDecompiler() {
+    public FernflowerDecompiler() {
         super("fernflower", "Fernflower", Settings.class);
     }
 
     @Override
-    public boolean decompile(final ClassNode classNode, byte[] bytes, StringBuilder output) {
+    public Either<Result, String> decompile(final ClassNode classNode, byte[] bytes) {
         try {
             if (classNode.version < 49) {
                 bytes = fixBytes(bytes);
@@ -48,8 +50,8 @@ public class FernflowerDecompiler extends Decompiler {
             Map<String, byte[]> importantClasses = new HashMap<>();
             importantClasses.put(classNode.name + ".class", bytesToUse);
             Set<LoadedFile> files = new HashSet<>();
-            files.addAll(Helios.getAllFiles());
-            files.addAll(Helios.getPathFiles().values());
+            files.addAll(FileManager.getAllFiles());
+            files.addAll(FileManager.getPathFiles().values());
             if (classNode.innerClasses != null) {
                 Set<String> innerClasses = new HashSet<>();
                 LinkedList<String> list = new LinkedList<>();
@@ -130,7 +132,6 @@ public class FernflowerDecompiler extends Decompiler {
                 }
             }, options, new PrintStreamLogger(System.out));
 
-            System.out.println("Decompiling");
             importantClasses.forEach((str, barr) -> {
                 try {
                     baseDecompiler.addSpace(new File(str) {
@@ -151,11 +152,9 @@ public class FernflowerDecompiler extends Decompiler {
                     lock.wait();
                 }
             }
-            output.append(result.get());
-            return true;
+            return Either.right(result.get());
         } catch (Exception e) {
-            output.append(parseException(e));
-            return false;
+            return Either.right(parseException(e));
         }
     }
 

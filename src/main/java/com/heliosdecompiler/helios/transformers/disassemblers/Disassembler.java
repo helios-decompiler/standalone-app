@@ -25,8 +25,11 @@ import com.heliosdecompiler.helios.transformers.Viewable;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.tree.ClassNode;
 
-import javax.swing.JComponent;
-import java.util.*;
+import javax.swing.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public abstract class Disassembler extends Transformer implements Viewable {
     private static final Map<String, Disassembler> BY_ID = new LinkedHashMap<>();

@@ -1,6 +1,6 @@
 package com.heliosdecompiler.helios.transformers.disassemblers;
 
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
 import com.strobel.assembler.InputTypeLoader;
 import com.strobel.assembler.metadata.*;
@@ -26,7 +26,7 @@ public class ProcyonDisassembler extends Disassembler {
                 bytes = fixBytes(bytes);
             }
             final byte[] bytesToUse = bytes;
-            final Map<String, byte[]> loadedClasses = Helios.getAllLoadedData();
+            final Map<String, byte[]> loadedClasses = FileManager.getAllLoadedData();
             DecompilerSettings settings = getDecompilerSettings();
             MetadataSystem metadataSystem = new MetadataSystem(new ITypeLoader() {
                 private final InputTypeLoader backLoader = new InputTypeLoader();

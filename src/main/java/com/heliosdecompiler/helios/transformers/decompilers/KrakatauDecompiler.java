@@ -16,10 +16,10 @@
 
 package com.heliosdecompiler.helios.transformers.decompilers;
 
-import com.heliosdecompiler.helios.transformers.TransformerSettings;
-import com.heliosdecompiler.helios.utils.Utils;
 import com.heliosdecompiler.helios.Constants;
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
+import com.heliosdecompiler.helios.transformers.TransformerSettings;
+import com.heliosdecompiler.helios.utils.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.ClassNode;
@@ -32,13 +32,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class KrakatauDecompiler extends Decompiler {
-    KrakatauDecompiler() {
+    public KrakatauDecompiler() {
         super("krakatau", "Krakatau", Settings.class);
     }
 
-    public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
-        if (Helios.ensurePython2Set()) {
-            if (Helios.ensureJavaRtSet()) {
+    public Either<Result, String> decompile(ClassNode classNode, byte[] bytes) {
+        Result python2 = SettingsValidator.ensurePython2Set();
+        if (python2.is(Result.Type.SUCCESS)) {
+            Result javart = SettingsValidator.ensureJavaRtSet();
+            if (javart.is(Result.Type.SUCCESS)) {
                 File inputJar = null;
                 File outputJar = null;
                 ZipFile zipFile = null;
@@ -48,11 +50,11 @@ public class KrakatauDecompiler extends Decompiler {
                 try {
                     inputJar = Files.createTempFile("kdein", ".jar").toFile();
                     outputJar = Files.createTempFile("kdeout", ".zip").toFile();
-                    Map<String, byte[]> loadedData = Helios.getAllLoadedData();
+                    Map<String, byte[]> loadedData = FileManager.getAllLoadedData();
                     loadedData.put(classNode.name + ".class", bytes);
                     Utils.saveClasses(inputJar, loadedData);
 
-                    createdProcess = Helios.launchProcess(
+                    createdProcess = ProcessUtils.launchProcess(
                             new ProcessBuilder(
                                     com.heliosdecompiler.helios.Settings.PYTHON2_LOCATION.get().asString(),
                                     "-O",
@@ -67,7 +69,7 @@ public class KrakatauDecompiler extends Decompiler {
                                     classNode.name + ".class"
                             ).directory(Constants.KRAKATAU_DIR));
 
-                    log = Utils.readProcess(createdProcess);
+                    log = ProcessUtils.readProcess(createdProcess);
 
                     System.out.println(log);
 
@@ -77,23 +79,18 @@ public class KrakatauDecompiler extends Decompiler {
                         throw new IllegalArgumentException("Class failed to decompile (no class in output zip)");
                     InputStream inputStream = zipFile.getInputStream(zipEntry);
                     byte[] data = IOUtils.toByteArray(inputStream);
-                    output.append(new String(data, "UTF-8"));
-                    return true;
+                    return Either.right(new String(data, "UTF-8"));
                 } catch (Exception e) {
-                    output.append(parseException(e)).append("\n").append(log);
-                    return false;
+                    return Either.right(parseException(e) + "\n" + log);
                 } finally {
                     IOUtils.closeQuietly(zipFile);
                     FileUtils.deleteQuietly(inputJar);
                     FileUtils.deleteQuietly(outputJar);
                 }
-            } else {
-                output.append("You need to set the location of rt.jar");
             }
-        } else {
-            output.append("You need to set the location of Python 2.x");
+            return Either.right("You must specify the location of rt.jar");
         }
-        return false;
+        return Either.right("You must specify the location of the Python 2.x executable");
     }
 
 

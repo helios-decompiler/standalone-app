@@ -16,22 +16,13 @@
 
 package com.heliosdecompiler.helios;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
-import com.eclipsesource.json.ParseException;
-import com.eclipsesource.json.WriterConfig;
+import com.eclipsesource.json.*;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.converters.Converter;
 import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class Settings {

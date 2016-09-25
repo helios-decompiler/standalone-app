@@ -32,6 +32,18 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>2.4.2</version>
                 <executions>
@@ -108,7 +120,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
+            <version>2.5</version>
             <!--Apache 2.0-->
         </dependency>
         <dependency>
@@ -159,14 +171,14 @@
         <dependency>
             <groupId>org.benf</groupId>
             <artifactId>cfr</artifactId>
-            <version>0.116</version>
+            <version>0.118</version>
             <!--MIT-->
             <!--helios-->
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>java-decompiler</artifactId>
-            <version>e4b966</version>
+            <version>78d1492</version>
             <!--Apache 2.0-->
             <!--helios-->
         </dependency>

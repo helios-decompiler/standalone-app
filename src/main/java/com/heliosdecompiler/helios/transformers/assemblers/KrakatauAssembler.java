@@ -16,60 +16,78 @@
 
 package com.heliosdecompiler.helios.transformers.assemblers;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.Constants;
-import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Settings;
-import com.heliosdecompiler.helios.utils.SWTUtil;
-import com.heliosdecompiler.helios.utils.Utils;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
+import com.heliosdecompiler.helios.utils.ProcessUtils;
+import com.heliosdecompiler.helios.utils.SettingsValidator;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class KrakatauAssembler extends Assembler {
-
-    KrakatauAssembler() {
+    public KrakatauAssembler() {
         super("krakatau", "Krakatau");
     }
 
+    /**
+     * Possible {@link Result} returns:
+     * {@link Result#SUCCESS}
+     * {@link Result#ERROR_OCCURED_IN_PROCESS}
+     * {@link Result#ERROR_OCCURED}
+     * {@link Result#NO_PYTHON2_SET}
+     */
     @Override
-    public byte[] assemble(String name, String contents) {
-        if (Helios.ensurePython2Set()) {
-            File tempFolder = null;
-            File tempFile = null;
-            String processLog = "";
-            try {
-                tempFolder = Files.createTempDirectory("ka").toFile();
-                tempFile = new File(tempFolder, name.replace('/', File.separatorChar) + ".j");
-                FileUtils.write(tempFile, contents, "UTF-8", false);
-                Process process = Helios.launchProcess(
-                        new ProcessBuilder(Settings.PYTHON2_LOCATION.get().asString(), "-O", "assemble.py", "-out",
-                                tempFolder.getAbsolutePath(), tempFile.getAbsolutePath()).directory(
-                                Constants.KRAKATAU_DIR));
+    public Either<Result, byte[]> assemble(String name, String contents) {
+        Result python2 = SettingsValidator.ensurePython2Set();
+        if (python2.not(Result.Type.SUCCESS))
+            return Either.left(Result.NO_PYTHON2_SET.create());
 
-                processLog = Utils.readProcess(process);
-
-                return FileUtils.readFileToByteArray(new File(tempFile.toString().replace(".j", ".class")));
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-                SWTUtil.showMessage(processLog);
-            } finally {
-                try {
-                    if (tempFolder != null) {
-                        FileUtils.deleteDirectory(tempFolder);
-                    }
-                } catch (IOException e) {
-                }
-                if (tempFile != null) {
-                    tempFile.delete();
-                }
-            }
-        } else {
-            SWTUtil.showMessage("You need to set Python!");
+        Path tempFolder = null;
+        Path tempFile;
+        try {
+            tempFolder = Files.createTempDirectory("ka");
+            tempFile = tempFolder.resolve(name.replace('/', File.separatorChar) + ".j");
+            Files.write(tempFile, contents.getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
+            if (tempFolder != null)
+                FileUtils.deleteQuietly(tempFolder.toFile());
+            return Either.left(Result.ERROR_OCCURED.create(ex));
         }
-        return null;
-    }
 
+        String processLog = "";
+        try {
+            Process process = ProcessUtils.launchProcess(
+                    new ProcessBuilder(
+                            Settings.PYTHON2_LOCATION.get().asString(),
+                            "-O",
+                            "assemble.py",
+                            "-out",
+                            tempFolder.toAbsolutePath().toString(),
+                            tempFile.toAbsolutePath().toString()
+                    ).directory(
+                            Constants.KRAKATAU_DIR
+                    )
+            );
+
+            processLog = ProcessUtils.readProcess(process);
+        } catch (IOException e) {
+            FileUtils.deleteQuietly(tempFolder.toFile());
+            return Either.left(Result.ERROR_OCCURED_IN_PROCESS.create(e, processLog));
+        }
+
+        try {
+            return Either.right(FileUtils.readFileToByteArray(new File(tempFile.toAbsolutePath().toString().replace(".j", ".class"))));
+        } catch (IOException ex) {
+            return Either.left(Result.ERROR_OCCURED.create(ex, processLog));
+        } finally {
+            FileUtils.deleteQuietly(tempFolder.toFile());
+        }
+    }
 }

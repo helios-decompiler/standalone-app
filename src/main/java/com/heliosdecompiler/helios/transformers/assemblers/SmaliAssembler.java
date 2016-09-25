@@ -19,6 +19,8 @@ package com.heliosdecompiler.helios.transformers.assemblers;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.converters.Converter;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import org.apache.commons.io.FileUtils;
 import org.jf.smali.SmaliOptions;
 import org.zeroturnaround.zip.ZipUtil;
@@ -28,12 +30,12 @@ import java.nio.file.Files;
 
 public class SmaliAssembler extends Assembler {
 
-    SmaliAssembler() {
+    public SmaliAssembler() {
         super("smali", "Smali");
     }
 
     @Override
-    public byte[] assemble(String name, String contents) {
+    public Either<Result, byte[]> assemble(String name, String contents) {
         File tempDir = null;
         File tempSmaliFolder = null;
         File tempSmali = null;
@@ -81,7 +83,7 @@ public class SmaliAssembler extends Assembler {
 
                 }
 
-                return org.apache.commons.io.FileUtils.readFileToByteArray(outputClass);
+                return Either.right(org.apache.commons.io.FileUtils.readFileToByteArray(outputClass));
             } catch (java.lang.NullPointerException e) {
 
             }
@@ -95,6 +97,7 @@ public class SmaliAssembler extends Assembler {
             FileUtils.deleteQuietly(tempJar);
             FileUtils.deleteQuietly(tempJarFolder);
         }
-        return null;
+        // todo fixme
+        return Either.left(null);
     }
 }

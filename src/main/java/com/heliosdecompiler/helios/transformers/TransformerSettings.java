@@ -18,14 +18,17 @@ package com.heliosdecompiler.helios.transformers;
 
 import com.eclipsesource.json.JsonObject;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class TransformerSettings {
-    private final Transformer decompiler;
+    private final Transformer transformer;
     private final Map<String, Setting> registrationOrder = new LinkedHashMap<>();
 
     public TransformerSettings(Transformer decompiler) {
-        this.decompiler = decompiler;
+        this.transformer = decompiler;
     }
 
     public void registerSetting(Setting setting) {

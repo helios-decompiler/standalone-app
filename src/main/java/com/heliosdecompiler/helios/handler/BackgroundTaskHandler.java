@@ -21,6 +21,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class BackgroundTaskHandler {
+    // todo pls
+    public static final BackgroundTaskHandler INSTANCE = new BackgroundTaskHandler();
+
     private final ExecutorService executor = Executors.newFixedThreadPool(8, r -> new Thread(r, "Background Thread"));
 
     private volatile int runningTasks = 0;

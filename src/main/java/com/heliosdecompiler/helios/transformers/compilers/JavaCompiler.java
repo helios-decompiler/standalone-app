@@ -16,10 +16,10 @@
 
 package com.heliosdecompiler.helios.transformers.compilers;
 
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
-import com.heliosdecompiler.helios.utils.Utils;
 import com.heliosdecompiler.helios.utils.SWTUtil;
+import com.heliosdecompiler.helios.utils.Utils;
 import com.sun.tools.javac.main.Main;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.swt.widgets.Shell;
@@ -27,7 +27,6 @@ import org.eclipse.swt.widgets.Shell;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.*;
 import java.nio.file.Files;
 
 public class JavaCompiler extends Compiler {
@@ -48,7 +47,7 @@ public class JavaCompiler extends Compiler {
             classFile = new File(tmpdir, name + ".class");
             classpathFile = new File(tmpdir, "classpath.jar");
             FileUtils.write(javaFile, contents, "UTF-8", false);
-            Utils.save(classpathFile, Helios.getAllLoadedData());
+            Utils.save(classpathFile, FileManager.getAllLoadedData());
 
             StringWriter stringWriter = new StringWriter();
 

@@ -16,9 +16,11 @@
 
 package com.heliosdecompiler.helios.transformers.disassemblers;
 
-import com.heliosdecompiler.helios.transformers.TransformerSettings;
 import com.heliosdecompiler.helios.Constants;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.transformers.TransformerSettings;
+import com.heliosdecompiler.helios.utils.ProcessUtils;
 import com.heliosdecompiler.helios.utils.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -51,17 +53,17 @@ public class KrakatauDisassembler extends Disassembler {
                 inputJar = Files.createTempFile("kdisin", ".jar").toFile();
                 outputZip = Files.createTempFile("kdisout", ".zip").toFile();
 
-                Map<String, byte[]> data = Helios.getAllLoadedData();
+                Map<String, byte[]> data = FileManager.getAllLoadedData();
                 data.put(cn.name + ".class", b);
 
                 Utils.saveClasses(inputJar, data);
 
-                Process process = Helios.launchProcess(
+                Process process = ProcessUtils.launchProcess(
                         new ProcessBuilder(com.heliosdecompiler.helios.Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
                                 inputJar.getAbsolutePath(), "-out", outputZip.getAbsolutePath(),
                                 cn.name + ".class", Settings.ROUNDTRIP.isEnabled() ? "-roundtrip" : "").directory(Constants.KRAKATAU_DIR));
 
-                processLog = Utils.readProcess(process);
+                processLog = ProcessUtils.readProcess(process);
 
                 ZipFile zipFile = new ZipFile(outputZip);
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();

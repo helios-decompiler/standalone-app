@@ -17,19 +17,14 @@
 package com.heliosdecompiler.helios.utils;
 
 import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.Resources;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class FileChooserUtil {

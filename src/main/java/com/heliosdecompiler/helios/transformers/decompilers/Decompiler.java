@@ -22,22 +22,20 @@ import com.heliosdecompiler.helios.gui.data.ClassData;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
 import com.heliosdecompiler.helios.transformers.Viewable;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.objectweb.asm.tree.ClassNode;
 
-import javax.swing.JComponent;
-import java.util.*;
+import javax.swing.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public abstract class Decompiler extends Transformer implements Viewable {
     private static final Map<String, Decompiler> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Decompiler> BY_NAME = new LinkedHashMap<>();
-
-    static {
-        new KrakatauDecompiler().register();
-        new FernflowerDecompiler().register();
-        new CFRDecompiler().register();
-        new ProcyonDecompiler().register();
-    }
 
     private final String originalId;
     private final String originalName;
@@ -83,10 +81,10 @@ public abstract class Decompiler extends Transformer implements Viewable {
     }
 
     public Object transform(Object... args) {
-        return decompile((ClassNode) args[0], (byte[]) args[1], (StringBuilder) args[2]);
+        return decompile((ClassNode) args[0], (byte[]) args[1]);
     }
 
-    public abstract boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output);
+    public abstract Either<Result, String> decompile(ClassNode classNode, byte[] bytes);
 
     public static Decompiler getById(String id) {
         return BY_ID.get(id);

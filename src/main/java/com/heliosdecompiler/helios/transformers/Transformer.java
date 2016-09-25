@@ -16,17 +16,23 @@
 
 package com.heliosdecompiler.helios.transformers;
 
-import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 import com.heliosdecompiler.helios.Constants;
 import com.heliosdecompiler.helios.Settings;
-import com.heliosdecompiler.helios.transformers.assemblers.Assembler;
+import com.heliosdecompiler.helios.transformers.assemblers.KrakatauAssembler;
+import com.heliosdecompiler.helios.transformers.assemblers.SmaliAssembler;
 import com.heliosdecompiler.helios.transformers.compilers.Compiler;
+import com.heliosdecompiler.helios.transformers.decompilers.CFRDecompiler;
+import com.heliosdecompiler.helios.transformers.decompilers.FernflowerDecompiler;
+import com.heliosdecompiler.helios.transformers.decompilers.KrakatauDecompiler;
+import com.heliosdecompiler.helios.transformers.decompilers.ProcyonDecompiler;
 import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,10 +49,22 @@ public abstract class Transformer {
     private static final Map<String, Transformer> BY_NAME = new LinkedHashMap<>();
 
     static {
-        Decompiler.getAllDecompilers();
-        Disassembler.getAllDisassemblers();
-        Assembler.getAllAssemblers();
-        Compiler.getAllCompilers();
+        Transformer0.registerAll();
+    }
+
+    private static class Transformer0 {
+        private static void registerAll() {
+            // decompilers
+            new KrakatauDecompiler().register();
+            new FernflowerDecompiler().register();
+            new CFRDecompiler().register();
+            new ProcyonDecompiler().register();
+            Disassembler.getAllDisassemblers();
+            //assemblers
+            new KrakatauAssembler().register();
+            new SmaliAssembler().register();
+            Compiler.getAllCompilers();
+        }
     }
 
     public static final Transformer HEX = new HexViewer().register();

@@ -16,8 +16,10 @@
 
 package com.heliosdecompiler.helios.transformers.decompilers;
 
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import org.benf.cfr.reader.PluginRunner;
 import org.benf.cfr.reader.api.ClassFileSource;
 import org.benf.cfr.reader.bytecode.analysis.parse.utils.Pair;
@@ -30,12 +32,12 @@ import java.util.Map;
 
 public class CFRDecompiler extends Decompiler {
 
-    CFRDecompiler() {
+    public CFRDecompiler() {
         super("cfr", "CFR", Settings.class);
     }
 
     @Override
-    public boolean decompile(ClassNode classNode, byte[] bytes, StringBuilder output) {
+    public Either<Result, String> decompile(ClassNode classNode, byte[] bytes) {
         PluginRunner pluginRunner = new PluginRunner(generateOptions(), new ClassFileSource() {
             @Override
             public void informAnalysisRelativePathDetail(String s, String s1) {
@@ -48,19 +50,22 @@ public class CFRDecompiler extends Decompiler {
             }
 
             @Override
+            public String getPossiblyRenamedPath(String s) {
+                return s;
+            }
+
+            @Override
             public Pair<byte[], String> getClassFileContent(String s) throws IOException {
                 if (s.equals(classNode.name + ".class")) {
                     return Pair.make(bytes, s);
                 }
-                return Pair.make(Helios.getAllLoadedData().get(s), s);
+                return Pair.make(FileManager.getAllLoadedData().get(s), s);
             }
         });
         try {
-            output.append(pluginRunner.getDecompilationFor(classNode.name));
-            return true;
+            return Either.right(pluginRunner.getDecompilationFor(classNode.name));
         } catch (Throwable t) {
-            output.append(parseException(t));
-            return false;
+            return Either.right(parseException(t));
         }
     }
 

@@ -19,6 +19,7 @@ package com.heliosdecompiler.helios;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import com.google.common.collect.Sets;
+import com.heliosdecompiler.helios.api.Addon;
 import com.heliosdecompiler.helios.api.events.Events;
 import com.heliosdecompiler.helios.api.events.requests.RecentFileRequest;
 import com.heliosdecompiler.helios.api.events.requests.RefreshViewRequest;
@@ -26,53 +27,44 @@ import com.heliosdecompiler.helios.api.events.requests.SearchBarRequest;
 import com.heliosdecompiler.helios.api.events.requests.TreeUpdateRequest;
 import com.heliosdecompiler.helios.bootloader.BootSequence;
 import com.heliosdecompiler.helios.bootloader.Splash;
+import com.heliosdecompiler.helios.gui.GUI;
 import com.heliosdecompiler.helios.gui.popups.BackgroundTaskPopup;
+import com.heliosdecompiler.helios.handler.BackgroundTaskHandler;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.handler.addons.AddonHandler;
 import com.heliosdecompiler.helios.tasks.AddFilesTask;
-import com.heliosdecompiler.helios.utils.FileChooserUtil;
-import com.heliosdecompiler.helios.gui.GUI;
-import com.heliosdecompiler.helios.handler.BackgroundTaskHandler;
-import com.heliosdecompiler.helios.utils.OSUtils;
-import com.heliosdecompiler.helios.utils.SWTUtil;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import com.heliosdecompiler.helios.utils.*;
+import com.sun.management.HotSpotDiagnosticMXBean;
+import com.sun.management.VMOption;
+import org.apache.commons.cli.*;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.BusyIndicator;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.ShellAdapter;
-import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.objectweb.asm.tree.ClassNode;
+import org.eclipse.swt.widgets.*;
 
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.management.MBeanServer;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class Helios {
-    private static final Map<String, LoadedFile> files = new HashMap<>();
-    private static final List<Process> processes = new ArrayList<>();
-    private static Boolean python2Verified = null;
     private static Boolean python3Verified = null;
     private static Boolean javaRtVerified = null;
     private static GUI gui;
@@ -80,13 +72,134 @@ public class Helios {
     private static BackgroundTaskPopup backgroundTaskPopup;
     private static LocalSocket socket;
 
-    private static volatile Map<String, LoadedFile> path = new HashMap<>();
-
     public static void main(String[] args, Shell shell, Splash splashScreen) {
+        ExceptionHandler.registerHandler(new Consumer<Throwable>() {
+
+            @Override
+            public void accept(Throwable exception) {
+                StringWriter stringWriter = new StringWriter();
+                exception.printStackTrace(new PrintWriter(stringWriter));
+                Shell shell = SWTUtil.generateLongMessage("An error has occured", stringWriter.toString());
+                Display display = Display.getDefault();
+                display.syncExec(() -> {
+                    Composite composite = new Composite(shell, SWT.NONE);
+                    composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+                    composite.setLayout(new FillLayout());
+                    Button send = new Button(composite, SWT.PUSH);
+                    send.setText("Send Error Report");
+                    Button dontsend = new Button(composite, SWT.PUSH);
+                    dontsend.setText("Don't Send (Not recommended)");
+                    send.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e) {
+                            Helios.getBackgroundTaskHandler().submit(() -> sendErrorReport(exception));
+                            shell.close();
+                        }
+                    });
+                    dontsend.addSelectionListener(new SelectionAdapter() {
+                        @Override
+                        public void widgetSelected(SelectionEvent e) {
+                            shell.close();
+                        }
+                    });
+                    composite.pack();
+                    shell.pack();
+                    SWTUtil.center(shell);
+                    shell.open();
+                });
+            }
+
+            private void sendErrorReport(Throwable throwable) {
+                initHotspotMBean();
+                Date date = new Date();
+                StringBuilder reportMessage = new StringBuilder();
+                reportMessage.append("Report generated on ").append(date).append(" (").append(System.currentTimeMillis()).append(")\n");
+                reportMessage.append("\n");
+                reportMessage.append("Error:\n");
+                StringWriter stringWriter = new StringWriter();
+                throwable.printStackTrace(new PrintWriter(stringWriter));
+                reportMessage.append(stringWriter.toString());
+                reportMessage.append("\n");
+                reportMessage.append("Helios Version: ").append(Constants.REPO_VERSION).append("\n");
+                reportMessage.append("Krakatau Verson: ").append(Constants.KRAKATAU_VERSION).append("\n");
+                reportMessage.append("Enjarify Version: ").append(Constants.ENJARIFY_VERSION).append("\n");
+                reportMessage.append("Enabled addons: ").append("\n");
+                for (Addon addon : AddonHandler.getAllAddons()) {
+                    reportMessage.append("\t").append(addon.getName()).append("\n");
+                }
+                reportMessage.append("\n");
+
+                List<String> args = ManagementFactory.getRuntimeMXBean().getInputArguments();
+                reportMessage.append("Input Arguments\n");
+                for (String arg : args) {
+                    reportMessage.append("\t").append(arg).append("\n");
+                }
+                reportMessage.append("\n");
+                reportMessage.append("sun.java.command ").append(System.getProperty("sun.java.command")).append("\n");
+                reportMessage.append("System properties\n");
+                for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
+                    reportMessage.append("\t").append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+                }
+                reportMessage.append("\n");
+                reportMessage.append("Diagnostic Options\n");
+                for (VMOption option : hotspotMBean.getDiagnosticOptions()) {
+                    reportMessage.append("\t").append(option.toString()).append("\n");
+                }
+                String to = "errorreport@heliosdecompiler.com";
+                String from = "heliosdecompilerclient@heliosdecompiler.com";
+                String host = "smtp.heliosdecompiler.com";
+                Properties properties = new Properties();
+                properties.setProperty("mail.smtp.host", host);
+                Session session = Session.getDefaultInstance(properties);
+
+                try {
+                    MimeMessage message = new MimeMessage(session);
+                    message.setFrom(new InternetAddress(from));
+                    message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+                    message.setSubject("Error report");
+                    message.setText(reportMessage.toString());
+                    Transport.send(message);
+                } catch (MessagingException mex) {
+                    SWTUtil.showMessage("Could not send error report. " + mex.getMessage());
+                    mex.printStackTrace();
+                }
+            }
+
+            private final String HOTSPOT_BEAN_NAME =
+                    "com.sun.management:type=HotSpotDiagnostic";
+
+            // field to store the hotspot diagnostic MBean
+            private volatile HotSpotDiagnosticMXBean hotspotMBean;
+
+            // initialize the hotspot diagnostic MBean field
+            private void initHotspotMBean() {
+                if (hotspotMBean == null) {
+                    synchronized (ExceptionHandler.class) {
+                        if (hotspotMBean == null) {
+                            hotspotMBean = getHotspotMBean();
+                        }
+                    }
+                }
+            }
+
+            private HotSpotDiagnosticMXBean getHotspotMBean() {
+                try {
+                    MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+                    HotSpotDiagnosticMXBean bean =
+                            ManagementFactory.newPlatformMXBeanProxy(server,
+                                    HOTSPOT_BEAN_NAME, HotSpotDiagnosticMXBean.class);
+                    return bean;
+                } catch (RuntimeException re) {
+                    throw re;
+                } catch (Exception exp) {
+                    throw new RuntimeException(exp);
+                }
+            }
+        });
         splashScreen.updateState(BootSequence.LOADING_SETTINGS);
         Settings.loadSettings();
         backgroundTaskPopup = new BackgroundTaskPopup();
-        backgroundTaskHandler = new BackgroundTaskHandler();
+        backgroundTaskHandler = BackgroundTaskHandler.INSTANCE;
         splashScreen.updateState(BootSequence.LOADING_ADDONS);
         AddonHandler.registerPreloadedAddons();
         for (File file : Constants.ADDONS_DIR.listFiles()) {
@@ -104,7 +217,7 @@ public class Helios {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Settings.saveSettings();
             getBackgroundTaskHandler().shutdown();
-            processes.forEach(Process::destroy);
+            ProcessUtils.destroyAll();
         }));
         try {
             socket = new LocalSocket();
@@ -128,10 +241,8 @@ public class Helios {
             LoadedFile loadedFile = new LoadedFile(file, true);
             newPath.put(loadedFile.getName(), loadedFile);
         }
-        synchronized (Helios.class) {
-            path.clear();
-            path.putAll(newPath);
-        }
+
+        FileManager.updatePath(newPath);
 //        });
         
         splashScreen.updateState(BootSequence.COMPLETE);
@@ -198,32 +309,6 @@ public class Helios {
         }
     }
 
-    public static List<LoadedFile> getFilesForName(String fileName) {
-        return files
-                .values()
-                .stream()
-                .filter(loadedFile -> loadedFile.getAllData().containsKey(fileName))
-                .collect(Collectors.toList());
-    }
-
-    public static void loadFile(File fileToLoad) throws IOException {
-        LoadedFile loadedFile = new LoadedFile(fileToLoad);
-        files.put(loadedFile.getName(), loadedFile);
-    }
-
-    public static List<ClassNode> loadAllClasses() {
-        List<ClassNode> classNodes = new ArrayList<>();
-        for (LoadedFile loadedFile : files.values()) {
-            for (String s : loadedFile.getAllData().keySet()) {
-                ClassNode loaded = loadedFile.getClassNode(s);
-                if (loaded != null) {
-                    classNodes.add(loaded);
-                }
-            }
-        }
-        return classNodes;
-    }
-
     public static void openFiles(final File[] files, final boolean recentFiles) {
         //TODO Loading everything as ClassNode async, handle thread safety, show popup if action requires loaded file but not completely loaded
         submitBackgroundTask(new AddFilesTask(files, recentFiles));
@@ -234,27 +319,10 @@ public class Helios {
                 "You have not yet saved your workspace. Are you sure you wish to create a new one?")) {
             return;
         }
-        files.clear();
+        FileManager.destroyAll();
         getGui().getTreeManager().reset();
         getGui().getClassManager().reset();
-        processes.forEach(Process::destroyForcibly);
-        processes.clear();
-    }
-
-    public static Process launchProcess(ProcessBuilder launch) throws IOException {
-        Process process = launch.start();
-        processes.add(process);
-        submitBackgroundTask(() -> {
-            try {
-                process.waitFor();
-                if (!process.isAlive()) {
-                    processes.remove(process);
-                }
-            } catch (InterruptedException e) {
-                ExceptionHandler.handle(e);
-            }
-        });
-        return process;
+        ProcessUtils.destroyAll();
     }
 
     public static void addRecentFile(File f) {
@@ -294,7 +362,7 @@ public class Helios {
 
     public static void promptForRefresh() {
         if (SWTUtil.promptForYesNo(Constants.REPO_NAME + " - Refresh", "Are you sure you wish to refresh?")) {
-            Helios.files.values().forEach(LoadedFile::reset);
+            FileManager.resetAll();
             Events.callEvent(new TreeUpdateRequest());
         }
     }
@@ -326,10 +394,7 @@ public class Helios {
                                     newPath.put(loadedFile.getName(), loadedFile);
                                 }
                             }
-                            synchronized (Helios.class) {
-                                path.clear();
-                                path.putAll(newPath);
-                            }
+                            FileManager.updatePath(newPath);
                         });
                     }
                 }
@@ -351,20 +416,12 @@ public class Helios {
         }, true);
     }
 
-    public static synchronized Map<String, LoadedFile> getPathFiles() {
-        return path;
-    }
-
     public static boolean ensurePython3Set() {
         return ensurePython3Set0(false);
     }
 
     public static boolean ensurePython2Set() {
-        return ensurePython2Set0(false);
-    }
-
-    public static boolean ensureJavaRtSet() {
-        return ensureJavaRtSet0(false);
+        return SettingsValidator.ensurePython2Set(false).getType() == Result.Type.SUCCESS;
     }
 
     private static boolean ensurePython3Set0(boolean forceCheck) {
@@ -393,72 +450,6 @@ public class Helios {
             }
         }
         return python3Verified;
-    }
-
-    private static boolean ensurePython2Set0(boolean forceCheck) {
-        String python2Location = Settings.PYTHON2_LOCATION.get().asString();
-        if (python2Location.isEmpty()) {
-            SWTUtil.showMessage("You need to set the location of the Python/PyPy 2.x executable", true);
-            setLocationOf(Settings.PYTHON2_LOCATION);
-            python2Location = Settings.PYTHON2_LOCATION.get().asString();
-        }
-        if (python2Location.isEmpty()) {
-            return false;
-        }
-        if (python2Verified == null || forceCheck) {
-            try {
-                Process process = new ProcessBuilder(python2Location, "-V").start();
-                String result = IOUtils.toString(process.getInputStream());
-                String error = IOUtils.toString(process.getErrorStream());
-                python2Verified = error.startsWith("Python 2") || result.startsWith("Python 2");
-            } catch (Throwable t) {
-                StringWriter sw = new StringWriter();
-                t.printStackTrace(new PrintWriter(sw));
-                SWTUtil.showMessage(
-                        "The Python 2.x executable is invalid." + Constants.NEWLINE + Constants.NEWLINE + sw.toString());
-                t.printStackTrace();
-                python2Verified = false;
-            }
-        }
-        return python2Verified;
-    }
-
-    private static boolean ensureJavaRtSet0(boolean forceCheck) {
-        String javaRtLocation = Settings.RT_LOCATION.get().asString();
-        if (javaRtLocation.isEmpty()) {
-            SWTUtil.showMessage("You need to set the location of Java's rt.jar", true);
-            setLocationOf(Settings.RT_LOCATION);
-            javaRtLocation = Settings.RT_LOCATION.get().asString();
-        }
-        if (javaRtLocation.isEmpty()) {
-            return false;
-        }
-        if (javaRtVerified == null || forceCheck) {
-            ZipFile zipFile = null;
-            try {
-                File rtjar = new File(javaRtLocation);
-                if (rtjar.exists()) {
-                    zipFile = new ZipFile(rtjar);
-                    ZipEntry object = zipFile.getEntry("java/lang/Object.class");
-                    if (object != null) {
-                        javaRtVerified = true;
-                    }
-                }
-            } catch (Throwable t) {
-                StringWriter sw = new StringWriter();
-                t.printStackTrace(new PrintWriter(sw));
-                SWTUtil.showMessage(
-                        "The selected Java rt.jar is invalid." + Constants.NEWLINE + Constants.NEWLINE + sw.toString());
-                t.printStackTrace();
-                javaRtVerified = false;
-            } finally {
-                IOUtils.closeQuietly(zipFile);
-                if (javaRtVerified == null) {
-                    javaRtVerified = false;
-                }
-            }
-        }
-        return javaRtVerified;
     }
 
     public static void checkHotKey(Event e) {
@@ -506,27 +497,8 @@ public class Helios {
         }
     }
 
-    public static LoadedFile getLoadedFile(String file) {
-        return files.containsKey(file) ? files.get(file) : getPathFiles().get(file);
-    }
-
     public static Future<?> submitBackgroundTask(Runnable runnable) {
         return backgroundTaskHandler.submit(runnable);
-    }
-
-    public static Collection<LoadedFile> getAllFiles() {
-        return Collections.unmodifiableCollection(files.values());
-    }
-
-    public static Map<String, byte[]> getAllLoadedData() {
-        Map<String, byte[]> data = new HashMap<>();
-        for (LoadedFile loadedFile : files.values()) {
-            data.putAll(loadedFile.getAllData());
-        }
-        for (LoadedFile loadedFile : path.values()) {
-            data.putAll(loadedFile.getAllData());
-        }
-        return data;
     }
 
     public static BackgroundTaskHandler getBackgroundTaskHandler() {
@@ -548,11 +520,11 @@ public class Helios {
         if (!files.isEmpty()) {
             setting.set(files.get(0).getAbsolutePath());
             if (setting == Settings.PYTHON2_LOCATION) {
-                ensurePython2Set0(true);
+                SettingsValidator.ensurePython2Set(true);
             } else if (setting == Settings.PYTHON3_LOCATION) {
                 ensurePython3Set0(true);
             } else if (setting == Settings.RT_LOCATION) {
-                ensureJavaRtSet0(true);
+                SettingsValidator.ensureJavaRtSet(true);
             }
         }
     }

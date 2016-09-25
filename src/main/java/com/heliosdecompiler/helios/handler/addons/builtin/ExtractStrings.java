@@ -16,8 +16,9 @@
 
 package com.heliosdecompiler.helios.handler.addons.builtin;
 
-import com.heliosdecompiler.helios.Resources;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.Resources;
 import com.heliosdecompiler.helios.api.Addon;
 import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -25,13 +26,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.*;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+import org.objectweb.asm.tree.*;
 
 public class ExtractStrings extends Addon {
     public ExtractStrings() {
@@ -44,7 +43,7 @@ public class ExtractStrings extends Addon {
             public void widgetSelected(SelectionEvent e) {
                 Helios.submitBackgroundTask(() -> {
                     StringBuilder stringBuilder = new StringBuilder();
-                    for (ClassNode classNode : Helios.loadAllClasses()) {
+                    for (ClassNode classNode : FileManager.loadAllClasses()) {
                         for (FieldNode fieldNode : classNode.fields) {
                             Object v = fieldNode.value;
                             if (v instanceof String) {

@@ -16,6 +16,9 @@
 
 package com.heliosdecompiler.helios.gui;
 
+import com.heliosdecompiler.helios.FileManager;
+import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.Resources;
 import com.heliosdecompiler.helios.api.events.Events;
 import com.heliosdecompiler.helios.api.events.Listener;
@@ -24,35 +27,16 @@ import com.heliosdecompiler.helios.tasks.DecompileAndSaveTask;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
-import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.*;
 import org.javatuples.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 
 public class TreeManager {
     private final Tree tree;
@@ -260,7 +244,7 @@ public class TreeManager {
     private void update() {
         Display display = tree.getDisplay();
         List<SpoofedTreeItem> roots = new ArrayList<>();
-        for (LoadedFile loadedFile : Helios.getAllFiles()) {
+        for (LoadedFile loadedFile : FileManager.getAllFiles()) {
             Map<String, SpoofedTreeItem> map = new HashMap<>();
             SpoofedTreeItem root = new SpoofedTreeItem();
             roots.add(root);

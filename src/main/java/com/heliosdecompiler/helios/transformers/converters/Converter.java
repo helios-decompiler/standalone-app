@@ -21,6 +21,7 @@ import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.Transformer;
+import com.heliosdecompiler.helios.utils.ProcessUtils;
 
 import java.io.File;
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public abstract class Converter extends Transformer {
                             out.getAbsolutePath(),
                             "-f"
                     ).directory(Constants.ENJARIFY_DIR);
-                    Process process = Helios.launchProcess(pb);
+                    Process process = ProcessUtils.launchProcess(pb);
                     process.waitFor();
                 } catch (Exception e) {
                     ExceptionHandler.handle(e);

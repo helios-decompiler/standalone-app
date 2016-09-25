@@ -21,11 +21,7 @@ import com.heliosdecompiler.helios.handler.addons.builtin.ExtractStrings;
 import com.heliosdecompiler.helios.handler.addons.builtin.FindEntryPoints;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AddonHandler {
     private static final Map<String, AddonHandler> BY_ID = new HashMap<>();

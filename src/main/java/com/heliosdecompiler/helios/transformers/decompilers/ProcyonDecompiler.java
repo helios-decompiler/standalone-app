@@ -25,14 +25,12 @@
 
 package com.heliosdecompiler.helios.transformers.decompilers;
 
-import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import com.strobel.assembler.InputTypeLoader;
-import com.strobel.assembler.metadata.Buffer;
-import com.strobel.assembler.metadata.ITypeLoader;
-import com.strobel.assembler.metadata.MetadataSystem;
-import com.strobel.assembler.metadata.TypeDefinition;
-import com.strobel.assembler.metadata.TypeReference;
+import com.strobel.assembler.metadata.*;
 import com.strobel.decompiler.DecompilationOptions;
 import com.strobel.decompiler.DecompilerSettings;
 import com.strobel.decompiler.PlainTextOutput;
@@ -44,18 +42,18 @@ import java.util.Map;
 
 public class ProcyonDecompiler extends Decompiler {
 
-    ProcyonDecompiler() {
+    public ProcyonDecompiler() {
         super("procyon", "Procyon", Settings.class);
     }
 
     @Override
-    public boolean decompile(final ClassNode classNode, byte[] bytes, StringBuilder output) {
+    public Either<Result, String> decompile(final ClassNode classNode, byte[] bytes) {
         try {
             if (classNode.version < 49) {
                 bytes = fixBytes(bytes);
             }
             final byte[] bytesToUse = bytes;
-            final Map<String, byte[]> loadedClasses = Helios.getAllLoadedData();
+            final Map<String, byte[]> loadedClasses = FileManager.getAllLoadedData();
             DecompilerSettings settings = getDecompilerSettings();
             MetadataSystem metadataSystem = new MetadataSystem(new ITypeLoader() {
                 private final InputTypeLoader backLoader = new InputTypeLoader();
@@ -82,18 +80,15 @@ public class ProcyonDecompiler extends Decompiler {
             DecompilationOptions decompilationOptions = new DecompilationOptions();
             decompilationOptions.setSettings(settings);
             decompilationOptions.setFullDecompilation(true);
-            TypeDefinition resolvedType = null;
+            TypeDefinition resolvedType;
             if (type == null || ((resolvedType = type.resolve()) == null)) {
                 throw new Exception("Unable to resolve type.");
             }
             StringWriter stringwriter = new StringWriter();
             settings.getLanguage().decompileType(resolvedType, new PlainTextOutput(stringwriter), decompilationOptions);
-            String decompiledSource = stringwriter.toString();
-            output.append(decompiledSource);
-            return true;
+            return Either.right(stringwriter.toString());
         } catch (Throwable e) {
-            output.append(parseException(e));
-            return false;
+            return Either.right(parseException(e));
         }
     }
 

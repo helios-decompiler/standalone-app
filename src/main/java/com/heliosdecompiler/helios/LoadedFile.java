@@ -16,23 +16,21 @@
 
 package com.heliosdecompiler.helios;
 
+import com.heliosdecompiler.helios.handler.BackgroundTaskHandler;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class LoadedFile {
@@ -63,7 +61,7 @@ public class LoadedFile {
         readDataQuick();
         if (files.size() > 0) {
             // Read all data of potential class files
-            Helios.submitBackgroundTask(() -> {
+            BackgroundTaskHandler.INSTANCE.submit(() -> {
                 Map<String, ClassNode> emptyClasses = new HashMap<>();
                 files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
                     try {
@@ -84,7 +82,7 @@ public class LoadedFile {
                     // Read the code as well
                     // fixme If path jars are guarenteed to not require code then maybe we can merge emptyClasses and classes
                     // fixme this seems to hog cpu cycles or something
-                    Helios.submitBackgroundTask(() -> {
+                    BackgroundTaskHandler.INSTANCE.submit(() -> {
                         Map<String, ClassNode> classes = new HashMap<>();
                         files.entrySet().stream().filter(ent -> ent.getKey().endsWith(".class")).forEach(ent -> {
                             try {

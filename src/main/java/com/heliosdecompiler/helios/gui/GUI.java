@@ -22,52 +22,35 @@ import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Resources;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.api.Addon;
-import com.heliosdecompiler.helios.api.events.Events;
-import com.heliosdecompiler.helios.api.events.FiletypeAssociationCreateEvent;
-import com.heliosdecompiler.helios.api.events.FiletypeAssociationDeleteEvent;
-import com.heliosdecompiler.helios.api.events.FiletypeAssociationEditEvent;
+import com.heliosdecompiler.helios.api.events.*;
 import com.heliosdecompiler.helios.api.events.Listener;
 import com.heliosdecompiler.helios.api.events.requests.RecentFileRequest;
+import com.heliosdecompiler.helios.gui.data.FiletypeAssociationData;
+import com.heliosdecompiler.helios.gui.popups.AddFiletypeAssociationPopup;
 import com.heliosdecompiler.helios.gui.popups.SearchPopup;
 import com.heliosdecompiler.helios.handler.addons.AddonHandler;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
 import com.heliosdecompiler.helios.transformers.converters.Converter;
-import com.heliosdecompiler.helios.gui.data.FiletypeAssociationData;
-import com.heliosdecompiler.helios.gui.popups.AddFiletypeAssociationPopup;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DropTarget;
-import org.eclipse.swt.dnd.DropTargetAdapter;
-import org.eclipse.swt.dnd.DropTargetEvent;
-import org.eclipse.swt.dnd.FileTransfer;
-import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Monitor;
-import org.eclipse.swt.widgets.ProgressBar;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.*;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GUI {
     private final Display display = Display.getDefault();
@@ -76,6 +59,7 @@ public class GUI {
     private TreeManager treeManager;
     private ClassManager classManager;
     private SearchPopup searchPopup;
+    private SearchPanel searchPanel;
 
     public GUI(Shell shell) {
         this.shell = shell;
@@ -418,9 +402,9 @@ public class GUI {
         sashForm.setLayout(new FillLayout());
 
         setupHierachy(sashForm);
-        new SearchPanel(sashForm);
+        searchPanel = new SearchPanel(sashForm);
 
-        sashForm.setWeights(new int[] {30, 70});
+        sashForm.setWeights(new int[]{30, 70});
     }
 
     private void setupHierachy(SashForm sashForm) {
@@ -523,5 +507,9 @@ public class GUI {
 
     public TreeManager getTreeManager() {
         return this.treeManager;
+    }
+
+    public SearchPanel getSearchPanel() {
+        return this.searchPanel;
     }
 }

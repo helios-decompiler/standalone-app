@@ -19,6 +19,8 @@ package com.heliosdecompiler.helios.transformers.assemblers;
 
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.TransformerSettings;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -28,11 +30,6 @@ import java.util.Map;
 public abstract class Assembler extends Transformer {
     private static final Map<String, Assembler> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Assembler> BY_NAME = new LinkedHashMap<>();
-
-    static {
-        new KrakatauAssembler().register();
-        new SmaliAssembler().register();
-    }
 
     private final String originalId;
     private final String originalName;
@@ -65,7 +62,7 @@ public abstract class Assembler extends Transformer {
         return assemble((String) args[0], (String) args[1]);
     }
 
-    public abstract byte[] assemble(String name, String contents);
+    public abstract Either<Result, byte[]> assemble(String name, String contents);
 
     public static Assembler getById(String id) {
         return BY_ID.get(id);

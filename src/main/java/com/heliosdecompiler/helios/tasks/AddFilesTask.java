@@ -16,12 +16,13 @@
 
 package com.heliosdecompiler.helios.tasks;
 
-import com.heliosdecompiler.helios.transformers.converters.Converter;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.api.events.Events;
 import com.heliosdecompiler.helios.api.events.requests.TreeUpdateRequest;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
+import com.heliosdecompiler.helios.transformers.converters.Converter;
 import com.heliosdecompiler.helios.utils.APKTool;
 import org.apache.commons.io.FilenameUtils;
 
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Objects;
 import java.util.Set;
 
 public class AddFilesTask implements Runnable {
@@ -124,7 +124,7 @@ public class AddFilesTask implements Runnable {
             }
         }
         try {
-            Helios.loadFile(fileToLoad);
+            FileManager.loadFile(fileToLoad);
         } catch (final Exception e) {
             ExceptionHandler.handle(e);
         }

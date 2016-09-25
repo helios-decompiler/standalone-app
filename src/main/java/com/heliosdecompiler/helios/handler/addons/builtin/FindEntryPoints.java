@@ -16,9 +16,10 @@
 
 package com.heliosdecompiler.helios.handler.addons.builtin;
 
+import com.heliosdecompiler.helios.FileManager;
+import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.Resources;
 import com.heliosdecompiler.helios.api.Addon;
-import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -41,7 +42,7 @@ public class FindEntryPoints extends Addon {
             public void widgetSelected(SelectionEvent e) {
                 Helios.submitBackgroundTask(() -> {
                     StringBuilder stringBuilder = new StringBuilder();
-                    for (ClassNode classNode : Helios.loadAllClasses()) {
+                    for (ClassNode classNode : FileManager.loadAllClasses()) {
                         classNode.methods
                                 .stream()
                                 .filter(methodNode -> methodNode.name.equals("main") && methodNode.desc.equals(

@@ -1078,7 +1078,7 @@ public abstract class SwingControl extends Composite {
      * should be enabled or not.
      * <p>
      * For this setting to be useful, a background colour should have been
-     * set that approximately matches the window's contents.
+     * set that approximately matches the window's contents.
      * <p>
      * By default, this setting is enabled on Windows with JDK 1.5 or older, and
      * disabled otherwise.

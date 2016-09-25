@@ -1,7 +1,9 @@
 package com.heliosdecompiler.helios.gui;
 
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.LoadedFile;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -9,31 +11,15 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.eclipse.swt.widgets.*;
+import org.objectweb.asm.tree.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-class SearchPanel {
+public class SearchPanel {
     private Composite mainComposite;
 
     private Composite accessComposite;
@@ -91,67 +77,42 @@ class SearchPanel {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (selection == 0) {
-                    String o = owner.getText();
-                    String n = name.getText();
-                    String d = desc.getText();
-                    Helios.submitBackgroundTask(() -> {
-                        for (ClassNode classNode : Helios.loadAllClasses()) {
-                            for (MethodNode m : classNode.methods) {
-                                InsnList insnList = m.instructions;
-                                for (AbstractInsnNode abstractInsnNode : insnList.toArray()) {
-                                    if (abstractInsnNode instanceof MethodInsnNode) {
-                                        MethodInsnNode min = (MethodInsnNode) abstractInsnNode;
-                                        if (min.owner.equals(o) && min.name.equals(n) && min.desc.equals(d)) {
-                                            System.out.println(classNode.name + " " + m.name + " " + m.desc);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
+                    searchMethod(owner.getText(), name.getText(), desc.getText());
                 } else if (selection == 1) {
                     String o = owner.getText();
                     String n = name.getText();
                     String d = desc.getText();
                     Helios.submitBackgroundTask(() -> {
-                        for (ClassNode classNode : Helios.loadAllClasses()) {
-                            for (MethodNode m : classNode.methods) {
-                                InsnList insnList = m.instructions;
-                                for (AbstractInsnNode abstractInsnNode : insnList.toArray()) {
-                                    if (abstractInsnNode instanceof FieldInsnNode) {
-                                        FieldInsnNode fin = (FieldInsnNode) abstractInsnNode;
-                                        if (fin.owner.equals(o) && fin.name.equals(n) && fin.desc.equals(d)) {
-                                            System.out.println(classNode.name + " " + m.name + " " + m.desc);
+                        Map<LoadedFile, List<Result>> resultByFile = new HashMap<>();
+
+                        for (LoadedFile loadedFile : FileManager.getAllFiles()) {
+                            loadedFile.getAllData().keySet().forEach(loadedFile::getClassNode);
+                            for (ClassNode classNode : loadedFile.getAllClassNodes()) {
+                                for (MethodNode m : classNode.methods) {
+                                    InsnList insnList = m.instructions;
+                                    for (AbstractInsnNode abstractInsnNode : insnList.toArray()) {
+                                        if (abstractInsnNode instanceof FieldInsnNode) {
+                                            FieldInsnNode fin = (FieldInsnNode) abstractInsnNode;
+                                            if (fin.owner.equals(o) && fin.name.equals(n) && fin.desc.equals(d)) {
+                                                resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, null, null, m.name + m.desc));
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                        draw(resultByFile);
                     });
                 } else {
                     String lookup = string.getText().toLowerCase();
                     boolean usePattern = regex.getSelection();
                     Helios.submitBackgroundTask(() -> {
-                        class Result {
-                            public ClassNode classNode;
-                            public FieldNode fieldNode;
-                            public MethodNode methodNode;
-                            public String value;
-
-                            public Result(ClassNode classNode, FieldNode fieldNode, MethodNode methodNode, String value) {
-                                this.classNode = classNode;
-                                this.fieldNode = fieldNode;
-                                this.methodNode = methodNode;
-                                this.value = value;
-                            }
-                        }
-
                         Map<LoadedFile, List<Result>> resultByFile = new HashMap<>();
 
                         Pattern p = Pattern.compile(lookup);
                         Predicate<String> matches = (str) -> usePattern ? p.matcher(str).find() : str.toLowerCase().contains(lookup);
 
-                        for (LoadedFile loadedFile : Helios.getAllFiles()) {
+                        for (LoadedFile loadedFile : FileManager.getAllFiles()) {
                             loadedFile.getAllData().keySet().forEach(loadedFile::getClassNode);
                             List<Result> results = new ArrayList<>();
                             for (ClassNode classNode : loadedFile.getAllClassNodes()) {
@@ -161,7 +122,8 @@ class SearchPanel {
                                         String s = (String) v;
                                         if (!s.isEmpty()) {
                                             if (matches.test(s)) {
-                                                results.add(new Result(classNode, fieldNode, null, s));
+                                                String val = fieldNode.name + " " + fieldNode.desc + " -> " + s;
+                                                results.add(new Result(classNode, fieldNode, null, val));
                                             }
                                         }
                                     }
@@ -174,7 +136,8 @@ class SearchPanel {
                                                 final String s = (String) ((LdcInsnNode) abstractInsnNode).cst;
                                                 if (!s.isEmpty()) {
                                                     if (matches.test(s)) {
-                                                        results.add(new Result(classNode, null, m, s));
+                                                        String val = m.name + m.desc + " -> " + s;
+                                                        results.add(new Result(classNode, null, m, val));
                                                     }
                                                 }
                                             }
@@ -183,53 +146,9 @@ class SearchPanel {
                                 }
                             }
                             resultByFile.put(loadedFile, results);
+
+                            draw(resultByFile);
                         }
-
-                        List<TempTreeItem> roots = new ArrayList<>();
-
-                        for (Map.Entry<LoadedFile, List<Result>> ent : resultByFile.entrySet()) {
-                            Map<String, TempTreeItem> map = new HashMap<>();
-                            TempTreeItem root = new TempTreeItem();
-                            root.name = ent.getKey().getName();
-                            for (Result r : ent.getValue()) {
-                                final String[] spl = r.classNode.name.split("/");
-                                TempTreeItem last = root;
-                                for (int i = 0; i < spl.length; i++) {
-                                    String joined = join(i, spl);
-                                    TempTreeItem child = map.get(joined);
-                                    if (child == null) {
-                                        child = new TempTreeItem();
-                                        child.parent = last;
-                                        child.name = spl[i];
-                                        last.children.add(child);
-                                        map.put(joined, child);
-                                    }
-                                    last = child;
-                                }
-                                TempTreeItem val = new TempTreeItem();
-                                last.children.add(val);
-                                val.parent = last;
-                                val.name = r.fieldNode == null ? r.methodNode.name + r.methodNode.desc + " -> " + r.value : r.fieldNode.name + " " + r.fieldNode.desc + " -> " + r.value;
-                            }
-                            roots.add(root);
-                        }
-
-                        sort(roots);
-
-                        mainComposite.getDisplay().syncExec(() -> {
-                            for (TreeItem item : outputTree.getItems()) {
-                                item.setExpanded(false);
-                                item.dispose();
-                            }
-                            try {
-                                outputTree.setRedraw(false);
-                                for (TempTreeItem root : roots) {
-                                    update(new TreeItem(outputTree, SWT.NONE), root);
-                                }
-                            } finally {
-                                outputTree.setRedraw(true);
-                            }
-                        });
                     });
                 }
             }
@@ -240,7 +159,95 @@ class SearchPanel {
         mainComposite.layout();
     }
 
-    class TempTreeItem {
+    class Result {
+        public ClassNode classNode;
+        public String value;
+
+        public Result(ClassNode classNode, FieldNode fieldNode, MethodNode methodNode, String value) {
+            this.classNode = classNode;
+            this.value = value;
+        }
+    }
+
+    private void draw(Map<LoadedFile, List<Result>> resultByFile) {
+        List<TempTreeItem> roots = new ArrayList<>();
+
+        for (Map.Entry<LoadedFile, List<Result>> ent : resultByFile.entrySet()) {
+            Map<String, TempTreeItem> map = new HashMap<>();
+            TempTreeItem root = new TempTreeItem();
+            root.name = ent.getKey().getName();
+            for (Result r : ent.getValue()) {
+                final String[] spl = r.classNode.name.split("/");
+                TempTreeItem last = root;
+                for (int i = 0; i < spl.length; i++) {
+                    String joined = join(i, spl);
+                    TempTreeItem child = map.get(joined);
+                    if (child == null) {
+                        child = new TempTreeItem();
+                        child.parent = last;
+                        child.name = spl[i];
+                        last.children.add(child);
+                        map.put(joined, child);
+                    }
+                    last = child;
+                }
+                TempTreeItem val = new TempTreeItem();
+                last.children.add(val);
+                val.parent = last;
+                val.name = r.value;
+            }
+            roots.add(root);
+        }
+
+        sort(roots);
+
+        mainComposite.getDisplay().syncExec(() -> {
+            for (TreeItem item : outputTree.getItems()) {
+                item.setExpanded(false);
+                item.dispose();
+            }
+            try {
+                outputTree.setRedraw(false);
+                for (TempTreeItem root : roots) {
+                    update(new TreeItem(outputTree, SWT.NONE), root);
+                }
+            } finally {
+                outputTree.setRedraw(true);
+            }
+        });
+    }
+
+    public void searchMethod(String o, String n, String d) {
+        System.out.println("Searching " + o + " " + n + " " + d);
+        Helios.submitBackgroundTask(() -> {
+            Map<LoadedFile, List<Result>> resultByFile = new HashMap<>();
+
+            for (LoadedFile loadedFile : FileManager.getAllFiles()) {
+                loadedFile.getAllData().keySet().forEach(loadedFile::getClassNode);
+                for (ClassNode classNode : loadedFile.getAllClassNodes()) {
+                    for (MethodNode m : classNode.methods) {
+                        InsnList insnList = m.instructions;
+                        for (AbstractInsnNode abstractInsnNode : insnList.toArray()) {
+                            if (abstractInsnNode instanceof MethodInsnNode) {
+                                MethodInsnNode min = (MethodInsnNode) abstractInsnNode;
+                                if (StringUtils.isEmpty(o) || min.owner.equals(o)) {
+                                    if (StringUtils.isEmpty(n) || min.name.equals(n)) {
+                                        if (StringUtils.isEmpty(d) || min.desc.equals(d)) {
+                                            resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, null, null, m.name + m.desc));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            draw(resultByFile);
+        });
+    }
+
+    private class TempTreeItem {
         String name;
         final List<TempTreeItem> children = new ArrayList<>();
         TempTreeItem parent;

@@ -16,10 +16,10 @@
 
 package com.heliosdecompiler.helios.transformers;
 
-import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.gui.data.ClassData;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.gui.ClassManager;
 import com.heliosdecompiler.helios.gui.GenericClickListener;
+import com.heliosdecompiler.helios.gui.data.ClassData;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import org.fife.ui.hex.swing.HexEditor;
 
@@ -46,7 +46,7 @@ public class HexViewer extends Transformer implements Viewable {
     public JComponent open(ClassManager cm, ClassData data) {
         final HexEditor editor = new HexEditor();
         try {
-            editor.open(new ByteArrayInputStream(Helios.getLoadedFile(data.getFileName()).getAllData().get(data.getClassName())));
+            editor.open(new ByteArrayInputStream(FileManager.getLoadedFile(data.getFileName()).getAllData().get(data.getClassName())));
         } catch (IOException e1) {
             ExceptionHandler.handle(e1);
         }

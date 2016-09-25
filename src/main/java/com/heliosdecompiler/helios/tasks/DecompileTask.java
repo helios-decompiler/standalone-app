@@ -28,17 +28,27 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.LoadedFile;
 import com.heliosdecompiler.helios.api.events.Events;
 import com.heliosdecompiler.helios.api.events.PreDecompileEvent;
+import com.heliosdecompiler.helios.api.events.requests.SearchRequest;
 import com.heliosdecompiler.helios.gui.ClickableSyntaxTextArea;
 import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.decompilers.CFRDecompiler;
 import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
-import com.heliosdecompiler.helios.LoadedFile;
-import com.heliosdecompiler.helios.api.events.requests.SearchRequest;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
+import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.TreeItem;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.javatuples.Pair;
 import org.objectweb.asm.Type;
@@ -92,14 +102,16 @@ public class DecompileTask implements Runnable {
 
     @Override
     public void run() {
-        LoadedFile loadedFile = Helios.getLoadedFile(fileName);
+        LoadedFile loadedFile = FileManager.getLoadedFile(fileName);
         byte[] classFile = loadedFile.getAllData().get(className);
         PreDecompileEvent event = new PreDecompileEvent(transformer, classFile);
         Events.callEvent(event);
         classFile = event.getBytes();
         StringBuilder output = new StringBuilder();
         if (transformer instanceof Decompiler) {
-            if (((Decompiler) transformer).decompile(loadedFile.getClassNode(className), classFile, output)) {
+            Either<Result, String> either = ((Decompiler) transformer).decompile(loadedFile.getClassNode(className), classFile);
+            if (either.right() != null) {
+                output.append(either.right());
                 CompilationUnit cu = null;
                 try {
                     cu = JavaParser.parse(new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8)), "UTF-8", false);
@@ -188,12 +200,12 @@ public class DecompileTask implements Runnable {
             if (fullName.endsWith("*")) continue; //Ignore wildcard imports
             String internalName = fullName.replace('.', '/');
             Set<LoadedFile> check = new HashSet<>();
-            check.addAll(Helios.getAllFiles());
-            check.addAll(Helios.getPathFiles().values());
+            check.addAll(FileManager.getAllFiles());
+            check.addAll(FileManager.getPathFiles().values());
             for (LoadedFile loadedFile : check) {
                 if (loadedFile.getAllData().containsKey(internalName + ".class")) {
                     Pair<Integer, Integer> offsets = getOffsets(lineSizes, decl.getName());
-                    ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(decl.getName().getBeginLine(), decl.getName().getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+                    ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.DecompileLink(decl.getName().getBeginLine(), decl.getName().getBeginColumn(), offsets.getValue0(), offsets.getValue1());
                     link.fileName = loadedFile.getName();
                     link.className = internalName + ".class";
                     link.jumpTo = "";
@@ -286,6 +298,43 @@ public class DecompileTask implements Runnable {
 
                     @Override
                     public void visit(MethodDeclaration n, Node arg) {
+                        Pair<Integer, Integer> offsets = getOffsets(lineSizes, n.getNameExpr());
+                        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(n.getNameExpr().getBeginLine(), n.getNameExpr().getBeginColumn(), offsets.getValue0(), offsets.getValue1()) {
+                            @Override
+                            public void run(Transformer currentTransformer) {
+                                SWTUtil.runTaskOnMainThread(() -> {
+                                    Menu menu = new Menu(Helios.getGui().getShell(), SWT.POP_UP);
+
+                                    MenuItem findUsages = new MenuItem(menu, SWT.CASCADE);
+                                    findUsages.setText("Find Usages");
+                                    findUsages.setEnabled(true);
+
+                                    Menu methodsMenu = new Menu(menu.getShell(), SWT.DROP_DOWN);
+                                    findUsages.setMenu(methodsMenu);
+
+
+                                    LoadedFile loadedFile = FileManager.getLoadedFile(DecompileTask.this.fileName);
+                                    ClassNode classNode = loadedFile.getClassNode(DecompileTask.this.className);
+
+                                    for (MethodNode methodNode : classNode.methods) {
+                                        if (methodNode.name.equals(n.getName())) {
+                                            MenuItem decompilerItem = new MenuItem(methodsMenu, SWT.CASCADE);
+                                            decompilerItem.setText(methodNode.name + methodNode.desc);
+                                            decompilerItem.addSelectionListener(new SelectionAdapter() {
+                                                @Override
+                                                public void widgetSelected(SelectionEvent e) {
+                                                    Helios.getGui().getSearchPanel().searchMethod(classNode.name, methodNode.name, methodNode.desc);
+                                                }
+                                            });
+                                        }
+                                    }
+
+                                    menu.setLocation(SWTUtil.getMouseLocation());
+                                    menu.setVisible(true);
+                                }, true);
+                            }
+                        };
+                        textArea.links.add(link);
                         super.visit(n, n);
                     }
 
@@ -703,7 +752,7 @@ public class DecompileTask implements Runnable {
         print(depth, "RHNE " + methodCallExpr + " " + nameExpr);
         print(depth, "Scope is " + ((methodCallExpr.getScope() == null) ? null : methodCallExpr.getScope().getClass()) + " " + methodCallExpr.getScope());
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, nameExpr);
-        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(nameExpr.getBeginLine(), nameExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.DecompileLink(nameExpr.getBeginLine(), nameExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
 
         Set<String> possibleClassNames = new HashSet<>();
 
@@ -897,7 +946,7 @@ public class DecompileTask implements Runnable {
              *
              * super.someVirtualMethod();
              */
-            LoadedFile loadedFile = Helios.getLoadedFile(fileName);
+            LoadedFile loadedFile = FileManager.getLoadedFile(fileName);
             ClassNode node = loadedFile.getClassNode(this.className);
             possibleClassNames.add(node.superName);
         } else if (methodCallExpr.getScope() instanceof EnclosedExpr) {
@@ -999,13 +1048,13 @@ public class DecompileTask implements Runnable {
                     LoadedFile readFrom = null;
 
                     String fileName = internalName + ".class";
-                    LoadedFile file = Helios.getLoadedFile(this.fileName);
+                    LoadedFile file = FileManager.getLoadedFile(this.fileName);
                     if (file.getAllData().get(fileName) != null) {
                         readFrom = file;
                     } else {
                         Set<LoadedFile> check = new HashSet<>();
-                        check.addAll(Helios.getAllFiles());
-                        check.addAll(Helios.getPathFiles().values());
+                        check.addAll(FileManager.getAllFiles());
+                        check.addAll(FileManager.getPathFiles().values());
                         for (LoadedFile loadedFile : check) {
                             if (loadedFile.getAllData().get(fileName) != null) {
                                 readFrom = loadedFile;
@@ -1071,7 +1120,7 @@ public class DecompileTask implements Runnable {
         Set<String> types = new HashSet<>();
 
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, fieldAccessExpr);
-        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(fieldAccessExpr.getBeginLine(), fieldAccessExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.DecompileLink(fieldAccessExpr.getBeginLine(), fieldAccessExpr.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
 
         String className = owner;
         String internalName = className.substring(0, className.length() - 6);
@@ -1081,13 +1130,13 @@ public class DecompileTask implements Runnable {
                 LoadedFile readFrom = null;
 
                 String fileName = internalName + ".class";
-                LoadedFile file = Helios.getLoadedFile(this.fileName);
+                LoadedFile file = FileManager.getLoadedFile(this.fileName);
                 if (file.getAllData().get(fileName) != null) {
                     readFrom = file;
                 } else {
                     Set<LoadedFile> check = new HashSet<>();
-                    check.addAll(Helios.getAllFiles());
-                    check.addAll(Helios.getPathFiles().values());
+                    check.addAll(FileManager.getAllFiles());
+                    check.addAll(FileManager.getPathFiles().values());
                     for (LoadedFile loadedFile : check) {
                         if (loadedFile.getAllData().get(fileName) != null) {
                             readFrom = loadedFile;
@@ -1155,7 +1204,7 @@ public class DecompileTask implements Runnable {
          * Fully Qualified Name with inner (internal): java.lang.System$Inner
          */
         Pair<Integer, Integer> offsets = getOffsets(lineSizes, classOrInterfaceType);
-        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.Link(classOrInterfaceType.getBeginLine(), classOrInterfaceType.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
+        ClickableSyntaxTextArea.Link link = new ClickableSyntaxTextArea.DecompileLink(classOrInterfaceType.getBeginLine(), classOrInterfaceType.getBeginColumn(), offsets.getValue0(), offsets.getValue1());
 
         /* Could be any of the above possibilities */
         String fullName = tostring.computeIfAbsent(classOrInterfaceType, toStringComputer);
@@ -1239,13 +1288,13 @@ public class DecompileTask implements Runnable {
     }
 
     private LoadedFile getFileFor(String fileName) {
-        LoadedFile file = Helios.getLoadedFile(this.fileName);
+        LoadedFile file = FileManager.getLoadedFile(this.fileName);
         if (file.getAllData().get(fileName) != null) {
             return file;
         } else {
             Set<LoadedFile> check = new HashSet<>();
-            check.addAll(Helios.getAllFiles());
-            check.addAll(Helios.getPathFiles().values());
+            check.addAll(FileManager.getAllFiles());
+            check.addAll(FileManager.getPathFiles().values());
             for (LoadedFile loadedFile : check) {
                 if (loadedFile.getAllData().get(fileName) != null) {
                     return loadedFile;

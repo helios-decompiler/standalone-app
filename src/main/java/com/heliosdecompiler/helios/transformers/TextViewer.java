@@ -16,9 +16,9 @@
 
 package com.heliosdecompiler.helios.transformers;
 
-import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.gui.data.ClassData;
+import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.gui.ClassManager;
+import com.heliosdecompiler.helios.gui.data.ClassData;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -43,7 +43,7 @@ public class TextViewer extends Transformer implements Viewable {
     @Override
     public JComponent open(ClassManager cm, ClassData data) {
         RSyntaxTextArea area = new RSyntaxTextArea();
-        area.setText(new String(Helios.getLoadedFile(data.getFileName()).getAllData().get(data.getClassName()), StandardCharsets.UTF_8));
+        area.setText(new String(FileManager.getLoadedFile(data.getFileName()).getAllData().get(data.getClassName()), StandardCharsets.UTF_8));
         return new RTextScrollPane(area);
     }
 }

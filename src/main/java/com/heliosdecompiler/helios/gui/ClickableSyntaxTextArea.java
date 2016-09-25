@@ -1,10 +1,13 @@
 package com.heliosdecompiler.helios.gui;
 
-import com.heliosdecompiler.helios.transformers.Transformer;
-import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.transformers.Transformer;
 import com.heliosdecompiler.helios.transformers.assemblers.Assembler;
+import com.heliosdecompiler.helios.transformers.compilers.Compiler;
+import com.heliosdecompiler.helios.transformers.decompilers.Decompiler;
 import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
+import com.heliosdecompiler.helios.utils.Either;
+import com.heliosdecompiler.helios.utils.Result;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Token;
 
@@ -14,8 +17,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.heliosdecompiler.helios.transformers.compilers.Compiler;
 
 
 public class ClickableSyntaxTextArea extends RSyntaxTextArea {
@@ -45,12 +46,7 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
                     if (offset != -1) {
                         Link link = getLinkForOffset(offset);
                         if (link != null) {
-                            System.out.println(link.fileName + " " + link.className);
-                            if (link.fileName != null && link.className != null) {
-                                Helios.submitBackgroundTask(() -> {
-                                    manager.openFileAndDecompile(link.fileName, link.className, currentTransformer, link.jumpTo);
-                                });
-                            }
+                            link.run(currentTransformer);
                         }
                     }
                 }
@@ -108,6 +104,9 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
             for (Compiler compiler : Compiler.getAllCompilers()) {
                 JMenuItem compileOption = new JMenuItem(compiler.getName());
                 compileOption.setEnabled(true);
+                compileOption.addActionListener(e -> {
+                    byte[] bytes = compiler.compile(this.className, this.getText());
+                });
                 compileMenu.add(compileOption);
             }
             menu.add(compileMenu);
@@ -116,6 +115,9 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
             for (Assembler assembler : Assembler.getAllAssemblers()) {
                 JMenuItem assembleOption = new JMenuItem(assembler.getName());
                 assembleOption.setEnabled(true);
+                assembleOption.addActionListener(e -> {
+                    Either<Result, byte[]> result = assembler.assemble(this.className, this.getText());
+                });
                 assembleMenu.add(assembleOption);
             }
             menu.add(assembleMenu);
@@ -140,7 +142,7 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
         return null;
     }
 
-    public static class Link {
+    public abstract static class Link {
         public String fileName;
         public String className;
         public String jumpTo;
@@ -155,6 +157,8 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
             this.offset = offset;
             this.offsetEnd = offsetEnd;
         }
+
+        public abstract void run(Transformer currentTransformer);
 
         @Override
         public boolean equals(Object o) {
@@ -181,6 +185,22 @@ public class ClickableSyntaxTextArea extends RSyntaxTextArea {
             result = 31 * result + offset;
             result = 31 * result + offsetEnd;
             return result;
+        }
+    }
+
+    public static class DecompileLink extends Link {
+
+        public DecompileLink(int line, int column, int offset, int offsetEnd) {
+            super(line, column, offset, offsetEnd);
+        }
+
+        public void run(Transformer currentTransformer) {
+            System.out.println(fileName + " " + className);
+            if (fileName != null && className != null) {
+                Helios.submitBackgroundTask(() -> {
+                    Helios.getGui().getClassManager().openFileAndDecompile(fileName, className, currentTransformer, jumpTo);
+                });
+            }
         }
     }
 }
