@@ -3,15 +3,17 @@ package com.heliosdecompiler.helios.gui;
 import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.LoadedFile;
+import com.heliosdecompiler.helios.utils.SWTUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
+import org.javatuples.Pair;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -94,7 +96,7 @@ public class SearchPanel {
                                         if (abstractInsnNode instanceof FieldInsnNode) {
                                             FieldInsnNode fin = (FieldInsnNode) abstractInsnNode;
                                             if (fin.owner.equals(o) && fin.name.equals(n) && fin.desc.equals(d)) {
-                                                resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, null, null, m.name + m.desc));
+                                                resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, loadedFile.getName(), null, null, m.name + m.desc));
                                             }
                                         }
                                     }
@@ -123,7 +125,7 @@ public class SearchPanel {
                                         if (!s.isEmpty()) {
                                             if (matches.test(s)) {
                                                 String val = fieldNode.name + " " + fieldNode.desc + " -> " + s;
-                                                results.add(new Result(classNode, fieldNode, null, val));
+                                                results.add(new Result(classNode, loadedFile.getName(), fieldNode, null, val));
                                             }
                                         }
                                     }
@@ -137,7 +139,7 @@ public class SearchPanel {
                                                 if (!s.isEmpty()) {
                                                     if (matches.test(s)) {
                                                         String val = m.name + m.desc + " -> " + s;
-                                                        results.add(new Result(classNode, null, m, val));
+                                                        results.add(new Result(classNode, loadedFile.getName(), null, m, val));
                                                     }
                                                 }
                                             }
@@ -161,10 +163,12 @@ public class SearchPanel {
 
     class Result {
         public ClassNode classNode;
+        public String fileName;
         public String value;
 
-        public Result(ClassNode classNode, FieldNode fieldNode, MethodNode methodNode, String value) {
+        public Result(ClassNode classNode, String fileName, FieldNode fieldNode, MethodNode methodNode, String value) {
             this.classNode = classNode;
+            this.fileName = fileName;
             this.value = value;
         }
     }
@@ -195,6 +199,7 @@ public class SearchPanel {
                 last.children.add(val);
                 val.parent = last;
                 val.name = r.value;
+                val.result = r;
             }
             roots.add(root);
         }
@@ -233,7 +238,7 @@ public class SearchPanel {
                                 if (StringUtils.isEmpty(o) || min.owner.equals(o)) {
                                     if (StringUtils.isEmpty(n) || min.name.equals(n)) {
                                         if (StringUtils.isEmpty(d) || min.desc.equals(d)) {
-                                            resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, null, null, m.name + m.desc));
+                                            resultByFile.computeIfAbsent(loadedFile, key -> new ArrayList<>()).add(new Result(classNode, loadedFile.getName(), null, null, m.name + m.desc));
                                         }
                                     }
                                 }
@@ -251,6 +256,7 @@ public class SearchPanel {
         String name;
         final List<TempTreeItem> children = new ArrayList<>();
         TempTreeItem parent;
+        Result result;
     }
 
     private String join(int end, String[] arr) {
@@ -267,6 +273,9 @@ public class SearchPanel {
     private void update(TreeItem last, TempTreeItem lastspoof) {
         while (last.getDisplay().readAndDispatch()) ;
         last.setText(lastspoof.name);
+        if (lastspoof.result != null) {
+            last.setData(lastspoof.result);
+        }
         for (TempTreeItem child : lastspoof.children) {
             update(new TreeItem(last, SWT.NONE), child);
         }
@@ -349,5 +358,53 @@ public class SearchPanel {
     private void createOutput() {
         outputTree = new Tree(mainComposite, SWT.BORDER);
         outputTree.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        outputTree.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (SWTUtil.isEnter(e.keyCode)) {
+                    TreeItem[] items = outputTree.getSelection();
+                    for (TreeItem treeItem : items) {
+                        if (treeItem.getItemCount() == 0) {
+                            click(treeItem);
+                        } else {
+                            treeItem.setExpanded(!treeItem.getExpanded());
+                        }
+                    }
+                }
+            }
+        });
+
+        outputTree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseDown(MouseEvent e) {
+                if (e.button == 1 && e.count % 2 == 0) {
+                    TreeItem item = outputTree.getItem(new Point(e.x, e.y));
+                    if (item != null) {
+                        if (item.getItemCount() == 0) {
+                            click(item);
+                        } else {
+                            item.setExpanded(!item.getExpanded());
+                            TreeItem current = item;
+                            TreeItem[] children;
+                            while ((children = current.getItems()).length == 1) {
+                                children[0].setExpanded(true);
+                                current = children[0];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    public void click(TreeItem item) {
+        if (item.getData() == null)
+            return;
+        Result result = (Result) item.getData();
+
+        System.out.println(result.fileName  + " " + result.classNode.name + ".class");
+
+        Helios.getGui().getClassManager().openFile(result.fileName, result.classNode.name + ".class");
     }
 }

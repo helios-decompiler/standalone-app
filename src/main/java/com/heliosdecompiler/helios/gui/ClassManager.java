@@ -223,7 +223,7 @@ public class ClassManager {
         });
     }
 
-    void openFile(String file, String name) {
+    public void openFile(String file, String name) {
         String extension = name.lastIndexOf('.') == -1 ? "" : name.substring(name.lastIndexOf('.'));
         ClassData classData = opened.computeIfAbsent(file + name, obj -> new ClassData(file, name));
         String finalName = name.substring(name.lastIndexOf('/') + 1, name.length());
