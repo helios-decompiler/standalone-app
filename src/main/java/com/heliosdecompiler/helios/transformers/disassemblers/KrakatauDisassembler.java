@@ -27,8 +27,10 @@ import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -45,44 +47,57 @@ public class KrakatauDisassembler extends Disassembler {
 
     public boolean disassembleClassNode(ClassNode cn, byte[] b, StringBuilder output) {
         if (Helios.ensurePython2Set()) {
-            File inputJar = null;
-            File outputZip = null;
+            File sessionDirectory = null;
+            File inputFile = null;
+            File outputDirectory = null;
             String processLog = null;
 
             try {
-                inputJar = Files.createTempFile("kdisin", ".jar").toFile();
-                outputZip = Files.createTempFile("kdisout", ".zip").toFile();
+                sessionDirectory = Files.createTempDirectory("krakatau-disassemble-").toFile();
+                inputFile = new File(sessionDirectory, "input.zip");
+                outputDirectory = new File(sessionDirectory, "out");
+                outputDirectory.mkdir();
 
-                Map<String, byte[]> data = FileManager.getAllLoadedData();
-                data.put(cn.name + ".class", b);
+                Map<String, byte[]> data = new HashMap<>();
+                data.put(cn.name, b);
+                Utils.saveClasses(inputFile, data);
 
-                Utils.saveClasses(inputJar, data);
+
+                FileOutputStream fileOutputStream = new FileOutputStream(inputFile);
+                fileOutputStream.write(b);
+                fileOutputStream.close();
 
                 Process process = ProcessUtils.launchProcess(
-                        new ProcessBuilder(com.heliosdecompiler.helios.Settings.PYTHON2_LOCATION.get().asString(), "-O", "disassemble.py", "-path",
-                                inputJar.getAbsolutePath(), "-out", outputZip.getAbsolutePath(),
-                                cn.name + ".class", Settings.ROUNDTRIP.isEnabled() ? "-roundtrip" : "").directory(Constants.KRAKATAU_DIR));
+                        new ProcessBuilder(
+                                com.heliosdecompiler.helios.Settings.PYTHON2_LOCATION.get().asString(),
+                                "-O",
+                                "disassemble.py",
+                                "-out",
+                                outputDirectory.getAbsolutePath(),
+                                Settings.ROUNDTRIP.isEnabled() ? "-roundtrip" : "",
+                                inputFile.getAbsolutePath()
+                        )
+                                .directory(Constants.KRAKATAU_DIR));
 
                 processLog = ProcessUtils.readProcess(process);
 
-                ZipFile zipFile = new ZipFile(outputZip);
-                Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                byte[] disassembled = null;
-                while (entries.hasMoreElements()) {
-                    ZipEntry next = entries.nextElement();
-                    if (next.getName().equals(cn.name + ".j")) {
-                        disassembled = IOUtils.toByteArray(zipFile.getInputStream(next));
-                    }
+                File outputFile = outputDirectory;
+                File[] currentFiles;
+                while ((currentFiles = outputFile.listFiles()) != null && currentFiles.length > 0) {
+                    outputFile = currentFiles[0];
                 }
-                zipFile.close();
-                output.append(new String(disassembled, "UTF-8"));
-                return true;
+
+                if (outputFile.isFile()) {
+                    output.append(new String(FileUtils.readFileToByteArray(outputFile), "UTF-8"));
+                    return true;
+                } else {
+                    throw new RuntimeException("Expected file, got " + outputFile);
+                }
             } catch (Exception e) {
                 output.append(parseException(e)).append(processLog);
                 return false;
             } finally {
-                FileUtils.deleteQuietly(inputJar);
-                FileUtils.deleteQuietly(outputZip);
+                FileUtils.deleteQuietly(sessionDirectory);
             }
         } else {
             output.append("You need to set the location of Python 2.x");

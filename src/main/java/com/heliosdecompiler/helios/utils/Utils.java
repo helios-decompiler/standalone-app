@@ -51,6 +51,7 @@ public class Utils {
                     out.closeEntry();
                 }
             }
+            out.flush();
             out.close();
         } catch (IOException e) {
             ExceptionHandler.handle(e);

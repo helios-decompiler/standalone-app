@@ -25,8 +25,11 @@ import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -41,18 +44,28 @@ public class KrakatauDecompiler extends Decompiler {
         if (python2.is(Result.Type.SUCCESS)) {
             Result javart = SettingsValidator.ensureJavaRtSet();
             if (javart.is(Result.Type.SUCCESS)) {
-                File inputJar = null;
-                File outputJar = null;
-                ZipFile zipFile = null;
+                File sessionDirectory = null;
+                File inputFile = null;
+                File pathFile = null;
+                File outputDirectory = null;
+
                 Process createdProcess;
                 String log = "";
 
                 try {
-                    inputJar = Files.createTempFile("kdein", ".jar").toFile();
-                    outputJar = Files.createTempFile("kdeout", ".zip").toFile();
+                    sessionDirectory = Files.createTempDirectory("krakatau-decompile-").toFile();
+                    inputFile = new File(sessionDirectory, "input.jar");
+                    pathFile = new File(sessionDirectory, "path.jar");
+                    outputDirectory = new File(sessionDirectory, "out");
+                    outputDirectory.mkdir();
+
                     Map<String, byte[]> loadedData = FileManager.getAllLoadedData();
-                    loadedData.put(classNode.name + ".class", bytes);
-                    Utils.saveClasses(inputJar, loadedData);
+                    loadedData.remove(classNode.name + ".class");
+                    Utils.saveClasses(pathFile, loadedData);
+
+                    Map<String, byte[]> data = new HashMap<>();
+                    data.put(classNode.name + ".class", bytes);
+                    Utils.saveClasses(inputFile, data);
 
                     createdProcess = ProcessUtils.launchProcess(
                             new ProcessBuilder(
@@ -63,29 +76,29 @@ public class KrakatauDecompiler extends Decompiler {
                                     "-nauto",
                                     Settings.MAGIC_THROW.isEnabled() ? "-xmagicthrow" : "",
                                     "-path",
-                                    buildPath(inputJar),
+                                    buildPath(pathFile),
                                     "-out",
-                                    outputJar.getAbsolutePath(),
-                                    classNode.name + ".class"
+                                    outputDirectory.getAbsolutePath(),
+                                    inputFile.getAbsolutePath()
                             ).directory(Constants.KRAKATAU_DIR));
 
                     log = ProcessUtils.readProcess(createdProcess);
 
-                    System.out.println(log);
+                    File outputFile = outputDirectory;
+                    File[] currentFiles;
+                    while ((currentFiles = outputFile.listFiles()) != null && currentFiles.length > 0) {
+                        outputFile = currentFiles[0];
+                    }
 
-                    zipFile = new ZipFile(outputJar);
-                    ZipEntry zipEntry = zipFile.getEntry(classNode.name + ".java");
-                    if (zipEntry == null)
-                        throw new IllegalArgumentException("Class failed to decompile (no class in output zip)");
-                    InputStream inputStream = zipFile.getInputStream(zipEntry);
-                    byte[] data = IOUtils.toByteArray(inputStream);
-                    return Either.right(new String(data, "UTF-8"));
+                    if (outputFile.isFile()) {
+                        return Either.right(new String(FileUtils.readFileToByteArray(outputFile), "UTF-8"));
+                    } else {
+                        throw new RuntimeException("Expected file, got " + outputFile);
+                    }
                 } catch (Exception e) {
                     return Either.right(parseException(e) + "\n" + log);
                 } finally {
-                    IOUtils.closeQuietly(zipFile);
-                    FileUtils.deleteQuietly(inputJar);
-                    FileUtils.deleteQuietly(outputJar);
+                    FileUtils.deleteQuietly(sessionDirectory);
                 }
             }
             return Either.right("You must specify the location of rt.jar");
