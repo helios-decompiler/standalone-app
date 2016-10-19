@@ -28,6 +28,7 @@ public enum BootSequence {
     LOADING_SETTINGS("Loading Settings"),
     LOADING_ADDONS("Loading Addons"),
     SETTING_UP_GUI("Setting up GUI"),
+    CREATING_TEMPORARY_FILES("Creating Temp Files"),
     COMPLETE("Complete");
 
     private final String message;

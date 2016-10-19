@@ -36,6 +36,7 @@ import java.util.zip.ZipInputStream;
 public class LoadedFile {
     private final File file;
     private final String name; /* The name of the file. No directory */
+    private final long lastModified;
 
     private Map<String, byte[]> files; /* Map of ZIP-style path with extension to byte */
     private Map<String, ClassNode> classes; /* Map of internal class name with ClassNode */
@@ -50,6 +51,7 @@ public class LoadedFile {
     public LoadedFile(File file, boolean path) {
         this.file = file;
         this.name = file.getName();
+        this.lastModified = file.lastModified();
         this.isPath = path;
         reset();
     }
@@ -179,5 +181,9 @@ public class LoadedFile {
 
     public String getName() {
         return name;
+    }
+
+    public boolean hasBeenModified() {
+        return file.lastModified() != lastModified;
     }
 }

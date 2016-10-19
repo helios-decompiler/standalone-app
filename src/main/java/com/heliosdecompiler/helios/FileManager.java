@@ -1,5 +1,7 @@
 package com.heliosdecompiler.helios;
 
+import com.heliosdecompiler.helios.utils.Utils;
+import org.apache.commons.io.FileUtils;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
@@ -48,7 +50,7 @@ public class FileManager {
 
     public static Map<String, byte[]> getAllLoadedData() {
         Map<String, byte[]> data = new HashMap<>();
-        for (LoadedFile loadedFile : FileManager.getAllFiles()) {
+        for (LoadedFile loadedFile : FILES.values()) {
             data.putAll(loadedFile.getAllData());
         }
         for (LoadedFile loadedFile : PATH.values()) {
@@ -72,5 +74,34 @@ public class FileManager {
     public static synchronized void updatePath(Map<String, LoadedFile> newPath) {
         PATH.clear();
         PATH.putAll(newPath);
+    }
+
+    public static List<File> buildPath() {
+        List<File> result = new ArrayList<>();
+
+        for (LoadedFile lf : FILES.values()) {
+            if (!lf.hasBeenModified()) {
+                result.add(lf.getFile());
+            } else {
+                boolean successful = false;
+                File tmpFile = null;
+                try {
+                    tmpFile = File.createTempFile("tmp", ".jar");
+                    tmpFile.deleteOnExit();
+                    Utils.save(tmpFile, lf.getAllData());
+                    successful = true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (!successful) {
+                        result.add(lf.getFile());
+                    } else {
+                        result.add(tmpFile);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 }

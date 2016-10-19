@@ -29,8 +29,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -45,9 +48,8 @@ public class KrakatauDecompiler extends Decompiler {
             Result javart = SettingsValidator.ensureJavaRtSet();
             if (javart.is(Result.Type.SUCCESS)) {
                 File sessionDirectory = null;
-                File inputFile = null;
-                File pathFile = null;
-                File outputDirectory = null;
+                File inputFile;
+                File outputFile;
 
                 Process createdProcess;
                 String log = "";
@@ -55,13 +57,7 @@ public class KrakatauDecompiler extends Decompiler {
                 try {
                     sessionDirectory = Files.createTempDirectory("krakatau-decompile-").toFile();
                     inputFile = new File(sessionDirectory, "input.jar");
-                    pathFile = new File(sessionDirectory, "path.jar");
-                    outputDirectory = new File(sessionDirectory, "out");
-                    outputDirectory.mkdir();
-
-                    Map<String, byte[]> loadedData = FileManager.getAllLoadedData();
-                    loadedData.remove(classNode.name + ".class");
-                    Utils.saveClasses(pathFile, loadedData);
+                    outputFile = new File(sessionDirectory, "out.jar");
 
                     Map<String, byte[]> data = new HashMap<>();
                     data.put(classNode.name + ".class", bytes);
@@ -76,24 +72,39 @@ public class KrakatauDecompiler extends Decompiler {
                                     "-nauto",
                                     Settings.MAGIC_THROW.isEnabled() ? "-xmagicthrow" : "",
                                     "-path",
-                                    buildPath(pathFile),
+                                    buildPath(FileManager.buildPath()),
                                     "-out",
-                                    outputDirectory.getAbsolutePath(),
+                                    outputFile.getAbsolutePath(),
                                     inputFile.getAbsolutePath()
                             ).directory(Constants.KRAKATAU_DIR));
 
                     log = ProcessUtils.readProcess(createdProcess);
+                    System.out.println(log);
 
-                    File outputFile = outputDirectory;
-                    File[] currentFiles;
-                    while ((currentFiles = outputFile.listFiles()) != null && currentFiles.length > 0) {
-                        outputFile = currentFiles[0];
+                    JarFile zipFile = new JarFile(outputFile);
+
+                    JarEntry target = null;
+
+                    Enumeration<JarEntry> e = zipFile.entries();
+                    while (e.hasMoreElements()) {
+                        JarEntry next = e.nextElement();
+                        if (!next.isDirectory()) {
+                            if (target == null) {
+                                target = next;
+                            } else {
+                                throw new IllegalArgumentException("Already had target: " + target + " but got new target " + next);
+                            }
+                        }
                     }
 
-                    if (outputFile.isFile()) {
-                        return Either.right(new String(FileUtils.readFileToByteArray(outputFile), "UTF-8"));
+                    if (target != null) {
+                        try (InputStream in = zipFile.getInputStream(target)) {
+                            return Either.right(new String(IOUtils.toByteArray(in), "UTF-8"));
+                        } finally {
+                            zipFile.close();
+                        }
                     } else {
-                        throw new RuntimeException("Expected file, got " + outputFile);
+                        throw new RuntimeException("Expected entry, but nothing was found");
                     }
                 } catch (Exception e) {
                     return Either.right(parseException(e) + "\n" + log);

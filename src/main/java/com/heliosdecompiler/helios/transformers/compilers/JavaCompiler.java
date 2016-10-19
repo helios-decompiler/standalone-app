@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 public class JavaCompiler extends Compiler {
 
@@ -57,7 +58,7 @@ public class JavaCompiler extends Compiler {
                     "-d",
                     tmpdir.getAbsolutePath(),
                     "-classpath",
-                    buildPath(classFile),
+                    buildPath(Arrays.asList(classFile)),
                     javaFile.getAbsolutePath()
             }).exitCode;
 

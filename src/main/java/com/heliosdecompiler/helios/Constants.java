@@ -17,9 +17,11 @@
 package com.heliosdecompiler.helios;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.function.Supplier;
 
 public class Constants {
+    public static final boolean IS_DEV = System.getProperty("com.heliosdecompiler.version") == null;
     public static final String REPO_NAME = "Helios";
     public static final String REPO_VERSION =
             (System.getProperty("com.heliosdecompiler.version") != null ? System.getProperty("com.heliosdecompiler.version") : "Dev")
@@ -30,14 +32,14 @@ public class Constants {
     public static final String CHANGELOG_FILE = RAW_REPO_BASE + "master/CHANGELOG";
 
     public static final String SWT_VERSION = "4.6";
-    public static final String KRAKATAU_VERSION = "1ed5c6cf43c7625d7db4868c35ddce92b8b4bbf9";
+    public static final String KRAKATAU_VERSION = "3eff49fe480efeca8a728936f6452ec6853cdc88";
     public static final String ENJARIFY_VERSION = "82d72ee92730e858b6ec3615d6dc74c9331e56e8";
 
     public static final int MB = 1024 * 1024;
     public static final File DATA_DIR = new File(
             System.getProperty("user.home") + File.separator + "." + Constants.REPO_NAME.toLowerCase());
-    public static final File KRAKATAU_DIR = new File(DATA_DIR,
-            "Krakatau" + File.separator + Constants.KRAKATAU_VERSION);
+    public static final File KRAKATAU_DIR = !IS_DEV ? new File(DATA_DIR,
+            "Krakatau" + File.separator + Constants.KRAKATAU_VERSION) : new File("." + File.separator + ".." + File.separator + "Krakatau");
     public static final File ENJARIFY_DIR = new File(DATA_DIR,
             "enjarify" + File.separator + Constants.ENJARIFY_VERSION);
     public static final File ADDONS_DIR = new File(DATA_DIR, "addons");

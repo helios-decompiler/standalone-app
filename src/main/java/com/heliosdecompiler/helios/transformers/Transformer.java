@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -124,11 +125,16 @@ public abstract class Transformer {
         return getSettings().size() > 0;
     }
 
-    protected String buildPath(File inputJar) {
-        return Settings.RT_LOCATION.get().asString() + ";" + inputJar.getAbsolutePath() + (Settings.PATH
-                .get()
-                .asString()
-                .isEmpty() ? "" : ";" + Settings.PATH.get().asString());
+    protected String buildPath(List<File> inputJar) {
+        StringBuilder path = new StringBuilder();
+        path.append(Settings.RT_LOCATION.get().asString()).append(";");
+        for (File file : inputJar) {
+            path.append(file.getAbsolutePath()).append(";");
+        }
+        if (!Settings.PATH.get().asString().isEmpty()) {
+            path.append(Settings.PATH.get().asString());
+        }
+        return path.toString();
     }
 
     protected String parseException(Throwable e) {

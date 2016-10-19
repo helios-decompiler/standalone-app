@@ -228,6 +228,7 @@ public class Helios {
         handleCommandLine(args);
 
 //        submitBackgroundTask(() -> {
+        splashScreen.updateState(BootSequence.CREATING_TEMPORARY_FILES);
         Map<String, LoadedFile> newPath = new HashMap<>();
         for (String strFile : Sets.newHashSet(Settings.PATH.get().asString().split(";"))) {
             File file = new File(strFile);
