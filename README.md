@@ -37,7 +37,7 @@ Q: Why is JD-GUI not included? I use it all the time!
 A: JD-GUI is incompatible with this project. It's a legality issue
 
 Q: Where can I download the latest build?  
-A: This is merely the implementation. If you want to start using Helios right away, download the bootstrapper [here](https://ci.samczsun.com/job/bootstrapper/lastSuccessfulBuild/artifact/target/bootstrapper-0.0.1-without-swt.jar)
+A: This is merely the implementation. If you want to start using Helios right away, download the bootstrapper [here](https://ci.samczsun.com/job/bootstrapper/)
 Otherwise, feel free to check out the [bootstrapper repo](https://github.com/helios-decompiler/bootstrapper) for more information
 
 # Contributing
