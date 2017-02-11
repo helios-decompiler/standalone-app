@@ -90,11 +90,6 @@
 
     <repositories>
         <repository>
-            <id>helios-decompiler-repo</id>
-            <name>Official Helios Repository</name>
-            <url>https://repo.samczsun.com/repository/helios-decompiler/</url>
-        </repository>
-        <repository>
             <id>maven-eclipse-repo</id>
             <url>http://maven-eclipse.github.io/maven/</url>
         </repository>
