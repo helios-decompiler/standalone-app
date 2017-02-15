@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<HBox fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity"
+      minHeight="400.0" minWidth="425.0"
+      prefHeight="400.0" prefWidth="425.0"
+      xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.heliosdecompiler.helios.gui.controller.PathEditorController">
+    <children>
+        <VBox prefHeight="100.0" prefWidth="300.0" HBox.hgrow="ALWAYS">
+            <children>
+                <ListView fx:id="list" maxHeight="Infinity" maxWidth="Infinity" prefHeight="200.0" prefWidth="200.0"
+                          editable="true"
+                          onEditCancel="#cancelEdit"
+                          onEditCommit="#commitEdit"
+                          VBox.vgrow="ALWAYS">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </ListView>
+            </children>
+        </VBox>
+        <VBox alignment="TOP_CENTER" prefHeight="100.0" prefWidth="125.0" maxWidth="125.0" HBox.hgrow="ALWAYS">
+            <children>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="New"
+                        VBox.vgrow="NEVER" onMouseClicked="#add">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </Button>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="Edit"
+                        VBox.vgrow="NEVER" onMouseClicked="#edit">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </Button>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="Browse"
+                        VBox.vgrow="NEVER" onMouseClicked="#browse">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </Button>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="Delete"
+                        VBox.vgrow="NEVER" onMouseClicked="#delete">
+                    <VBox.margin>
+                        <Insets bottom="15.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </Button>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="Move Up"
+                        VBox.vgrow="NEVER" onMouseClicked="#up">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="15.0"/>
+                    </VBox.margin>
+                </Button>
+                <Button maxWidth="100" minWidth="100" mnemonicParsing="false" prefWidth="100" text="Move Down"
+                        VBox.vgrow="NEVER" onMouseClicked="#down">
+                    <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </VBox.margin>
+                </Button>
+            </children>
+            <HBox.margin>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </HBox.margin>
+        </VBox>
+    </children>
+</HBox>

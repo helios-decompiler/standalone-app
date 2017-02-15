@@ -1,17 +1,17 @@
 /*
- * Copyright 2016 Sam Sun <me@samczsun.com>
+ * Copyright 2017 Sam Sun <github-contact@samczsun.com>
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.heliosdecompiler.helios.transformers.assemblers;
@@ -23,7 +23,6 @@ import com.heliosdecompiler.helios.utils.Either;
 import com.heliosdecompiler.helios.utils.Result;
 import org.apache.commons.io.FileUtils;
 import org.jf.smali.SmaliOptions;
-import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -62,12 +61,13 @@ public class SmaliAssembler extends Assembler {
             }
 
 
-            if (Settings.APK_CONVERSION.get().asString().equals(Converter.ENJARIFY.getId())) {
-                Converter.ENJARIFY.convert(tempDex, tempJar);
-            } else if (Settings.APK_CONVERSION.get().asString().equals(Converter.DEX2JAR.getId())) {
-                Converter.DEX2JAR.convert(tempDex, tempJar);
-            }
-            ZipUtil.unpack(tempJar, tempJarFolder);
+//            if (Settings.APK_CONVERSION.get().asString().equals(Converter.ENJARIFY.getId())) {
+//                Converter.ENJARIFY.convert(tempDex, tempJar);
+//            } else if (Settings.APK_CONVERSION.get().asString().equals(Converter.DEX2JAR.getId())) {
+//                Converter.DEX2JAR.convert(tempDex, tempJar);
+//            }
+            //todo yeah
+//            ZipUtil.unpack(tempJar, tempJarFolder);
 
             File outputClass = null;
             boolean found = false;

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<MenuBar xmlns="http://javafx.com/javafx/8.0.112"
+         xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="com.heliosdecompiler.helios.gui.controller.MenuBarController"
+         fx:id="root"
+         maxWidth="1.7976931348623157E308"
+         VBox.vgrow="ALWAYS"
+>
+    <menus>
+        <Menu mnemonicParsing="false" text="File">
+            <items>
+                <MenuItem mnemonicParsing="false" onAction="#onNewClicked" text="New"/>
+                <MenuItem mnemonicParsing="false" onAction="#onOpenClicked" text="Open"/>
+                <MenuItem mnemonicParsing="false" onAction="#onAddToContextMenu" text="Add to Context Menu"/>
+            </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Settings">
+            <items>
+                <MenuItem mnemonicParsing="false" onAction="#setPython2" text="Set Python 2 Executable"/>
+                <MenuItem mnemonicParsing="false" onAction="#selectPath" text="Select Path"/>
+            </items>
+        </Menu>
+    </menus>
+</MenuBar>

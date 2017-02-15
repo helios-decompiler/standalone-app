@@ -1,34 +1,29 @@
 /*
- * Copyright 2016 Sam Sun <me@samczsun.com>
+ * Copyright 2017 Sam Sun <github-contact@samczsun.com>
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.heliosdecompiler.helios.transformers.compilers;
 
-import com.heliosdecompiler.helios.FileManager;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
-import com.heliosdecompiler.helios.utils.SWTUtil;
-import com.heliosdecompiler.helios.utils.Utils;
 import com.sun.tools.javac.main.Main;
 import org.apache.commons.io.FileUtils;
-import org.eclipse.swt.widgets.Shell;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
-import java.util.Arrays;
 
 public class JavaCompiler extends Compiler {
 
@@ -48,7 +43,7 @@ public class JavaCompiler extends Compiler {
             classFile = new File(tmpdir, name + ".class");
             classpathFile = new File(tmpdir, "classpath.jar");
             FileUtils.write(javaFile, contents, "UTF-8", false);
-            Utils.save(classpathFile, FileManager.getAllLoadedData());
+//            Utils.save(classpathFile, FileManager.getAllLoadedData());
 
             StringWriter stringWriter = new StringWriter();
 
@@ -58,17 +53,17 @@ public class JavaCompiler extends Compiler {
                     "-d",
                     tmpdir.getAbsolutePath(),
                     "-classpath",
-                    buildPath(Arrays.asList(classFile)),
+                    /*buildPath(Arrays.asList(classFile)),*/
                     javaFile.getAbsolutePath()
             }).exitCode;
 
             if (responseCode != Main.Result.OK.exitCode) {
                 System.out.println(stringWriter.toString());
-                Shell shell = SWTUtil.generateLongMessage("Error", stringWriter.toString());
-                shell.getDisplay().syncExec(() -> {
-                    SWTUtil.center(shell);
-                    shell.open();
-                });
+//                Shell shell = SWTUtil.generateLongMessage("Error", stringWriter.toString());
+//                shell.getDisplay().syncExec(() -> {
+//                    SWTUtil.center(shell);
+//                    shell.open();
+//                });
             } else {
                 return FileUtils.readFileToByteArray(classFile);
             }

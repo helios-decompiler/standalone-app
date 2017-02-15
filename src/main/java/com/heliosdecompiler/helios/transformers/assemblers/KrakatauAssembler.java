@@ -1,27 +1,26 @@
 /*
- * Copyright 2016 Sam Sun <me@samczsun.com>
+ * Copyright 2017 Sam Sun <github-contact@samczsun.com>
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.heliosdecompiler.helios.transformers.assemblers;
 
 import com.heliosdecompiler.helios.Constants;
-import com.heliosdecompiler.helios.Settings;
+import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.utils.Either;
 import com.heliosdecompiler.helios.utils.Result;
-import com.heliosdecompiler.helios.utils.ProcessUtils;
-import com.heliosdecompiler.helios.utils.SettingsValidator;
+import com.heliosdecompiler.helios.utils.Utils;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -45,10 +44,6 @@ public class KrakatauAssembler extends Assembler {
      */
     @Override
     public Either<Result, byte[]> assemble(String name, String contents) {
-        Result python2 = SettingsValidator.ensurePython2Set();
-        if (python2.not(Result.Type.SUCCESS))
-            return Either.left(Result.NO_PYTHON2_SET.create());
-
         Path tempFolder = null;
         Path tempFile;
         try {
@@ -63,9 +58,9 @@ public class KrakatauAssembler extends Assembler {
 
         String processLog = "";
         try {
-            Process process = ProcessUtils.launchProcess(
+            Process process = ((ProcessController) null).launchProcess(
                     new ProcessBuilder(
-                            Settings.PYTHON2_LOCATION.get().asString(),
+                            "python",
                             "-O",
                             "assemble.py",
                             "-out",
@@ -76,7 +71,7 @@ public class KrakatauAssembler extends Assembler {
                     )
             );
 
-            processLog = ProcessUtils.readProcess(process);
+            processLog = Utils.readProcess(process);
         } catch (IOException e) {
             FileUtils.deleteQuietly(tempFolder.toFile());
             return Either.left(Result.ERROR_OCCURED_IN_PROCESS.create(e, processLog));

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.controlsfx.control.StatusBar?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tooltip?>
+<StatusBar fx:controller="com.heliosdecompiler.helios.gui.controller.StatusBarController" fx:id="root" text=""
+           xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" prefHeight="200.0" prefWidth="200.0">
+    <leftItems>
+        <HBox alignment="CENTER">
+            <children>
+                <Label fx:id="backgroundLabel" text="0 background tasks" onMouseClicked="#onClickBackgroundLabel"/>
+            </children>
+        </HBox>
+    </leftItems>
+    <rightItems>
+        <HBox alignment="CENTER">
+            <children>
+                <ProgressBar fx:id="memUsage" progress="0.0">
+                    <tooltip>
+                        <Tooltip text="Memory Usage">
+
+                        </Tooltip>
+                    </tooltip>
+                </ProgressBar>
+            </children>
+        </HBox>
+    </rightItems>
+</StatusBar>

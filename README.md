@@ -1,4 +1,5 @@
-# About
+# Standalone App
+## About
 
 Helios is an all-in-one Java reverse engineering tool. It features integration with the latest up-to-date decompilers.
 
@@ -24,37 +25,7 @@ All files are stored inside the default temporary file directory on your OS. You
 
 The settings file is located within the `.helios` folder inside your user directory. Inside the `.helios` folder you
 will find libraries which are not written in Java, but have been packaged with this program. You will also find
-the addons folder, where you can install new addons.
-
-# Addons
-
-The addon API is currently under development. There are minimal events which you are able to hook into.
-More will be added as the API progresses.
-
-# FAQ
-
-Q: Why is JD-GUI not included? I use it all the time!   
-A: JD-GUI is incompatible with this project. It's a legality issue
-
-Q: Where can I download the latest build?  
-A: This is merely the implementation. If you want to start using Helios right away, download the bootstrapper [here](https://ci.samczsun.com/job/bootstrapper/lastSuccessfulBuild/artifact/target/bootstrapper-0.0.1-without-swt.jar)
-Otherwise, feel free to check out the [bootstrapper repo](https://github.com/helios-decompiler/bootstrapper) for more information
-
-# Contributing
-
-Thanks for wanting to help! This project is currently licensed under the Apache 2.0 license.
-
-First, you should [sign the CLA](https://www.clahub.com/agreements/helios-decompiler/Helios).This is for the good of
-everyone - contributors, distributors, and end users.
-
-Here are some basic conventions you should follow. Your coding style is your own but requirements may also change.
-Please do not be surprised if you find your code has been reformatted.
-
-* GUI and logic _must_ be separated. If you need to call logic from the GUI use an event. This is so the project is 
-future-proofed should we ever want to switch GUI libraries.  
-* If your code could throw an exception, handle it appropriately. If you want a popup to be shown, use
-`ExceptionHandler.handle(exception);`  
-* Opening brackets should be on the same line as the preceding statement
+the addons folder, where you can install new addons. 
 
 # Acknowledgements
 

@@ -5,17 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.heliosdecompiler</groupId>
-    <artifactId>helios</artifactId>
-    <version>0.0.7</version>
-    <!--Refer to http://semver.org-->
+    <artifactId>standalone-app</artifactId>
+    <version>1.0.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <swt.version>4.6</swt.version>
         <build.number>999</build.number>
     </properties>
 
     <build>
+        <finalName>helios-standalone</finalName>
         <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
@@ -45,7 +44,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.heliosdecompiler.helios.bootloader.Bootloader</Main-Class>
+                                        <Main-Class>com.heliosdecompiler.helios.Helios</Main-Class>
                                         <Implementation-Version>${build.number}</Implementation-Version>
                                         <Version>${project.version}</Version>
                                     </manifestEntries>
@@ -55,10 +54,11 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/*</exclude>
+                                        <exclude>META-INF/**</exclude>
                                         <exclude>**/*.java</exclude>
                                         <exclude>**/*.html</exclude>
                                         <exclude>*.txt</exclude>
+                                        <exclude>prebuilt/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -68,16 +68,10 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.sun.mail:javax.mail</artifact>
+                                    <artifact>commons-logging:commons-logging:*</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.eclipse.swt:*</artifact>
-                                    <excludes>
-                                        <exclude>**</exclude>
-                                    </excludes>
                                 </filter>
                             </filters>
                             <minimizeJar>true</minimizeJar>
@@ -95,16 +89,19 @@
             <url>https://repo.samczsun.com/repository/helios-decompiler/</url>
         </repository>
         <repository>
-            <id>maven-eclipse-repo</id>
-            <url>http://maven-eclipse.github.io/maven/</url>
-        </repository>
-        <repository>
             <id>dex2jar-repo</id>
             <url>http://repository-dex2jar.forge.cloudbees.com/release/</url>
         </repository>
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>com.eclipsesource.minimal-json</groupId>
+            <artifactId>minimal-json</artifactId>
+            <version>0.9.4</version>
+            <!--MIT-->
+        </dependency>
+
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-debug-all</artifactId>
@@ -130,52 +127,33 @@
             <!--Modified BSD-->
         </dependency>
         <dependency>
-            <groupId>org.zeroturnaround</groupId>
-            <artifactId>zt-zip</artifactId>
-            <version>1.8</version>
-            <!--Apache 2.0-->
-        </dependency>
-        <dependency>
-            <groupId>com.eclipsesource.minimal-json</groupId>
-            <artifactId>minimal-json</artifactId>
-            <version>0.9.4</version>
-            <!--MIT-->
-        </dependency>
-        <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
             <version>1.3.1</version>
             <!--Apache 2.0-->
         </dependency>
         <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>1.5.5</version>
-            <!-- Classpath exception -->
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>8.40.12</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.heliosdecompiler</groupId>
+            <artifactId>transformer-api</artifactId>
+            <version>2.0.3</version>
+        </dependency>
 
-        <dependency>
-            <groupId>com.strobel</groupId>
-            <artifactId>procyon</artifactId>
-            <version>44d7e2</version>
-            <!--Apache 2.0-->
-            <!--helios-->
-        </dependency>
-        <dependency>
-            <groupId>org.benf</groupId>
-            <artifactId>cfr</artifactId>
-            <version>0.118</version>
-            <!--MIT-->
-            <!--helios-->
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>java-decompiler</artifactId>
-            <version>78d1492</version>
-            <!--Apache 2.0-->
-            <!--helios-->
-        </dependency>
         <dependency>
             <groupId>org.jf</groupId>
             <artifactId>smali</artifactId>
@@ -223,42 +201,20 @@
             <artifactId>javaparser-core</artifactId>
             <version>2.4.0</version>
         </dependency>
-
-
         <dependency>
-            <groupId>org.eclipse.swt</groupId>
-            <artifactId>org.eclipse.swt.win32.win32.x86</artifactId>
-            <version>${swt.version}</version>
-            <scope>provided</scope>
-            <!--EPL 1.0-->
+            <groupId>com.cathive.fx</groupId>
+            <artifactId>fx-guice</artifactId>
+            <version>8.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.swt</groupId>
-            <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
-            <version>${swt.version}</version>
-            <scope>provided</scope>
-            <!--EPL 1.0-->
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.1.0</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.swt</groupId>
-            <artifactId>org.eclipse.swt.gtk.linux.x86</artifactId>
-            <version>${swt.version}</version>
-            <scope>provided</scope>
-            <!--EPL 1.0-->
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.swt</groupId>
-            <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
-            <version>${swt.version}</version>
-            <scope>provided</scope>
-            <!--EPL 1.0-->
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.swt</groupId>
-            <artifactId>org.eclipse.swt.cocoa.macosx.x86_64</artifactId>
-            <version>${swt.version}</version>
-            <scope>provided</scope>
-            <!--EPL 1.0-->
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
         </dependency>
     </dependencies>
 </project>

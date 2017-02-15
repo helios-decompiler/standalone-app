@@ -1,17 +1,17 @@
 /*
- * Copyright 2016 Sam Sun <me@samczsun.com>
+ * Copyright 2017 Sam Sun <github-contact@samczsun.com>
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.heliosdecompiler.helios.transformers;
@@ -21,11 +21,6 @@ import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.transformers.assemblers.KrakatauAssembler;
 import com.heliosdecompiler.helios.transformers.assemblers.SmaliAssembler;
 import com.heliosdecompiler.helios.transformers.compilers.Compiler;
-import com.heliosdecompiler.helios.transformers.decompilers.CFRDecompiler;
-import com.heliosdecompiler.helios.transformers.decompilers.FernflowerDecompiler;
-import com.heliosdecompiler.helios.transformers.decompilers.KrakatauDecompiler;
-import com.heliosdecompiler.helios.transformers.decompilers.ProcyonDecompiler;
-import com.heliosdecompiler.helios.transformers.disassemblers.Disassembler;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -53,30 +48,9 @@ public abstract class Transformer {
         Transformer0.registerAll();
     }
 
-    private static class Transformer0 {
-        private static void registerAll() {
-            // decompilers
-            new KrakatauDecompiler().register();
-            new FernflowerDecompiler().register();
-            new CFRDecompiler().register();
-            new ProcyonDecompiler().register();
-            Disassembler.getAllDisassemblers();
-            //assemblers
-            new KrakatauAssembler().register();
-            new SmaliAssembler().register();
-            Compiler.getAllCompilers();
-        }
-    }
-
-    public static final Transformer HEX = new HexViewer().register();
-
-    public static final Transformer TEXT = new TextViewer().register();
-
     protected final TransformerSettings settings = new TransformerSettings(this);
-
     private final String id;
     private final String name;
-
     protected Transformer(String id, String name) {
         this(id, name, null);
     }
@@ -95,6 +69,22 @@ public abstract class Transformer {
                 throw new IllegalArgumentException("Settings must be an enum");
             }
         }
+    }
+
+    public static Transformer getById(String id) {
+        return BY_ID.get(id);
+    }
+
+    public static Transformer getByName(String name) {
+        return BY_NAME.get(name);
+    }
+
+    public static Collection<Transformer> getAllTransformers() {
+        return getAllTransformers(transformer -> true);
+    }
+
+    public static Collection<Transformer> getAllTransformers(Predicate<Transformer> filter) {
+        return BY_ID.values().stream().filter(filter).collect(Collectors.toList());
     }
 
     protected Transformer register() {
@@ -123,18 +113,6 @@ public abstract class Transformer {
 
     public final boolean hasSettings() {
         return getSettings().size() > 0;
-    }
-
-    protected String buildPath(List<File> inputJar) {
-        StringBuilder path = new StringBuilder();
-        path.append(Settings.RT_LOCATION.get().asString()).append(";");
-        for (File file : inputJar) {
-            path.append(file.getAbsolutePath()).append(";");
-        }
-        if (!Settings.PATH.get().asString().isEmpty()) {
-            path.append(Settings.PATH.get().asString());
-        }
-        return path.toString();
     }
 
     protected String parseException(Throwable e) {
@@ -169,22 +147,6 @@ public abstract class Transformer {
         return obj == this;
     }
 
-    public static Transformer getById(String id) {
-        return BY_ID.get(id);
-    }
-
-    public static Transformer getByName(String name) {
-        return BY_NAME.get(name);
-    }
-
-    public static Collection<Transformer> getAllTransformers() {
-        return getAllTransformers(transformer -> true);
-    }
-
-    public static Collection<Transformer> getAllTransformers(Predicate<Transformer> filter) {
-        return BY_ID.values().stream().filter(filter).collect(Collectors.toList());
-    }
-
     private void checkLegalId(String request) {
         if (request == null || request.length() == 0) throw new IllegalArgumentException("ID must not be empty");
         Matcher matcher = LEGAL_ID_PATTERN.matcher(request);
@@ -195,5 +157,14 @@ public abstract class Transformer {
 
     private void checkLegalName(String request) {
         if (request == null || request.length() == 0) throw new IllegalArgumentException("Name must not be empty");
+    }
+
+    private static class Transformer0 {
+        private static void registerAll() {
+            //assemblers
+            new KrakatauAssembler().register();
+            new SmaliAssembler().register();
+            Compiler.getAllCompilers();
+        }
     }
 }
