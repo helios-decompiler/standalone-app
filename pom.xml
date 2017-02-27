@@ -155,29 +155,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jf</groupId>
-            <artifactId>smali</artifactId>
-            <version>2709afc5</version>
-            <!--BSD + Apache 2.0-->
-            <!--helios-->
-            <!--2.1.0-->
-        </dependency>
-        <dependency>
-            <groupId>org.jf</groupId>
-            <artifactId>baksmali</artifactId>
-            <version>2709afc5</version>
-            <!--BSD + Apache 2.0-->
-            <!--helios-->
-            <!--2.1.0-->
-        </dependency>
-        <dependency>
-            <groupId>brut</groupId>
-            <artifactId>apktool</artifactId>
-            <version>a4270d</version>
-            <!--Apache 2.0-->
-            <!--helios-->
-        </dependency>
-        <dependency>
             <groupId>com.googlecode.d2j</groupId>
             <artifactId>dex-tools</artifactId>
             <version>2.0</version>

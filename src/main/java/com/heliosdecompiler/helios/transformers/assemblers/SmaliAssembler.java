@@ -16,13 +16,10 @@
 
 package com.heliosdecompiler.helios.transformers.assemblers;
 
-import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
-import com.heliosdecompiler.helios.transformers.converters.Converter;
 import com.heliosdecompiler.helios.utils.Either;
 import com.heliosdecompiler.helios.utils.Result;
 import org.apache.commons.io.FileUtils;
-import org.jf.smali.SmaliOptions;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -52,13 +49,13 @@ public class SmaliAssembler extends Assembler {
             tempJarFolder = new File(tempDir, "temp-jar");
 
             FileUtils.write(tempSmali, contents, "UTF-8", false);
-            try {
-                SmaliOptions smaliOptions = new SmaliOptions();
-                smaliOptions.outputDexFile = tempDex.getAbsolutePath();
-                org.jf.smali.main.run(smaliOptions, tempSmaliFolder.getAbsolutePath());
-            } catch (Exception e) {
-                ExceptionHandler.handle(e);
-            }
+//            try {
+//                SmaliOptions smaliOptions = new SmaliOptions();
+//                smaliOptions.outputDexFile = tempDex.getAbsolutePath();
+//                org.jf.smali.main.run(smaliOptions, tempSmaliFolder.getAbsolutePath());
+//            } catch (Exception e) {
+//                ExceptionHandler.handle(e);
+//            }
 
 
 //            if (Settings.APK_CONVERSION.get().asString().equals(Converter.ENJARIFY.getId())) {
