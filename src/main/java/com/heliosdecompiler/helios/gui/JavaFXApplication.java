@@ -26,6 +26,7 @@ import com.google.inject.name.Names;
 import com.heliosdecompiler.helios.Constants;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.controller.PathController;
+import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.gui.controller.JavaFXMessageHandler;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.application.Platform;
@@ -45,6 +46,9 @@ public class JavaFXApplication extends GuiceApplication {
     @Inject
     private GuiceFXMLLoader loader;
 
+    @Inject
+    private UpdateController updateController;
+
     static List<Module> getModules() {
         return Arrays.asList(
                 binder -> binder.bind(new TypeLiteral<AtomicReference<Stage>>(){}).annotatedWith(Names.named("mainStage")).toInstance(primaryStage),
@@ -62,7 +66,7 @@ public class JavaFXApplication extends GuiceApplication {
                 System.exit(0);
             });
 
-            primaryStage.setTitle("Helios - " + Constants.REPO_VERSION + " | By samczsun");
+            primaryStage.setTitle("Helios - v" + updateController.getVersion() + " | By samczsun");
             primaryStage.getIcons().add(new Image("/res/icon.png"));
 
             primaryStage.setScene(new Scene(loader.load(getClass().getResource("/views/main.fxml")).getRoot()));

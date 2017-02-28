@@ -26,6 +26,7 @@ import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileChooserView;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.stage.Stage;
 
@@ -139,29 +140,45 @@ public class JavaFXMessageHandler implements MessageHandler {
     }
 
     @Override
-    public void handleError(CommonError.FormattedMessage message, boolean wait) {
+    public void handleError(CommonError.FormattedMessage message, Runnable after) {
         // In the future, this will be internationalized
         String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
 
-        new ErrorPopupView(stage.get()).withMessage(formatted).show();
+        Platform.runLater(() -> {
+            ErrorPopupView view = new ErrorPopupView(stage.get()).withMessage(formatted);
+            if (after != null) {
+                view.showAndWait();
+                after.run();
+            } else {
+                view.show();
+            }
+        });
     }
 
     @Override
-    public void handleMessage(CommonError.FormattedMessage message, boolean wait) {
+    public void handleMessage(CommonError.FormattedMessage message, Runnable after) {
         // In the future, this will be internationalized
         String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
 
-        InfoPopupView view = new InfoPopupView(stage.get()).withMessage(formatted);
-        if (!wait) view.show();
-        else view.showAndWait();
+        Platform.runLater(() -> {
+            InfoPopupView view = new InfoPopupView(stage.get()).withMessage(formatted);
+            if (after != null) {
+                view.showAndWait();
+                after.run();
+            } else {
+                view.show();
+            }
+        });
     }
 
     @Override
-    public boolean prompt(CommonError.FormattedMessage message) {
+    public void prompt(CommonError.FormattedMessage message, Consumer<Boolean> consumer) {
         // In the future, this will be internationalized
         String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
 
-        return new PromptView(stage.get()).withMessage(formatted).show();
+        Platform.runLater(() -> {
+            consumer.accept(new PromptView(stage.get()).withMessage(formatted).show());
+        });
     }
 
     @Override

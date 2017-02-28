@@ -18,7 +18,8 @@ package com.heliosdecompiler.helios.gui.model;
 
 public enum Message {
     IOEXCEPTION_OCCURRED("ioexception-occurred"),
-    UNKNOWN_ERROR("unknown-error");
+    UNKNOWN_ERROR("unknown-error"),
+    UPDATING("updating");
 
     private String key;
 

@@ -26,7 +26,10 @@ public enum CommonError {
     CONTEXT_MENU_SUCCESSFUL("context-menu-successful", 0),
     RESET_WORKSPACE("reset-workspace", 0),
     COULD_NOTE_LOCATE_HELIOS("could-not-locate-helios", 0),
-    COULD_NOT_LOCATE_JAVA("could-not-locate-java", 1);
+    COULD_NOT_LOCATE_JAVA("could-not-locate-java", 1),
+    UPDATE_FOUND("update-found", 2),
+    UPDATED("updated", 0),
+    ;
 
     private String messageKey;
     private int args;

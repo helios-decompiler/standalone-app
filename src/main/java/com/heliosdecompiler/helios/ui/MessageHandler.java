@@ -20,22 +20,24 @@ import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.views.file.FileChooserView;
 
+import java.util.function.Consumer;
+
 public interface MessageHandler {
     void handleException(Message message, Throwable exception);
 
     default void handleError(CommonError.FormattedMessage message) {
-        handleError(message, false);
+        handleError(message, null);
     }
 
-    void handleError(CommonError.FormattedMessage message, boolean wait);
+    void handleError(CommonError.FormattedMessage message, Runnable after);
 
     default void handleMessage(CommonError.FormattedMessage message) {
-        handleMessage(message, false);
+        handleMessage(message, null);
     }
 
-    void handleMessage(CommonError.FormattedMessage message, boolean wait);
+    void handleMessage(CommonError.FormattedMessage message, Runnable after);
 
-    boolean prompt(CommonError.FormattedMessage format);
+    void prompt(CommonError.FormattedMessage format, Consumer<Boolean> result);
 
     FileChooserView chooseFile();
 }

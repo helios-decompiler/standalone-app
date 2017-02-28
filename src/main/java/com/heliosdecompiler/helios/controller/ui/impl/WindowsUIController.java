@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.controller.ui.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
@@ -26,9 +27,8 @@ import com.heliosdecompiler.helios.ui.views.file.FileFilter;
 import com.heliosdecompiler.helios.utils.OSUtils;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.util.function.Consumer;
 
 @Singleton
 public class WindowsUIController implements UserInterfaceController {
@@ -36,6 +36,8 @@ public class WindowsUIController implements UserInterfaceController {
     @Inject
     private MessageHandler messageHandler;
 
+    @Inject
+    private UpdateController updateController;
 
     public void registerInContextMenu() {
         try {
@@ -46,29 +48,35 @@ public class WindowsUIController implements UserInterfaceController {
                     process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios /ve /d \"Open with Helios\" /f");
                     process.waitFor();
                     if (process.exitValue() == 0) {
-                        File currentJarLocation = getJarLocation();
-                        if (currentJarLocation != null) {
-                            File javaw = getJavawLocation();
-                            if (javaw != null) {
-                                process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios /v MultiSelectModel /d \"Single\" /f"); //Don't allow opening 2 at once... sorry
-                                process.waitFor();
-                                if (process.exitValue() == 0) {
-                                    process = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" --open \\\"%1\\\"\" /f");
-                                    process.waitFor();
-                                    if (process.exitValue() == 0) {
-                                        messageHandler.handleMessage(CommonError.CONTEXT_MENU_SUCCESSFUL.format());
-                                    } else {
-                                        messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("6"));
+                        getJarLocation(currentJarLocation -> {
+                            if (currentJarLocation != null) {
+                                getJavawLocation(javaw -> {
+                                    try {
+                                        if (javaw != null) {
+                                            Process process1 = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios /v MultiSelectModel /d \"Single\" /f"); //Don't allow opening 2 at once... sorry
+                                            process1.waitFor();
+                                            if (process1.exitValue() == 0) {
+                                                process1 = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" --open \\\"%1\\\"\" /f");
+                                                process1.waitFor();
+                                                if (process1.exitValue() == 0) {
+                                                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_SUCCESSFUL.format());
+                                                } else {
+                                                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("6"));
+                                                }
+                                            } else {
+                                                messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("5"));
+                                            }
+                                        } else {
+                                            messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("4"));
+                                        }
+                                    } catch (Throwable t) {
+                                        messageHandler.handleException(Message.UNKNOWN_ERROR, t);
                                     }
-                                } else {
-                                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("5"));
-                                }
+                                });
                             } else {
-                                messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("4"));
+                                messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("3"));
                             }
-                        } else {
-                            messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("3"));
-                        }
+                        });
                     } else {
                         messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("2"));
                     }
@@ -83,63 +91,65 @@ public class WindowsUIController implements UserInterfaceController {
         }
     }
 
-    public void relaunchAsAdmin(String arg) throws IOException, InterruptedException, URISyntaxException {
-        File currentJarLocation = getJarLocation();
-        File javawLocation = getJavawLocation();
-        if (currentJarLocation == null) {
-            messageHandler.handleMessage(CommonError.RELAUNCH_ADMIN_FAILED.format("1"));
-            return;
-        }
-        if (javawLocation == null) {
-            messageHandler.handleMessage(CommonError.RELAUNCH_ADMIN_FAILED.format("1"));
-            return;
-        }
-        File tempVBSFile = File.createTempFile("tmpvbs", ".vbs");
-        PrintWriter writer = new PrintWriter(tempVBSFile);
-        writer.println("Set objShell = CreateObject(\"Wscript.Shell\")");
-        writer.println("strPath = Wscript.ScriptFullName");
-        writer.println("Set objFSO = CreateObject(\"Scripting.FileSystemObject\")");
-        writer.println("Set objFile = objFSO.GetFile(strPath)");
-        writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
-        writer.println("Set UAC = CreateObject(\"Shell.Application\")");
-
-        String args = "-jar ``%s`` " + arg;
-        args = String.format(args, currentJarLocation.getAbsolutePath()).replace('`', '"');
-
-        String uacCommand = "UAC.ShellExecute ```%s```, `%s`, strFolder, `runas`, 1";
-        uacCommand = String.format(uacCommand, javawLocation.getAbsolutePath(), args).replace('`', '"');
-        writer.println(uacCommand);
-        writer.println("WScript.Quit 0");
-        writer.close();
-
-//        if (socket != null) {
-//            try {
-//                socket.close();
-//            } catch (Throwable t) {
-//                ExceptionHandler.handle(t);
-//            }
+//    public void relaunchAsAdmin(String arg) throws IOException, InterruptedException, URISyntaxException {
+//        File currentJarLocation = getJarLocation();
+//        File javawLocation = getJavawLocation();
+//        if (currentJarLocation == null) {
+//            messageHandler.handleMessage(CommonError.RELAUNCH_ADMIN_FAILED.format("1"));
+//            return;
 //        }
+//        if (javawLocation == null) {
+//            messageHandler.handleMessage(CommonError.RELAUNCH_ADMIN_FAILED.format("1"));
+//            return;
+//        }
+//        File tempVBSFile = File.createTempFile("tmpvbs", ".vbs");
+//        PrintWriter writer = new PrintWriter(tempVBSFile);
+//        writer.println("Set objShell = CreateObject(\"Wscript.Shell\")");
+//        writer.println("strPath = Wscript.ScriptFullName");
+//        writer.println("Set objFSO = CreateObject(\"Scripting.FileSystemObject\")");
+//        writer.println("Set objFile = objFSO.GetFile(strPath)");
+//        writer.println("strFolder = objFSO.GetParentFolderName(objFile)");
+//        writer.println("Set UAC = CreateObject(\"Shell.Application\")");
+//
+//        String args = "-jar ``%s`` " + arg;
+//        args = String.format(args, currentJarLocation.getAbsolutePath()).replace('`', '"');
+//
+//        String uacCommand = "UAC.ShellExecute ```%s```, `%s`, strFolder, `runas`, 1";
+//        uacCommand = String.format(uacCommand, javawLocation.getAbsolutePath(), args).replace('`', '"');
+//        writer.println(uacCommand);
+//        writer.println("WScript.Quit 0");
+//        writer.close();
+//
+////        if (socket != null) {
+////            try {
+////                socket.close();
+////            } catch (Throwable t) {
+////                ExceptionHandler.handle(t);
+////            }
+////        }
+//
+//        Process process = Runtime.getRuntime().exec("cscript " + tempVBSFile.getAbsolutePath());
+//        process.waitFor();
+//        System.exit(process.exitValue());
+//    }
 
-        Process process = Runtime.getRuntime().exec("cscript " + tempVBSFile.getAbsolutePath());
-        process.waitFor();
-        System.exit(process.exitValue());
-    }
-
-
-    private File getJarLocation() throws URISyntaxException {
-        File currentJarLocation = (File) System.getProperties().get("com.heliosdecompiler.bootstrapperFile");
+    private void getJarLocation(Consumer<File> file) throws URISyntaxException {
+        File currentJarLocation = updateController.getHeliosLocation();
         if (currentJarLocation != null && currentJarLocation.exists() && currentJarLocation.isFile()) {
-            return currentJarLocation;
+            file.accept(currentJarLocation);
+            return;
         }
-        messageHandler.handleMessage(CommonError.COULD_NOTE_LOCATE_HELIOS.format(), true);
-        return messageHandler.chooseFile()
-                .withInitialDirectory(new File("."))
-                .withTitle("Choose location of Helios bootstrapper")
-                .withExtensionFilter(new FileFilter("Java Archive", "*.jar"), true)
-                .promptSingle();
+
+        messageHandler.handleMessage(CommonError.COULD_NOTE_LOCATE_HELIOS.format(), () -> {
+            file.accept(messageHandler.chooseFile()
+                    .withInitialDirectory(new File("."))
+                    .withTitle("Choose location of Helios bootstrapper")
+                    .withExtensionFilter(new FileFilter("Java Archive", "*.jar"), true)
+                    .promptSingle());
+        });
     }
 
-    private File getJavawLocation() {
+    private void getJavawLocation(Consumer<File> consumer) {
         File javaw = null;
         String name = "java";
 
@@ -153,13 +163,17 @@ public class WindowsUIController implements UserInterfaceController {
 
 
         if (javaw != null && javaw.exists() && javaw.isFile()) {
-            return javaw;
+            consumer.accept(javaw);
+            return;
         }
-        messageHandler.handleMessage(CommonError.COULD_NOT_LOCATE_JAVA.format(name), true);
-        return messageHandler.chooseFile()
-                .withInitialDirectory(new File("."))
-                .withTitle("Choose location of " + name)
-                .withExtensionFilter(new FileFilter("Executable", "*"), true)
-                .promptSingle();
+
+        String fname = name;
+        messageHandler.handleMessage(CommonError.COULD_NOT_LOCATE_JAVA.format(name), () -> {
+            consumer.accept(messageHandler.chooseFile()
+                    .withInitialDirectory(new File("."))
+                    .withTitle("Choose location of " + fname)
+                    .withExtensionFilter(new FileFilter("Executable", "*"), true)
+                    .promptSingle());
+        });
     }
 }

@@ -21,8 +21,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.heliosdecompiler.helios.Settings;
-import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
+import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
@@ -140,10 +140,12 @@ public class MenuBarController extends NestedController<MainViewController> {
     }
 
     public void onReset() {
-        if (messageHandler.prompt(CommonError.RESET_WORKSPACE.format())) {
-            openedFileController.clear();
-            getParentController().getAllFilesViewerController().clear();
-        }
+        messageHandler.prompt(CommonError.RESET_WORKSPACE.format(), result -> {
+            if (result) {
+                openedFileController.clear();
+                getParentController().getAllFilesViewerController().clear();
+            }
+        });
     }
 
     @FXML
