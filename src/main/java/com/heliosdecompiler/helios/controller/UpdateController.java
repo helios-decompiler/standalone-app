@@ -87,7 +87,6 @@ public class UpdateController {
 
     public void doUpdate() {
         try {
-            System.out.println(getVersion());
             Version thisVersion = Version.valueOf(getVersion());
 
             URL url = new URL(UPDATE_URL);
