@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.controller.editors.disassemblers;
 
 import com.google.inject.Inject;
 import com.heliosdecompiler.helios.Settings;
+import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.disassemblers.krakatau.KrakatauDisassemblerSettings;
 import org.apache.commons.configuration2.Configuration;
@@ -29,6 +30,9 @@ public class KrakatauDisassemblerController extends DisassemblerController<Kraka
     @Inject
     private Configuration configuration;
 
+    @Inject
+    private ProcessController processController;
+
     public KrakatauDisassemblerController() {
         super("Krakatau Disassembler", "krakatau-disassembler", StandardTransformers.Disassemblers.KRAKATAU);
     }
@@ -37,6 +41,7 @@ public class KrakatauDisassemblerController extends DisassemblerController<Kraka
     protected KrakatauDisassemblerSettings getSettings() {
         KrakatauDisassemblerSettings settings = new KrakatauDisassemblerSettings();
         settings.setPythonExecutable(new File(configuration.getString(Settings.PYTHON2_KEY)));
+        settings.setProcessCreator(processController::launchProcess);
         return settings;
     }
 }

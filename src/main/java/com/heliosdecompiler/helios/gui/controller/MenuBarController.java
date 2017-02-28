@@ -21,6 +21,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.heliosdecompiler.helios.Settings;
+import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.gui.model.CommonError;
@@ -63,6 +64,9 @@ public class MenuBarController extends NestedController<MainViewController> {
 
     @Inject
     private UserInterfaceController userInterfaceController;
+
+    @Inject
+    private ProcessController processController;
 
     @Inject
     @Named(value = "mainStage")
@@ -143,6 +147,7 @@ public class MenuBarController extends NestedController<MainViewController> {
         messageHandler.prompt(CommonError.RESET_WORKSPACE.format(), result -> {
             if (result) {
                 openedFileController.clear();
+                processController.clear();
                 getParentController().getAllFilesViewerController().clear();
             }
         });

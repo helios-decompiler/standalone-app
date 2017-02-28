@@ -25,17 +25,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Singleton
 public class ProcessController {
-    private final List<Process> processes = Collections.synchronizedList(new ArrayList<>());
+    private final ReentrantLock lock = new ReentrantLock();
+    private final List<Process> processes = new ArrayList<>();
 
     @Inject
     private BackgroundTaskHelper backgroundTaskHelper;
 
     public Process launchProcess(ProcessBuilder launch) throws IOException {
         Process process = launch.start();
-        processes.add(process);
+        try {
+            lock.lock();
+            processes.add(process);
+        } finally {
+            lock.unlock();
+        }
         backgroundTaskHelper.submit(new BackgroundTask("Process " + launch.command(), true, () -> {
             try {
                 process.waitFor();
@@ -44,12 +51,27 @@ public class ProcessController {
                 }
             } catch (InterruptedException ignored) {
             }
+        }, () -> {
+            process.destroyForcibly();
+            try {
+                lock.lock();
+                processes.remove(process);
+            } finally {
+                lock.unlock();
+            }
         }));
         return process;
     }
 
     public void clear() {
-        processes.forEach(Process::destroy);
-        processes.clear();
+        try {
+            lock.lock();
+            processes.forEach(p -> {
+                p.destroyForcibly();
+            });
+            processes.clear();
+        } finally {
+            lock.unlock();
+        }
     }
 }

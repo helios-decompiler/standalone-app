@@ -19,6 +19,7 @@ package com.heliosdecompiler.helios.controller.editors.decompilers;
 import com.google.inject.Inject;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.PathController;
+import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
@@ -39,6 +40,9 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
 
     @Inject
     private PathController pathController;
+
+    @Inject
+    private ProcessController processController;
 
     public KrakatauDecompilerController() {
         super("Krakatau Decompiler", "krakatau", StandardTransformers.Decompilers.KRAKATAU);
@@ -69,6 +73,7 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
         if (location != null)
             settings.setPythonExecutable(new File(location));
         settings.setPath(pathController.getFiles());
+        settings.setProcessCreator(processController::launchProcess);
         return settings;
     }
 
