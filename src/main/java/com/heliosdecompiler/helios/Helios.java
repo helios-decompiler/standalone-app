@@ -25,13 +25,17 @@ import com.google.inject.Injector;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.RecentFileController;
 import com.heliosdecompiler.helios.controller.UpdateController;
-import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.editors.EditorController;
+import com.heliosdecompiler.helios.controller.files.OpenedFileController;
+import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.ui.impl.UnsupportedUIController;
 import com.heliosdecompiler.helios.gui.JavaFXGuiLauncher;
+import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.GuiLauncher;
+import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.utils.OSUtils;
 import com.heliosdecompiler.transformerapi.PackagedLibraryHelper;
+import org.apache.commons.cli.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -47,7 +51,9 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 public class Helios {
@@ -143,9 +149,11 @@ public class Helios {
                             })
                     )
             );
-            launcher.start(mainInjector);
-
-            mainInjector.getInstance(UpdateController.class).doUpdate();
+            launcher.start(mainInjector, () -> {
+                mainInjector.getInstance(PathController.class).reload();
+                mainInjector.getInstance(UpdateController.class).doUpdate();
+                handleCommandLine(args, mainInjector);
+            });
         } catch (Throwable t) {
             displayError(t);
             System.exit(1);
@@ -170,5 +178,34 @@ public class Helios {
         FileBasedConfigurationBuilder<XMLConfiguration> builder = configurations.xmlBuilder(file);
         builder.setAutoSave(true);
         return builder.getConfiguration();
+    }
+
+    public static void handleCommandLine(String[] args, Injector injector) {
+        Options options = new Options();
+        options.addOption(
+                Option.builder("o")
+                        .longOpt("open")
+                        .hasArg()
+                        .desc("Open a file straight away")
+                        .build()
+        );
+        try {
+            List<File> open = new ArrayList<>();
+            CommandLineParser parser = new DefaultParser();
+            CommandLine commandLine = parser.parse(options, args);
+            if (commandLine.hasOption("open")) {
+                for (String name : commandLine.getOptionValues("open")) {
+                    File file = new File(name);
+                    if (file.exists()) {
+                        open.add(file);
+                    }
+                }
+            }
+
+            for (File file : open)
+                injector.getInstance(OpenedFileController.class).openFile(file);
+        } catch (ParseException e) {
+            injector.getInstance(MessageHandler.class).handleException(Message.UNKNOWN_ERROR, e);
+        }
     }
 }

@@ -139,7 +139,7 @@ public class MenuBarController extends NestedController<MainViewController> {
         if (selectedFile != null) {
             configuration.setProperty(Settings.LAST_DIR_KEY, selectedFile.getParent());
 
-            getParentController().getFileTreeController().openFile(selectedFile);
+            openedFileController.openFile(selectedFile);
         }
     }
 

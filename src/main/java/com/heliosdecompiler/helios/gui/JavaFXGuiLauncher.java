@@ -25,8 +25,9 @@ import java.util.List;
 
 public class JavaFXGuiLauncher extends GuiLauncher {
     @Override
-    public void start(Injector rootInjector) {
+    public void start(Injector rootInjector, Runnable afterGui) {
         JavaFXApplication.rootInjector = rootInjector;
+        JavaFXApplication.runAfter = afterGui;
         new Thread(() -> Application.launch(JavaFXApplication.class), "JavaFX GUI Launcher").start();
     }
 

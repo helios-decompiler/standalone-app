@@ -107,17 +107,12 @@ public class FileTreeController extends NestedController<MainViewController> {
             success = true;
             for (File file : db.getFiles()) {
                 if (file.getName().endsWith(".jar")) {
-                    openFile(file);
+                    openedFileController.openFile(file);
                 }
             }
         }
         event.setDropCompleted(success);
         event.consume();
-    }
-
-    public void openFile(File file) {
-        recentFileController.addRecentFile(file);
-        this.openedFileController.openFile(file);
     }
 
     public InputStream getIconForTreeItem(TreeNode node) {

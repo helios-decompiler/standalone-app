@@ -23,10 +23,10 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
-import com.heliosdecompiler.helios.Constants;
 import com.heliosdecompiler.helios.Helios;
-import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.UpdateController;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.gui.controller.JavaFXMessageHandler;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.application.Platform;
@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class JavaFXApplication extends GuiceApplication {
     static volatile Injector rootInjector;
+    static volatile Runnable runAfter;
     private static AtomicReference<Stage> primaryStage = new AtomicReference<>();
 
     @Inject
@@ -51,7 +52,8 @@ public class JavaFXApplication extends GuiceApplication {
 
     static List<Module> getModules() {
         return Arrays.asList(
-                binder -> binder.bind(new TypeLiteral<AtomicReference<Stage>>(){}).annotatedWith(Names.named("mainStage")).toInstance(primaryStage),
+                binder -> binder.bind(new TypeLiteral<AtomicReference<Stage>>() {
+                }).annotatedWith(Names.named("mainStage")).toInstance(primaryStage),
                 binder -> binder.bind(MessageHandler.class).to(JavaFXMessageHandler.class)
         );
     }
@@ -72,12 +74,17 @@ public class JavaFXApplication extends GuiceApplication {
             primaryStage.setScene(new Scene(loader.load(getClass().getResource("/views/main.fxml")).getRoot()));
             primaryStage.show();
 
-            getInjector().getInstance(PathController.class).reload();
+            if (runAfter != null) {
+                getInjector().getInstance(BackgroundTaskHelper.class).submit(new BackgroundTask("After", false, () -> {
+                    runAfter.run();
+                }));
+            }
         } catch (Throwable t) {
             Helios.displayError(t);
             System.exit(1);
         }
     }
+
     @Override
     public void init(List<Module> list) throws Exception {
     }

@@ -22,7 +22,7 @@ import com.google.inject.Module;
 import java.util.List;
 
 public abstract class GuiLauncher {
-    public abstract void start(Injector rootInjector);
+    public abstract void start(Injector rootInjector, Runnable afterGui);
 
     public abstract List<Module> getModules();
 }
