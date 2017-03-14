@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.decompilers;
+package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
+import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.decompilers.fernflower.FernflowerSettings;
 
+@Singleton
 public class FernflowerDecompilerController extends DecompilerController<FernflowerSettings> {
 
     public FernflowerDecompilerController() {
         super("Fernflower Decompiler", "fernflower", StandardTransformers.Decompilers.FERNFLOWER);
     }
 
+    @Override
+    protected FernflowerSettings defaultSettings() {
+        return getDecompiler().defaultSettings();
+    }
+    
     @Override
     protected void registerSettings() {
         registerSetting(new RawBooleanSetting("rbr", "Hide bridge methods", true));

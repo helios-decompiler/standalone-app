@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.decompilers;
+package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
 import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
@@ -33,6 +33,11 @@ public class CFRDecompilerController extends DecompilerController<CFRSettings> {
 
     public CFRDecompilerController() {
         super("CFR Decompiler", "cfr", StandardTransformers.Decompilers.CFR);
+    }
+
+    @Override
+    protected CFRSettings defaultSettings() {
+        return getDecompiler().defaultSettings();
     }
 
     @Override

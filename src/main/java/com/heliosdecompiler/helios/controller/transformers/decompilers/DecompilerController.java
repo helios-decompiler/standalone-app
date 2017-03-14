@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.decompilers;
+package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
 import com.google.inject.Inject;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
+import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
+import com.heliosdecompiler.helios.controller.transformers.TransformerType;
 import com.heliosdecompiler.transformerapi.ClassData;
 import com.heliosdecompiler.transformerapi.Result;
 import com.heliosdecompiler.transformerapi.decompilers.Decompiler;
-import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.PrintWriter;
@@ -34,34 +33,17 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-public abstract class DecompilerController<SettingObject> {
+public abstract class DecompilerController<SettingObject> extends BaseTransformerController<SettingObject> {
     @Inject
     private PathController pathController;
     @Inject
     private BackgroundTaskHelper backgroundTaskHelper;
-    @Inject
-    private Configuration configuration;
 
-    private String name;
-    private String id;
     private Decompiler<SettingObject> decompiler;
 
-    private List<Setting<?, SettingObject>> settings = new ArrayList<>();
-
     public DecompilerController(String name, String id, Decompiler<SettingObject> decompiler) {
-        this.name = name;
-        this.id = id;
+        super(TransformerType.DECOMPILER, id, name);
         this.decompiler = decompiler;
-
-        registerSettings();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public Decompiler<SettingObject> getDecompiler() {
@@ -69,7 +51,7 @@ public abstract class DecompilerController<SettingObject> {
     }
 
     public void decompile(OpenedFile file, String path, BiConsumer<Boolean, String> consumer) {
-        backgroundTaskHelper.submit(new BackgroundTask("Decompiling " + path + " with " + getName(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask("Decompiling " + path + " with " + getDisplayName(), true, () -> {
             try {
                 String pre = preDecompile(file, path);
                 if (pre != null) {
@@ -78,7 +60,7 @@ public abstract class DecompilerController<SettingObject> {
                     byte[] data = file.getContent(path);
                     ClassData cd = ClassData.construct(data);
 
-                    Result result = decompiler.decompile(Collections.singleton(cd), getSettings(), getClasspath(file));
+                    Result result = decompiler.decompile(Collections.singleton(cd), createSettings(), getClasspath(file));
 
                     Map<String, String> results = result.getDecompiledResult();
 
@@ -135,43 +117,10 @@ public abstract class DecompilerController<SettingObject> {
 
         return map;
     }
-
-    protected Configuration getConfiguration() {
-        try {
-            return ((XMLConfiguration) configuration).configurationAt("decompilers." + getId(), true);
-        } catch (RuntimeException ex) {
-            configuration.setProperty("decompilers." + getId() + ".configured", true);
-            return getConfiguration();
-        }
-    }
-
     protected String preDecompile(OpenedFile file, String path) {
         byte[] data = file.getContent(path);
         ClassData cd = ClassData.construct(data);
         return cd == null ? "Could not decompile - are you sure that's a class file?" : null;
     }
 
-    protected abstract void registerSettings();
-
-    protected void registerSetting(Setting<?, SettingObject> setting) {
-        this.settings.add(setting);
-        this.settings.sort((a, b) -> a.getId().compareToIgnoreCase(b.getId()));
-    }
-
-    private <SettingType> void applySetting(SettingObject settingObject, Setting<SettingType, SettingObject> setting) {
-        String fromConfig = getConfiguration().getString(setting.getId());
-        if (fromConfig == null) {
-            fromConfig = String.valueOf(setting.getDefault());
-            getConfiguration().setProperty(setting.getId(), fromConfig);
-        }
-        setting.apply(settingObject, setting.getSerializer().deserialize(fromConfig));
-    }
-
-    protected SettingObject getSettings() {
-        SettingObject settingsObject = decompiler.defaultSettings();
-        for (Setting<?, SettingObject> setting : settings) {
-            applySetting(settingsObject, setting);
-        }
-        return settingsObject;
-    }
 }

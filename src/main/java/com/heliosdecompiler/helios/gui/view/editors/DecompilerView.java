@@ -16,7 +16,7 @@
 
 package com.heliosdecompiler.helios.gui.view.editors;
 
-import com.heliosdecompiler.helios.controller.editors.decompilers.DecompilerController;
+import com.heliosdecompiler.helios.controller.transformers.decompilers.DecompilerController;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
@@ -66,6 +66,6 @@ public class DecompilerView extends EditorView {
 
     @Override
     public String getDisplayName() {
-        return this.controller.getName();
+        return this.controller.getDisplayName();
     }
 }

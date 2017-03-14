@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.disassemblers;
+package com.heliosdecompiler.helios.controller.transformers.disassemblers;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.sun.tools.javap.Options;
 import org.apache.commons.configuration2.Configuration;
 
+@Singleton
 public class JavapDisassemblerController extends DisassemblerController<Options> {
 
     @Inject
@@ -31,7 +33,16 @@ public class JavapDisassemblerController extends DisassemblerController<Options>
     }
 
     @Override
-    protected Options getSettings() {
+    protected void registerSettings() {
+    }
+
+    @Override
+    protected Options defaultSettings() {
+        return getDisassembler().defaultSettings();
+    }
+
+    @Override
+    protected Options createSettings() {
         return getDisassembler().defaultSettings();
     }
 }

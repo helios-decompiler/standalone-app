@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.disassemblers;
+package com.heliosdecompiler.helios.controller.transformers.disassemblers;
 
 import com.google.inject.Inject;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
+import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
+import com.heliosdecompiler.helios.controller.transformers.TransformerType;
 import com.heliosdecompiler.transformerapi.ClassData;
 import com.heliosdecompiler.transformerapi.Result;
 import com.heliosdecompiler.transformerapi.disassemblers.Disassembler;
@@ -29,25 +31,14 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public abstract class DisassemblerController<T> {
-    private String name;
-    private String id;
+public abstract class DisassemblerController<T> extends BaseTransformerController<T> {
     private Disassembler<T> disassembler;
     @Inject
     private BackgroundTaskHelper backgroundTaskHelper;
 
     public DisassemblerController(String name, String id, Disassembler<T> disassembler) {
-        this.name = name;
-        this.id = id;
+        super(TransformerType.DISASSEMBLER, id, name);
         this.disassembler = disassembler;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public Disassembler<T> getDisassembler() {
@@ -55,12 +46,12 @@ public abstract class DisassemblerController<T> {
     }
 
     public void disassemble(OpenedFile file, String path, BiConsumer<Boolean, String> consumer) {
-        backgroundTaskHelper.submit(new BackgroundTask("Disassembling " + path + " with " + getName(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask("Disassembling " + path + " with " + getDisplayName(), true, () -> {
             try {
                 byte[] data = file.getContent(path);
                 ClassData cd = ClassData.construct(data);
                 if (cd != null) {
-                    Result result = disassembler.disassemble(cd, getSettings());
+                    Result result = disassembler.disassemble(cd, createSettings());
 
                     Map<String, String> results = result.getDecompiledResult();
                     if (results.containsKey(cd.getInternalName())) {
@@ -93,6 +84,4 @@ public abstract class DisassemblerController<T> {
             consumer.accept(false, "Disassembling aborted");
         }));
     }
-
-    protected abstract T getSettings();
 }

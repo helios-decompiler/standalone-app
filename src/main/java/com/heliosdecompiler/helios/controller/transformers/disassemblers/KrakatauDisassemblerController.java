@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.disassemblers;
+package com.heliosdecompiler.helios.controller.transformers.disassemblers;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
@@ -25,6 +26,7 @@ import org.apache.commons.configuration2.Configuration;
 
 import java.io.File;
 
+@Singleton
 public class KrakatauDisassemblerController extends DisassemblerController<KrakatauDisassemblerSettings> {
 
     @Inject
@@ -38,7 +40,17 @@ public class KrakatauDisassemblerController extends DisassemblerController<Kraka
     }
 
     @Override
-    protected KrakatauDisassemblerSettings getSettings() {
+    protected void registerSettings() {
+
+    }
+
+    @Override
+    protected KrakatauDisassemblerSettings defaultSettings() {
+        return getDisassembler().defaultSettings();
+    }
+
+    @Override
+    protected KrakatauDisassemblerSettings createSettings() {
         KrakatauDisassemblerSettings settings = new KrakatauDisassemblerSettings();
         settings.setPythonExecutable(new File(configuration.getString(Settings.PYTHON2_KEY)));
         settings.setProcessCreator(processController::launchProcess);

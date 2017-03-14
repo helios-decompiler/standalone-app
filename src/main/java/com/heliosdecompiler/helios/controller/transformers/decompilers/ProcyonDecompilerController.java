@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.decompilers;
+package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
+import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
@@ -23,10 +24,16 @@ import com.strobel.decompiler.DecompilerSettings;
 
 import java.util.function.BiConsumer;
 
+@Singleton
 public class ProcyonDecompilerController extends DecompilerController<DecompilerSettings> {
 
     public ProcyonDecompilerController() {
         super("Procyon Decompiler", "procyon", StandardTransformers.Decompilers.PROCYON);
+    }
+
+    @Override
+    protected DecompilerSettings defaultSettings() {
+        return getDecompiler().defaultSettings();
     }
 
     @Override

@@ -19,12 +19,12 @@ package com.heliosdecompiler.helios.controller.editors;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.heliosdecompiler.helios.controller.editors.decompilers.CFRDecompilerController;
-import com.heliosdecompiler.helios.controller.editors.decompilers.FernflowerDecompilerController;
-import com.heliosdecompiler.helios.controller.editors.decompilers.KrakatauDecompilerController;
-import com.heliosdecompiler.helios.controller.editors.decompilers.ProcyonDecompilerController;
-import com.heliosdecompiler.helios.controller.editors.disassemblers.JavapDisassemblerController;
-import com.heliosdecompiler.helios.controller.editors.disassemblers.KrakatauDisassemblerController;
+import com.heliosdecompiler.helios.controller.transformers.decompilers.CFRDecompilerController;
+import com.heliosdecompiler.helios.controller.transformers.decompilers.FernflowerDecompilerController;
+import com.heliosdecompiler.helios.controller.transformers.decompilers.KrakatauDecompilerController;
+import com.heliosdecompiler.helios.controller.transformers.decompilers.ProcyonDecompilerController;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.JavapDisassemblerController;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
 import com.heliosdecompiler.helios.gui.view.editors.*;
 
 import java.util.Collection;

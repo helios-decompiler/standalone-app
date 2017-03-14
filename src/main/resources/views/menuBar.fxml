@@ -19,6 +19,7 @@
         </Menu>
         <Menu mnemonicParsing="false" text="Settings">
             <items>
+                <MenuItem mnemonicParsing="false" onAction="#openTransformerSettings" text="Transformer Settings"/>
                 <MenuItem mnemonicParsing="false" onAction="#setPython2" text="Set Python 2 Executable"/>
                 <MenuItem mnemonicParsing="false" onAction="#selectPath" text="Select Path"/>
             </items>

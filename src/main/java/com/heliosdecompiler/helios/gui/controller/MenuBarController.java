@@ -58,6 +58,7 @@ public class MenuBarController extends NestedController<MainViewController> {
     private GuiceFXMLLoader loader;
 
     private PathEditorController pathEditorController;
+    private TransformerSettingsController transformerSettingsController;
 
     @Inject
     private OpenedFileController openedFileController;
@@ -96,6 +97,17 @@ public class MenuBarController extends NestedController<MainViewController> {
         } catch (IOException ex) {
             messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
         }
+        try {
+            GuiceFXMLLoader.Result result = loader.load(getClass().getResource("/views/transformerSettings.fxml"));
+            transformerSettingsController = result.getController();
+        } catch (IOException ex) {
+            messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
+        }
+    }
+
+    @FXML
+    private void openTransformerSettings(ActionEvent event) {
+        transformerSettingsController.open();
     }
 
     @FXML

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<HBox fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="425.0" prefHeight="500.0"
+      prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.heliosdecompiler.helios.gui.controller.TransformerSettingsController">
+    <children>
+        <TreeView fx:id="treeView" showRoot="false" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS"
+                  onMouseClicked="#onClickTreeItem">
+        </TreeView>
+        <VBox fx:id="vbox" prefHeight="100.0" prefWidth="600.0" maxHeight="Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+
+        </VBox>
+    </children>
+</HBox>

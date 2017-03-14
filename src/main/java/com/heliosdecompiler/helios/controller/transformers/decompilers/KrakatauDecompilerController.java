@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors.decompilers;
+package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.ProcessController;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+@Singleton
 public class KrakatauDecompilerController extends DecompilerController<KrakatauDecompilerSettings> {
 
     @Inject
@@ -49,12 +51,17 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
     }
 
     @Override
+    protected KrakatauDecompilerSettings defaultSettings() {
+        return getDecompiler().defaultSettings();
+    }
+
+    @Override
     protected String preDecompile(OpenedFile file, String path) {
         String superRes = super.preDecompile(file, path);
         if (superRes != null)
             return superRes;
 
-        KrakatauDecompilerSettings settings = getSettings();
+        KrakatauDecompilerSettings settings = createSettings();
         if (settings.getPython2Exe() == null) {
             return "You need to specify the location of Python 2 in order to use the Krakatau decompiler";
         }
@@ -67,8 +74,8 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
     }
 
     @Override
-    protected KrakatauDecompilerSettings getSettings() {
-        KrakatauDecompilerSettings settings = super.getSettings();
+    protected KrakatauDecompilerSettings createSettings() {
+        KrakatauDecompilerSettings settings = super.createSettings();
         String location = configuration.getString(Settings.PYTHON2_KEY);
         if (location != null)
             settings.setPythonExecutable(new File(location));
