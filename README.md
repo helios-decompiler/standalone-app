@@ -28,5 +28,13 @@ will find libraries which are not written in Java, but have been packaged with t
 the addons folder, where you can install new addons. 
 
 # Acknowledgements
+## Icons
+Icons for the tree are sourced from the "Silk" icon pack, located [here](http://famfamfam.com/lab/icons/silk/)
 
-Icons for the tree are sourced from the "Silk" icon pack, located [here](http://famfamfam.com/lab/icons/silk/)  
+## Performance
+![YourKit](https://www.yourkit.com/images/yklogo.png)
+
+YourKit supports open source projects with its full-featured Java Profiler.
+
+YourKit, LLC is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/index.jsp)
+and [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/index.jsp), innovative and intelligent tools for profiling Java and .NET applications.
