@@ -85,8 +85,11 @@ public class FileTreeController extends NestedController<MainViewController> {
     @FXML
     public void onClickTreeItem(MouseEvent event) {
         if (event.getClickCount() == 2) {
-            if (getParentController().getAllFilesViewerController().handleClick(this.root.getSelectionModel().getSelectedItem().getValue())) {
-                event.consume();
+            TreeItem<TreeNode> selectedItem = this.root.getSelectionModel().getSelectedItem();
+            if (selectedItem != null) {
+                if (getParentController().getAllFilesViewerController().handleClick(selectedItem.getValue())){
+                    event.consume();
+                }
             }
         }
     }
