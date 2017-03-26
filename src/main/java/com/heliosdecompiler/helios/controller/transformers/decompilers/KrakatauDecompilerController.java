@@ -70,7 +70,7 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
 
     @Override
     protected void registerSettings() {
-        registerSetting(new RawBooleanSetting("magicthrow", "Assume all instructions can throw an exception (disabling may lead to inaccurate code)", true, KrakatauDecompilerSettings::setMagicThrow));
+        registerSetting(Boolean.class, new RawBooleanSetting("magicthrow", "Assume all instructions can throw an exception (disabling may lead to inaccurate code)", true, KrakatauDecompilerSettings::setMagicThrow));
     }
 
     @Override

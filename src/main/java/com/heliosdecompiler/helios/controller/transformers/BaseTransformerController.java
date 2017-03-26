@@ -17,6 +17,7 @@
 package com.heliosdecompiler.helios.controller.transformers;
 
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.controller.configuration.IntegerSetting;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.XMLConfiguration;
@@ -59,18 +60,16 @@ public abstract class BaseTransformerController<SettingObject> {
 
     protected abstract SettingObject defaultSettings();
 
-    protected void registerSetting(Setting<?, SettingObject> setting) {
+    protected <SettingType> void registerSetting(Class<SettingType> type, Setting<SettingType, SettingObject> setting) {
+        if (type == Integer.class && !(setting instanceof IntegerSetting)) {
+            throw new IllegalArgumentException("Integer settings must be registered using IntegerSetting");
+        }
         this.settings.add(setting);
         this.settings.sort((a, b) -> a.getId().compareToIgnoreCase(b.getId()));
     }
 
     private <SettingType> void applySetting(SettingObject settingObject, Setting<SettingType, SettingObject> setting) {
-        String fromConfig = getConfiguration().getString(setting.getId());
-        if (fromConfig == null) {
-            fromConfig = String.valueOf(setting.getDefault());
-            getConfiguration().setProperty(setting.getId(), fromConfig);
-        }
-        setting.apply(settingObject, setting.getSerializer().deserialize(fromConfig));
+        setting.apply(settingObject, (SettingType) getSettingValue(setting));
     }
 
     protected SettingObject createSettings() {
@@ -83,6 +82,21 @@ public abstract class BaseTransformerController<SettingObject> {
 
     public List<Setting<?, SettingObject>> getSettings() {
         return this.settings;
+    }
+
+    public <SettingType> SettingType getSettingValue(Setting<SettingType, SettingObject> setting) {
+        String fromConfig = getConfiguration().getString(setting.getId());
+        if (fromConfig == null) {
+            fromConfig = String.valueOf(setting.getDefault());
+            getConfiguration().setProperty(setting.getId(), fromConfig);
+        }
+        return setting.getSerializer().deserialize(fromConfig);
+    }
+
+    public <T> void setSettingValue(Setting<T, ?> setting, T value) {
+        if (setting.isValid(value)) {
+            getConfiguration().setProperty(setting.getId(), setting.getSerializer().serialize(value));
+        }
     }
 
     protected Configuration getConfiguration() {

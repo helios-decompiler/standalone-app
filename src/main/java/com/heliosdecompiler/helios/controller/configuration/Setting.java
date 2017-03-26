@@ -23,6 +23,10 @@ public abstract class Setting<SettingType, SettingOwner> {
     private String id;
     private SettingType defaultValue;
 
+    public String getDesc() {
+        return desc;
+    }
+
     private String desc;
 
     public Setting(Class<SettingType> type, SettingType defaultValue, ConfigurationSerializer<SettingType> serializer,
@@ -50,5 +54,9 @@ public abstract class Setting<SettingType, SettingOwner> {
 
     public boolean isValid(SettingType value) {
         return true;
+    }
+
+    public Class<SettingType> getClazz() {
+        return clazz;
     }
 }

@@ -38,21 +38,21 @@ public class ProcyonDecompilerController extends DecompilerController<Decompiler
 
     @Override
     protected void registerSettings() {
-        registerSetting(new RawBooleanSetting("includelinenumbers", "Include line numbers in raw bytecode mode", true, DecompilerSettings::setIncludeLineNumbersInBytecode));
-        registerSetting(new RawBooleanSetting("showsyntheticmembers", "Show synthetic (compiler-generated) members.", false, DecompilerSettings::setShowSyntheticMembers));
-        registerSetting(new RawBooleanSetting("genexforcatch", "Always generate exception variables for catch blocks", true, DecompilerSettings::setAlwaysGenerateExceptionVariableForCatchBlocks));
-        registerSetting(new RawBooleanSetting("forceexplicitimports", "[DEPRECATED] Explicit imports are now enabled by default.  This option will be removed in a future release.", false, DecompilerSettings::setForceExplicitImports));
-        registerSetting(new RawBooleanSetting("forceexplicittypeargs", "Always print type arguments to generic methods.", false, DecompilerSettings::setForceExplicitTypeArguments));
-        registerSetting(new RawBooleanSetting("flattenswitch", "Drop the braces statements around switch sections when possible.", false, DecompilerSettings::setFlattenSwitchBlocks));
-        registerSetting(new RawBooleanSetting("exclnested", "Exclude nested types when decompiling their enclosing types.", false, DecompilerSettings::setExcludeNestedTypes));
-        registerSetting(new RawBooleanSetting("retaincasts", "Do not remove redundant explicit casts.", false, DecompilerSettings::setRetainRedundantCasts));
-        registerSetting(new RawBooleanSetting("retainswitches", "Do not lift the contents of switches having only a default label.", false, DecompilerSettings::setRetainPointlessSwitches));
-        registerSetting(new RawBooleanSetting("unicode", "Enable Unicode output (printable non-ASCII characters will not be escaped).", false, DecompilerSettings::setUnicodeOutputEnabled));
-//        registerSetting(new RawBooleanSetting("errordiag", "Include error diagnostics", true, DecompilerSettings::setIncludeErrorDiagnostics));
-        registerSetting(new RawBooleanSetting("mergevar", "Attempt to merge as many variables as possible.  This may lead to fewer declarations, but at the expense of inlining and useful naming.  This feature is experimental and may be removed or become the standard behavior in future releases.", false, DecompilerSettings::setMergeVariables));
-        registerSetting(new RawBooleanSetting("disablefortransform", "Disable \'for each\' loop transforms.", false, DecompilerSettings::setDisableForEachTransforms));
-        registerSetting(new RawBooleanSetting("showlinenumbers", "For debugging, show Java line numbers as inline comments (implies including line numbers)", true, DecompilerSettings::setShowDebugLineNumbers));
-        registerSetting(new RawBooleanSetting("simplifymembers", "Simplify type-qualified member references in Java output [EXPERIMENTAL].", false, DecompilerSettings::setSimplifyMemberReferences));
+        registerSetting(Boolean.class, new RawBooleanSetting("includelinenumbers", "Include line numbers in raw bytecode mode", true, DecompilerSettings::setIncludeLineNumbersInBytecode));
+        registerSetting(Boolean.class, new RawBooleanSetting("showsyntheticmembers", "Show synthetic (compiler-generated) members.", false, DecompilerSettings::setShowSyntheticMembers));
+        registerSetting(Boolean.class, new RawBooleanSetting("genexforcatch", "Always generate exception variables for catch blocks", true, DecompilerSettings::setAlwaysGenerateExceptionVariableForCatchBlocks));
+        registerSetting(Boolean.class, new RawBooleanSetting("forceexplicitimports", "[DEPRECATED] Explicit imports are now enabled by default.  This option will be removed in a future release.", false, DecompilerSettings::setForceExplicitImports));
+        registerSetting(Boolean.class, new RawBooleanSetting("forceexplicittypeargs", "Always print type arguments to generic methods.", false, DecompilerSettings::setForceExplicitTypeArguments));
+        registerSetting(Boolean.class, new RawBooleanSetting("flattenswitch", "Drop the braces statements around switch sections when possible.", false, DecompilerSettings::setFlattenSwitchBlocks));
+        registerSetting(Boolean.class, new RawBooleanSetting("exclnested", "Exclude nested types when decompiling their enclosing types.", false, DecompilerSettings::setExcludeNestedTypes));
+        registerSetting(Boolean.class, new RawBooleanSetting("retaincasts", "Do not remove redundant explicit casts.", false, DecompilerSettings::setRetainRedundantCasts));
+        registerSetting(Boolean.class, new RawBooleanSetting("retainswitches", "Do not lift the contents of switches having only a default label.", false, DecompilerSettings::setRetainPointlessSwitches));
+        registerSetting(Boolean.class, new RawBooleanSetting("unicode", "Enable Unicode output (printable non-ASCII characters will not be escaped).", false, DecompilerSettings::setUnicodeOutputEnabled));
+//        registerSetting(Boolean.class, new RawBooleanSetting("errordiag", "Include error diagnostics", true, DecompilerSettings::setIncludeErrorDiagnostics));
+        registerSetting(Boolean.class, new RawBooleanSetting("mergevar", "Attempt to merge as many variables as possible.  This may lead to fewer declarations, but at the expense of inlining and useful naming.  This feature is experimental and may be removed or become the standard behavior in future releases.", false, DecompilerSettings::setMergeVariables));
+        registerSetting(Boolean.class, new RawBooleanSetting("disablefortransform", "Disable \'for each\' loop transforms.", false, DecompilerSettings::setDisableForEachTransforms));
+        registerSetting(Boolean.class, new RawBooleanSetting("showlinenumbers", "For debugging, show Java line numbers as inline comments (implies including line numbers)", true, DecompilerSettings::setShowDebugLineNumbers));
+        registerSetting(Boolean.class, new RawBooleanSetting("simplifymembers", "Simplify type-qualified member references in Java output [EXPERIMENTAL].", false, DecompilerSettings::setSimplifyMemberReferences));
 
     }
 

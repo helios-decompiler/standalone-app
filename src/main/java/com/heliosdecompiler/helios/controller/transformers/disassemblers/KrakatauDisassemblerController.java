@@ -20,11 +20,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.ProcessController;
+import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
+import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.disassemblers.krakatau.KrakatauDisassemblerSettings;
 import org.apache.commons.configuration2.Configuration;
 
 import java.io.File;
+import java.util.function.BiConsumer;
 
 @Singleton
 public class KrakatauDisassemblerController extends DisassemblerController<KrakatauDisassemblerSettings> {
@@ -41,7 +44,7 @@ public class KrakatauDisassemblerController extends DisassemblerController<Kraka
 
     @Override
     protected void registerSettings() {
-
+        registerSetting(Boolean.class, new RawBooleanSetting("roundtrip", "Disassemble for roundtrip assembly (preserves constant pool ordering)", false, KrakatauDisassemblerSettings::setRoundtrip));
     }
 
     @Override
@@ -55,5 +58,19 @@ public class KrakatauDisassemblerController extends DisassemblerController<Kraka
         settings.setPythonExecutable(new File(configuration.getString(Settings.PYTHON2_KEY)));
         settings.setProcessCreator(processController::launchProcess);
         return settings;
+    }
+
+    private class RawBooleanSetting extends Setting<Boolean, KrakatauDisassemblerSettings> {
+        private BiConsumer<KrakatauDisassemblerSettings, Boolean> consumer;
+
+        RawBooleanSetting(String id, String desc, boolean defaultValue, BiConsumer<KrakatauDisassemblerSettings, Boolean> consumer) {
+            super(Boolean.class, defaultValue, ConfigurationSerializer.BOOLEAN, id, desc);
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void apply(KrakatauDisassemblerSettings settings, Boolean value) {
+            consumer.accept(settings, value);
+        }
     }
 }

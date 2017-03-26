@@ -16,25 +16,31 @@
 
 package com.heliosdecompiler.helios.controller.configuration;
 
-public enum Troolean {
-    TRUE("True"),
-    FALSE("False"),
-    NEITHER("Neither");
+public abstract class IntegerSetting<T> extends Setting<Integer, T> {
+    private int min;
+    private int max;
+    private int step;
 
-    String name;
-
-    Troolean(String name) {
-        this.name = name;
+    public IntegerSetting(Class<Integer> type, Integer defaultValue, ConfigurationSerializer<Integer> serializer, String id, String desc, int min, int max, int step) {
+        super(type, defaultValue, serializer, id, desc);
+        this.min = min;
+        this.max = max;
+        this.step = step;
     }
 
-    public String getName() {
-        return this.name;
+    public int getMin() {
+        return min;
     }
 
-    public static Troolean parseTroolean(String defaultValue) {
-        if (defaultValue == null || defaultValue.equalsIgnoreCase("Neither")) {
-            return Troolean.NEITHER;
-        }
-        return defaultValue.equalsIgnoreCase("true") ? TRUE : FALSE;
+    public int getMax() {
+        return max;
+    }
+
+    public int getStart() {
+        return getDefault();
+    }
+
+    public int getStep() {
+        return step;
     }
 }

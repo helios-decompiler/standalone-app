@@ -16,17 +16,17 @@
 
 package com.heliosdecompiler.helios.controller.transformers.disassemblers;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
+import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
+import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.javap.Options;
-import org.apache.commons.configuration2.Configuration;
+
+import java.util.function.BiConsumer;
 
 @Singleton
 public class JavapDisassemblerController extends DisassemblerController<Options> {
-
-    @Inject
-    private Configuration configuration;
 
     public JavapDisassemblerController() {
         super("Javap Disassembler", "javap-disassembler", StandardTransformers.Disassemblers.JAVAP);
@@ -34,6 +34,47 @@ public class JavapDisassemblerController extends DisassemblerController<Options>
 
     @Override
     protected void registerSettings() {
+        registerSetting(Boolean.class, new RawBooleanSetting("verbose", "Print additional information", true, (obj, val) -> {
+            obj.verbose = val;
+            obj.showDescriptors = val;
+            obj.showFlags = val;
+            obj.showAllAttrs = val;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("l", "Print line number and local variable tables", true, (obj, val) -> {
+            obj.showLineAndLocalVariableTables = val;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("public", "Show only public classes and members", false, (obj, val) -> {
+            obj.accessOptions.add("-public");
+            obj.showAccess = AccessFlags.ACC_PUBLIC;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("protected", "Show protected/public classes and members", false, (obj, val) -> {
+            obj.accessOptions.add("-protected");
+            obj.showAccess = AccessFlags.ACC_PROTECTED;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("package", "Show package/protected/public classes and members (default)", false, (obj, val) -> {
+            obj.accessOptions.add("-package");
+            obj.showAccess = 0;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("private", "Show all classes and members", true, (obj, val) -> {
+            if (!obj.accessOptions.contains("-p") &&
+                    !obj.accessOptions.contains("-private")) {
+                obj.accessOptions.add("-private");
+            }
+            obj.showAccess = AccessFlags.ACC_PRIVATE;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("c", "Disassemble the code", true, (obj, val) -> {
+            obj.showDisassembled = val;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("s", "Print internal type signatures", true, (obj, val) -> {
+            obj.showDescriptors = val;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("sysinfo", "Show system info (path, size, date, MD5 hash) of class being processed", true, (obj, val) -> {
+            obj.sysInfo = val;
+        }));
+        registerSetting(Boolean.class, new RawBooleanSetting("constants", "Show static final constants", true, (obj, val) -> {
+            obj.showConstants = val;
+        }));
+        // todo compact, details?
     }
 
     @Override
@@ -41,8 +82,17 @@ public class JavapDisassemblerController extends DisassemblerController<Options>
         return getDisassembler().defaultSettings();
     }
 
-    @Override
-    protected Options createSettings() {
-        return getDisassembler().defaultSettings();
+    private class RawBooleanSetting extends Setting<Boolean, Options> {
+        private BiConsumer<Options, Boolean> consumer;
+
+        RawBooleanSetting(String id, String desc, boolean defaultValue, BiConsumer<Options, Boolean> consumer) {
+            super(Boolean.class, defaultValue, ConfigurationSerializer.BOOLEAN, id, desc);
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void apply(Options settings, Boolean value) {
+            consumer.accept(settings, value);
+        }
     }
 }

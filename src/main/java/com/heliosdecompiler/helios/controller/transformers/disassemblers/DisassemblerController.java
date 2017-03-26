@@ -31,17 +31,17 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public abstract class DisassemblerController<T> extends BaseTransformerController<T> {
-    private Disassembler<T> disassembler;
+public abstract class DisassemblerController<SettingObject> extends BaseTransformerController<SettingObject> {
+    private Disassembler<SettingObject> disassembler;
     @Inject
     private BackgroundTaskHelper backgroundTaskHelper;
 
-    public DisassemblerController(String name, String id, Disassembler<T> disassembler) {
+    public DisassemblerController(String name, String id, Disassembler<SettingObject> disassembler) {
         super(TransformerType.DISASSEMBLER, id, name);
         this.disassembler = disassembler;
     }
 
-    public Disassembler<T> getDisassembler() {
+    public Disassembler<SettingObject> getDisassembler() {
         return disassembler;
     }
 

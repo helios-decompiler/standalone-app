@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
 import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
+import com.heliosdecompiler.helios.controller.configuration.IntegerSetting;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.helios.controller.configuration.Troolean;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
@@ -42,71 +43,70 @@ public class CFRDecompilerController extends DecompilerController<CFRSettings> {
 
     @Override
     protected void registerSettings() {
-        registerSetting(new RawBooleanSetting(OptionsImpl.SUGAR_STRINGBUFFER, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SUGAR_STRINGBUILDER, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ENUM_SWITCH, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ENUM_SUGAR, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.STRING_SWITCH, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ARRAY_ITERATOR, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.COLLECTION_ITERATOR, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.REWRITE_LAMBDAS, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.DECOMPILE_INNER_CLASSES));
-        registerSetting(new RawBooleanSetting(OptionsImpl.HIDE_UTF8));
-        registerSetting(new RawBooleanSetting(OptionsImpl.HIDE_LONGSTRINGS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.REMOVE_BOILERPLATE));
-        registerSetting(new RawBooleanSetting(OptionsImpl.REMOVE_INNER_CLASS_SYNTHETICS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.HIDE_BRIDGE_METHODS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.LIFT_CONSTRUCTOR_INIT));
-        registerSetting(new RawBooleanSetting(OptionsImpl.REMOVE_DEAD_METHODS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.REMOVE_BAD_GENERICS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SUGAR_ASSERTS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SUGAR_BOXING));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SHOW_CFR_VERSION));
-        registerSetting(new RawBooleanSetting(OptionsImpl.DECODE_FINALLY));
-        registerSetting(new RawBooleanSetting(OptionsImpl.TIDY_MONITORS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.COMMENT_MONITORS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.LENIENT));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.DUMP_CLASS_PATH));
-        registerSetting(new RawBooleanSetting(OptionsImpl.DECOMPILER_COMMENTS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.COMMENT_MONITORS));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_TOPSORT));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FOR_LOOP_CAPTURE));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_TOPSORT_EXTRA));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_COND_PROPAGATE));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_RETURNING_IFS));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_PRUNE_EXCEPTIONS));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.FORCE_AGGRESSIVE_EXCEPTION_AGG));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.RECOVER_TYPECLASHES));
-        registerSetting(new RawTrooleanSetting(OptionsImpl.USE_RECOVERED_ITERATOR_TYPE_HINTS));
-//        registerSetting(new RawTrooleanSetting(OptionsImpl.OUTPUT_DIR));
-//        registerSetting(new RawTrooleanSetting(OptionsImpl.OUTPUT_PATH));
-//        registerSetting(new RawTrooleanSetting(OptionsImpl.CLOBBER_FILES));
-        registerSetting(new RawIntegerSetting(OptionsImpl.SHOWOPS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SILENT));
-        registerSetting(new RawBooleanSetting(OptionsImpl.RECOVER));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ECLIPSE));
-        registerSetting(new RawBooleanSetting(OptionsImpl.OVERRIDES, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.SHOW_INFERRABLE, true));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.HELP));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ALLOW_CORRECTING));
-        registerSetting(new RawBooleanSetting(OptionsImpl.LABELLED_BLOCKS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.JAVA_4_CLASS_OBJECTS, true));
-        registerSetting(new RawBooleanSetting(OptionsImpl.HIDE_LANG_IMPORTS));
-        registerSetting(new RawIntegerSetting(OptionsImpl.FORCE_PASS));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.ANALYSE_AS));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.JAR_FILTER));
-        registerSetting(new RawBooleanSetting(OptionsImpl.RENAME_MEMBERS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.RENAME_DUP_MEMBERS));
-        registerSetting(new RawIntegerSetting(OptionsImpl.RENAME_SMALL_MEMBERS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.RENAME_ILLEGAL_IDENTS));
-        registerSetting(new RawBooleanSetting(OptionsImpl.RENAME_ENUM_MEMBERS));
-        registerSetting(new RawIntegerSetting(OptionsImpl.AGGRESSIVE_SIZE_REDUCTION_THRESHOLD));
-        registerSetting(new RawBooleanSetting(OptionsImpl.STATIC_INIT_RETURN));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.FILENAME));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.METHODNAME));
-//        registerSetting(new RawBooleanSetting(OptionsImpl.EXTRA_CLASS_PATH));
-        registerSetting(new RawBooleanSetting(OptionsImpl.PULL_CODE_CASE));
-        registerSetting(new RawBooleanSetting(OptionsImpl.ELIDE_SCALA));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SUGAR_STRINGBUFFER, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SUGAR_STRINGBUILDER, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ENUM_SWITCH, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ENUM_SUGAR, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.STRING_SWITCH, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ARRAY_ITERATOR, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.COLLECTION_ITERATOR, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.REWRITE_LAMBDAS, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.DECOMPILE_INNER_CLASSES));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.HIDE_UTF8));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.HIDE_LONGSTRINGS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.REMOVE_BOILERPLATE));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.REMOVE_INNER_CLASS_SYNTHETICS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.HIDE_BRIDGE_METHODS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.LIFT_CONSTRUCTOR_INIT));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.REMOVE_DEAD_METHODS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.REMOVE_BAD_GENERICS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SUGAR_ASSERTS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SUGAR_BOXING));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SHOW_CFR_VERSION));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.DECODE_FINALLY));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.TIDY_MONITORS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.COMMENT_MONITORS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.LENIENT));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.DUMP_CLASS_PATH));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.DECOMPILER_COMMENTS));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_TOPSORT));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FOR_LOOP_CAPTURE));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_TOPSORT_EXTRA));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_COND_PROPAGATE));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_RETURNING_IFS));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_PRUNE_EXCEPTIONS));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.FORCE_AGGRESSIVE_EXCEPTION_AGG));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.RECOVER_TYPECLASHES));
+        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.USE_RECOVERED_ITERATOR_TYPE_HINTS));
+//        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.OUTPUT_DIR));
+//        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.OUTPUT_PATH));
+//        registerSetting(Troolean.class, new RawTrooleanSetting(OptionsImpl.CLOBBER_FILES));
+        registerSetting(Integer.class, new RawIntegerSetting(OptionsImpl.SHOWOPS, 0, Integer.MAX_VALUE, 1));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SILENT));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.RECOVER));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ECLIPSE));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.OVERRIDES, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.SHOW_INFERRABLE, true));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.HELP));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ALLOW_CORRECTING));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.LABELLED_BLOCKS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.JAVA_4_CLASS_OBJECTS, true));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.HIDE_LANG_IMPORTS));
+        registerSetting(Integer.class, new RawIntegerSetting(OptionsImpl.FORCE_PASS, 0, Integer.MAX_VALUE, 1));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ANALYSE_AS));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.JAR_FILTER));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.RENAME_MEMBERS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.RENAME_DUP_MEMBERS));
+        registerSetting(Integer.class, new RawIntegerSetting(OptionsImpl.RENAME_SMALL_MEMBERS, 0, Integer.MAX_VALUE, 1));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.RENAME_ILLEGAL_IDENTS));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.RENAME_ENUM_MEMBERS));
+        registerSetting(Integer.class, new RawIntegerSetting(OptionsImpl.AGGRESSIVE_SIZE_REDUCTION_THRESHOLD, 0, Integer.MAX_VALUE, 1));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.STATIC_INIT_RETURN));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.FILENAME));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.METHODNAME));
+//        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.EXTRA_CLASS_PATH));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.PULL_CODE_CASE));
+        registerSetting(Boolean.class, new RawBooleanSetting(OptionsImpl.ELIDE_SCALA));
     }
 
     private class RawBooleanSetting extends Setting<Boolean, CFRSettings> {
@@ -140,10 +140,9 @@ public class CFRDecompilerController extends DecompilerController<CFRSettings> {
         }
     }
 
-    private class RawIntegerSetting extends Setting<Integer, CFRSettings> {
-
-        RawIntegerSetting(PermittedOptionProvider.Argument<Integer> argument) {
-            super(Integer.class, Integer.parseInt(argument.getFn().getDefaultValue()), ConfigurationSerializer.INTEGER, argument.getName(), getHelp(argument));
+    private class RawIntegerSetting extends IntegerSetting<CFRSettings> {
+        RawIntegerSetting(PermittedOptionProvider.Argument<Integer> argument, int min, int max, int step) {
+            super(Integer.class, Integer.parseInt(argument.getFn().getDefaultValue()), ConfigurationSerializer.INTEGER, argument.getName(), getHelp(argument), min, max, step);
         }
 
         @Override
