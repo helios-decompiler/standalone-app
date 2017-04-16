@@ -134,9 +134,9 @@
             <!--Apache 2.0-->
         </dependency>
         <dependency>
-            <groupId>com.fifesoft</groupId>
-            <artifactId>rsyntaxtextarea</artifactId>
-            <version>2.5.8</version>
+            <groupId>org.fxmisc.richtext</groupId>
+            <artifactId>richtextfx</artifactId>
+            <version>0.7-M5</version>
             <!--Modified BSD-->
         </dependency>
         <dependency>
