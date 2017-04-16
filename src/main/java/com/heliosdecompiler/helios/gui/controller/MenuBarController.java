@@ -144,7 +144,7 @@ public class MenuBarController extends NestedController<MainViewController> {
 
         File selectedFile = messageHandler.chooseFile()
                 .withTitle("Open")
-                .withExtensionFilter(new FileFilter("Java Archives", "*.jar"), true)
+                .withExtensionFilter(new FileFilter("Java Archives, Class Files", "*.jar", "*.class"), true)
                 .withInitialDirectory(lastDir)
                 .promptSingle();
 

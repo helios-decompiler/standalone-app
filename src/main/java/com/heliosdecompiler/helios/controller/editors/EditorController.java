@@ -25,6 +25,7 @@ import com.heliosdecompiler.helios.controller.transformers.decompilers.KrakatauD
 import com.heliosdecompiler.helios.controller.transformers.decompilers.ProcyonDecompilerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.JavapDisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.ProcyonDisassemblerController;
 import com.heliosdecompiler.helios.gui.view.editors.*;
 
 import java.util.Collection;
@@ -46,6 +47,7 @@ public class EditorController {
         registerEditor(new DecompilerView(injector.getInstance(KrakatauDecompilerController.class)));
         registerEditor(new DisassemblerView(injector.getInstance(KrakatauDisassemblerController.class)));
         registerEditor(new DisassemblerView(injector.getInstance(JavapDisassemblerController.class)));
+        registerEditor(new DisassemblerView(injector.getInstance(ProcyonDisassemblerController.class)));
     }
 
     public void registerEditor(EditorView editorView) {

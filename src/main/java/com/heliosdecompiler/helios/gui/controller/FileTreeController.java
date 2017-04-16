@@ -109,7 +109,7 @@ public class FileTreeController extends NestedController<MainViewController> {
         if (db.hasFiles()) {
             success = true;
             for (File file : db.getFiles()) {
-                if (file.getName().endsWith(".jar")) {
+                if (file.getName().endsWith(".jar") || file.getName().endsWith(".class")) {
                     openedFileController.openFile(file);
                 }
             }

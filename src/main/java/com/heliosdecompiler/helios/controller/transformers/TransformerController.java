@@ -23,6 +23,7 @@ import com.heliosdecompiler.helios.controller.transformers.decompilers.KrakatauD
 import com.heliosdecompiler.helios.controller.transformers.decompilers.ProcyonDecompilerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.JavapDisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.ProcyonDisassemblerController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 
@@ -40,6 +41,7 @@ public class TransformerController {
         registerTransformerController(TransformerType.DECOMPILER, ProcyonDecompilerController.class);
         registerTransformerController(TransformerType.DISASSEMBLER, JavapDisassemblerController.class);
         registerTransformerController(TransformerType.DISASSEMBLER, KrakatauDisassemblerController.class);
+        registerTransformerController(TransformerType.DISASSEMBLER, ProcyonDisassemblerController.class);
     }
 
     public <T extends BaseTransformerController<?>> void registerTransformerController(TransformerType<T> transformerType, Class<? extends T> clazz) {
