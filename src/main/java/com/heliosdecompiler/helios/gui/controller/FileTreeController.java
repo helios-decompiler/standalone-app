@@ -32,13 +32,12 @@ import com.heliosdecompiler.helios.utils.Utils;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
+import javafx.geometry.Bounds;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,6 +46,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -127,11 +127,91 @@ public class FileTreeController extends NestedController<MainViewController> {
                 if (selected != null) {
                     if (selected.getChildren().size() != 0) {
                         selected.setExpanded(!selected.isExpanded());
-
                     } else {
                         getParentController().getAllFilesViewerController().handleClick(selected.getValue());
                     }
                 }
+            }
+        });
+
+
+        Tooltip tooltip = new Tooltip();
+        StringBuilder search = new StringBuilder();
+
+        List<TreeItem<TreeNode>> searchContext = new ArrayList<>();
+        AtomicInteger searchIndex = new AtomicInteger();
+
+        root.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) {
+                tooltip.hide();
+                search.setLength(0);
+            }
+        });
+
+        root.boundsInLocalProperty().addListener((observable, oldValue, newValue) -> {
+            Bounds bounds = root.localToScreen(newValue);
+            tooltip.setAnchorX(bounds.getMinX());
+            tooltip.setAnchorY(bounds.getMinY());
+        });
+
+        root.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+            if (tooltip.isShowing() && event.getCode() == KeyCode.UP) {
+                if (searchIndex.decrementAndGet() < 0) {
+                    searchIndex.set(searchContext.size() - 1);
+                }
+            } else if (tooltip.isShowing() && event.getCode() == KeyCode.DOWN) {
+                if (searchIndex.incrementAndGet() >= searchContext.size()) {
+                    searchIndex.set(0);
+                }
+            } else {
+                return;
+            }
+            event.consume();
+
+            root.scrollTo(root.getRow(searchContext.get(searchIndex.get())));
+            root.getSelectionModel().select(searchContext.get(searchIndex.get()));
+        });
+
+        root.addEventHandler(KeyEvent.KEY_TYPED, event -> {
+            if (event.getCharacter().charAt(0) == '\b') {
+                if (search.length() > 0) {
+                    search.setLength(search.length() - 1);
+                }
+            } else if (event.getCharacter().charAt(0) == '\u001B') { //esc
+                tooltip.hide();
+                search.setLength(0);
+                return;
+            } else if (search.length() > 0 || (search.length() == 0 && StringUtils.isAlphanumeric(event.getCharacter()))) {
+                search.append(event.getCharacter());
+                if (!tooltip.isShowing()) {
+                    tooltip.show(root.getScene().getWindow());
+                }
+            }
+
+            if (!tooltip.isShowing())
+                return;
+
+            String str = search.toString();
+            tooltip.setText(str);
+
+            searchContext.clear();
+
+            ArrayDeque<TreeItem<TreeNode>> deque = new ArrayDeque<>();
+            deque.addAll(rootItem.getChildren());
+
+            while (!deque.isEmpty()) {
+                TreeItem<TreeNode> item = deque.poll();
+                if (item.getValue().getDisplayName().contains(str)) {
+                    searchContext.add(item);
+                }
+                if (item.isExpanded() && item.getChildren().size() > 0)
+                    deque.addAll(item.getChildren());
+            }
+
+            searchIndex.set(0);
+            if (searchContext.size() > 0) {
+                root.scrollTo(root.getRow(searchContext.get(0)));
+                root.getSelectionModel().select(searchContext.get(0));
             }
         });
 
