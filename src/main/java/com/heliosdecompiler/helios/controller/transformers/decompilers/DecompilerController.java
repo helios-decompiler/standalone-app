@@ -62,7 +62,7 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
 
                     TransformationResult<String> transformationResult = decompiler.decompile(Collections.singleton(cd), createSettings(), getClasspath(file));
 
-                    Map<String, String> results = transformationResult.getDecompiledResult();
+                    Map<String, String> results = transformationResult.getTransformationData();
 
                     System.out.println("Results: " + results.keySet());
                     System.out.println("Looking for: " + StringEscapeUtils.escapeJava(cd.getInternalName()));

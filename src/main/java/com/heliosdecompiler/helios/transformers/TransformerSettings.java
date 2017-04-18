@@ -16,8 +16,6 @@
 
 package com.heliosdecompiler.helios.transformers;
 
-import com.eclipsesource.json.JsonObject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -37,21 +35,6 @@ public class TransformerSettings {
 
     public int size() {
         return registrationOrder.size();
-    }
-
-    public void loadFrom(JsonObject thisDecompiler) {
-        thisDecompiler.forEach(member -> {
-            Setting setting = registrationOrder.get(member.getName());
-            if (setting != null) {
-                setting.setEnabled(member.getValue().asBoolean());
-            }
-        });
-    }
-
-    public void saveTo(JsonObject thisDecompiler) {
-        for (Setting setting : registrationOrder.values()) {
-            thisDecompiler.set(setting.getParam(), setting.isEnabled());
-        }
     }
 
     public Collection<Setting> getRegisteredSettings() {

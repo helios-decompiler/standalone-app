@@ -16,8 +16,8 @@
 
 package com.heliosdecompiler.helios.controller.addons;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.api.Addon;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
@@ -50,8 +50,8 @@ public class JarLauncher extends AddonHandler {
             ZipEntry entry = jarFile.getEntry("addon.json");
             if (entry != null) {
                 inputStream = jarFile.getInputStream(entry);
-                JsonObject jsonObject = Json.parse(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).asObject();
-                String main = jsonObject.get("main").asString();
+                JsonObject jsonObject = new Gson().fromJson(new InputStreamReader(inputStream, StandardCharsets.UTF_8), JsonObject.class);
+                String main = jsonObject.get("main").getAsString();
                 URL[] url = new URL[]{file.toURI().toURL()};
                 ClassLoader classLoader = AccessController.doPrivileged(
                         (PrivilegedAction<ClassLoader>) () -> new URLClassLoader(url, Helios.class.getClassLoader()));

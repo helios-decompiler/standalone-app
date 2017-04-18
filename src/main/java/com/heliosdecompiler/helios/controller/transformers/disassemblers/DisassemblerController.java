@@ -53,7 +53,7 @@ public abstract class DisassemblerController<SettingObject> extends BaseTransfor
                 if (cd != null) {
                     TransformationResult<String> transformationResult = disassembler.disassemble(cd, createSettings());
 
-                    Map<String, String> results = transformationResult.getDecompiledResult();
+                    Map<String, String> results = transformationResult.getTransformationData();
                     if (results.containsKey(cd.getInternalName())) {
                         consumer.accept(true, results.get(cd.getInternalName()));
                     } else {

@@ -192,7 +192,7 @@ public class FileTreeController extends NestedController<MainViewController> {
                 return;
 
             String str = search.toString();
-            tooltip.setText(str);
+            tooltip.setText("Search for: " + str);
 
             searchContext.clear();
 

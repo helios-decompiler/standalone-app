@@ -25,7 +25,6 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
-import com.heliosdecompiler.helios.gui.controller.BackgroundTaskController;
 import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
@@ -49,7 +48,6 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -107,8 +105,8 @@ public class DisassemblerView extends EditorView {
 
                 try {
                     TransformationResult<byte[]> result = StandardTransformers.Assemblers.KRAKATAU.assemble(assembledCode, settings);
-                    if (result.getDecompiledResult().size() == 1) {
-                        future.complete(result.getDecompiledResult().values().iterator().next());
+                    if (result.getTransformationData().size() == 1) {
+                        future.complete(result.getTransformationData().values().iterator().next());
                     } else {
                         future.completeExceptionally(new KrakatauException(KrakatauException.Reason.UNKNOWN, result.getStdout(), result.getStderr()));
                     }
