@@ -22,12 +22,16 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
 import com.heliosdecompiler.helios.gui.controller.JavaFXMessageHandler;
+import com.heliosdecompiler.helios.gui.controller.editors.DisassemblerViewFactory;
+import com.heliosdecompiler.helios.gui.view.editors.DisassemblerView;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -54,7 +58,10 @@ public class JavaFXApplication extends GuiceApplication {
         return Arrays.asList(
                 binder -> binder.bind(new TypeLiteral<AtomicReference<Stage>>() {
                 }).annotatedWith(Names.named("mainStage")).toInstance(primaryStage),
-                binder -> binder.bind(MessageHandler.class).to(JavaFXMessageHandler.class)
+                binder -> binder.bind(MessageHandler.class).to(JavaFXMessageHandler.class),
+                new FactoryModuleBuilder()
+                        .implement(DisassemblerView.class, DisassemblerView.class)
+                        .build(DisassemblerViewFactory.class)
         );
     }
 

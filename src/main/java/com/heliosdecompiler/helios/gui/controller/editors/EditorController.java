@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.editors;
+package com.heliosdecompiler.helios.gui.controller.editors;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -39,15 +39,16 @@ public class EditorController {
 
     @Inject
     public EditorController(Injector injector) {
-        registerEditor(new HexEditorView());
-        registerEditor(new TextView());
+        DisassemblerViewFactory disassemblerViewFactory = injector.getInstance(DisassemblerViewFactory.class);
+        registerEditor(StandardEditors.HEX);
+        registerEditor(StandardEditors.TEXT);
         registerEditor(new DecompilerView(injector.getInstance(CFRDecompilerController.class)));
         registerEditor(new DecompilerView(injector.getInstance(ProcyonDecompilerController.class)));
         registerEditor(new DecompilerView(injector.getInstance(FernflowerDecompilerController.class)));
         registerEditor(new DecompilerView(injector.getInstance(KrakatauDecompilerController.class)));
-        registerEditor(new DisassemblerView(injector.getInstance(KrakatauDisassemblerController.class)));
-        registerEditor(new DisassemblerView(injector.getInstance(JavapDisassemblerController.class)));
-        registerEditor(new DisassemblerView(injector.getInstance(ProcyonDisassemblerController.class)));
+        registerEditor(disassemblerViewFactory.createDisassemblerView(injector.getInstance(KrakatauDisassemblerController.class)));
+        registerEditor(disassemblerViewFactory.createDisassemblerView((injector.getInstance(JavapDisassemblerController.class))));
+        registerEditor(disassemblerViewFactory.createDisassemblerView((injector.getInstance(ProcyonDisassemblerController.class))));
     }
 
     public void registerEditor(EditorView editorView) {

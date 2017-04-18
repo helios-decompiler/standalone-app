@@ -18,14 +18,17 @@ package com.heliosdecompiler.helios.gui.view.editors;
 
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.ScrollEvent;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 public class TextView extends EditorView {
     @Override
-    public Node createView(OpenedFile file, String path) {
+    protected Node createView0(OpenedFile file, String path) {
         TextArea textArea = new TextArea();
         textArea.setWrapText(true);
 
@@ -33,7 +36,7 @@ public class TextView extends EditorView {
         textArea.getProperties().put("fontSize", 1);
 
         textArea.addEventFilter(ScrollEvent.SCROLL, e -> {
-            if (e.isControlDown()) {
+            if (e.isShortcutDown()) {
                 if (e.getDeltaY() > 0) {
                     int size = (int) textArea.getProperties().get("fontSize") + 1;
                     textArea.setStyle("-fx-font-size: " + size + "em");
@@ -51,7 +54,29 @@ public class TextView extends EditorView {
 
         textArea.setText(new String(file.getContent(path), StandardCharsets.UTF_8));
 
+        ContextMenu newContextMenu = new ContextMenu();
+        MenuItem save = new MenuItem("Save");
+        save.setOnAction(e -> {
+            save(textArea).whenComplete((res, err) -> {
+                if (err != null) {
+                    err.printStackTrace();
+                } else {
+                    file.putContent(path, res);
+                }
+            });
+        });
+        newContextMenu.getItems().add(save);
+        textArea.setContextMenu(newContextMenu);
+
         return textArea;
+    }
+
+    @Override
+    public CompletableFuture<byte[]> save(Node node) {
+        if (!(node instanceof TextArea)) {
+            return CompletableFuture.completedFuture(new byte[0]);
+        }
+        return CompletableFuture.completedFuture(((TextArea) node).getText().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

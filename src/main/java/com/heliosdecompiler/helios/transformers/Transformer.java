@@ -17,17 +17,11 @@
 package com.heliosdecompiler.helios.transformers;
 
 import com.heliosdecompiler.helios.Constants;
-import com.heliosdecompiler.helios.Settings;
-import com.heliosdecompiler.helios.transformers.assemblers.KrakatauAssembler;
-import com.heliosdecompiler.helios.transformers.assemblers.SmaliAssembler;
-import com.heliosdecompiler.helios.transformers.compilers.Compiler;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -43,10 +37,6 @@ public abstract class Transformer {
 
     private static final Map<String, Transformer> BY_ID = new LinkedHashMap<>();
     private static final Map<String, Transformer> BY_NAME = new LinkedHashMap<>();
-
-    static {
-        Transformer0.registerAll();
-    }
 
     protected final TransformerSettings settings = new TransformerSettings(this);
     private final String id;
@@ -157,14 +147,5 @@ public abstract class Transformer {
 
     private void checkLegalName(String request) {
         if (request == null || request.length() == 0) throw new IllegalArgumentException("Name must not be empty");
-    }
-
-    private static class Transformer0 {
-        private static void registerAll() {
-            //assemblers
-            new KrakatauAssembler().register();
-            new SmaliAssembler().register();
-            Compiler.getAllCompilers();
-        }
     }
 }

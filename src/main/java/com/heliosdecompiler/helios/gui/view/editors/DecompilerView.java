@@ -45,13 +45,18 @@ public class DecompilerView extends EditorView {
     }
 
     @Override
-    public Node createView(OpenedFile file, String path) {
+    public boolean canSave() {
+        return false;
+    }
+
+    @Override
+    protected Node createView0(OpenedFile file, String path) {
         CodeArea codeArea = new CodeArea();
 
         codeArea.setStyle("-fx-font-size: 1em");
         codeArea.getProperties().put("fontSize", 1);
 
-        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
+        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea, (digits) -> "%1$" + digits + "d"));
         codeArea.replaceText("Decompiling... this may take a while");
         codeArea.getUndoManager().forgetHistory();
 
@@ -73,7 +78,7 @@ public class DecompilerView extends EditorView {
         codeArea.getStylesheets().add(getClass().getResource("/java-keywords.css").toExternalForm());
 
         codeArea.addEventFilter(ScrollEvent.SCROLL, e -> {
-            if (e.isControlDown()) {
+            if (e.isShortcutDown()) {
                 if (e.getDeltaY() > 0) {
                     int size = (int) codeArea.getProperties().get("fontSize") + 1;
                     codeArea.setStyle("-fx-font-size: " + size + "em");

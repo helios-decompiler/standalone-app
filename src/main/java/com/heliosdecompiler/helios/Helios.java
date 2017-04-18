@@ -25,7 +25,6 @@ import com.google.inject.Injector;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.RecentFileController;
 import com.heliosdecompiler.helios.controller.UpdateController;
-import com.heliosdecompiler.helios.controller.editors.EditorController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.ui.impl.UnsupportedUIController;
@@ -143,8 +142,6 @@ public class Helios {
                                     bind(PathController.class);
                                     bind(Configuration.class).toInstance(configuration);
                                     bind(EventBus.class).toInstance(eventBus);
-                                    bind(EditorController.class);
-                                    bind(UpdateController.class);
                                 }
                             })
                     )

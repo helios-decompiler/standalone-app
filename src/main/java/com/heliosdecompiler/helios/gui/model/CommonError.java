@@ -29,6 +29,8 @@ public enum CommonError {
     COULD_NOT_LOCATE_JAVA("could-not-locate-java", 1),
     UPDATE_FOUND("update-found", 2),
     UPDATED("updated", 0),
+    ASSEMBLED("assembled", 0),
+    EXPORTED("exported", 0)
     ;
 
     private String messageKey;

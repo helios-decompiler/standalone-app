@@ -20,9 +20,12 @@ import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.views.file.FileChooserView;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public interface MessageHandler {
+    CompletableFuture<Void> handleLongMessage(Message shortMessage, String longMessage);
+
     void handleException(Message message, Throwable exception);
 
     default void handleError(CommonError.FormattedMessage message) {

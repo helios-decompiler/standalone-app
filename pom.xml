@@ -170,7 +170,7 @@
         <dependency>
             <groupId>com.heliosdecompiler</groupId>
             <artifactId>transformer-api</artifactId>
-            <version>2.0.6-SNAPSHOT</version>
+            <version>3.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -208,6 +208,11 @@
             <version>4.1.0</version>
         </dependency>
         <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-assistedinject</artifactId>
+            <version>4.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>21.0</version>
@@ -221,6 +226,12 @@
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
             <version>0.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.heliosdecompiler</groupId>
+            <artifactId>hex-editor</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

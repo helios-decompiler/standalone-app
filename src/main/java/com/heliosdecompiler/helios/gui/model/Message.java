@@ -19,7 +19,8 @@ package com.heliosdecompiler.helios.gui.model;
 public enum Message {
     IOEXCEPTION_OCCURRED("ioexception-occurred"),
     UNKNOWN_ERROR("unknown-error"),
-    UPDATING("updating");
+    UPDATING("updating"),
+    FAILED_TO_ASSEMBLE_KRAKATAU("failed-to-assemble-krakatau");
 
     private String key;
 

@@ -26,23 +26,17 @@ import javafx.stage.Stage;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class ExceptionPopupView {
+public class LongMessagePopupView {
 
     private final Message message;
-    private final Throwable cause;
     private final Stage stage;
 
-    private boolean allowReport = true;
+    private final String longMessage;
 
-    public ExceptionPopupView(Stage stage, Message message, Throwable cause) {
+    public LongMessagePopupView(Stage stage, Message message, String longMessage) {
         this.stage = stage;
         this.message = message;
-        this.cause = cause;
-    }
-
-    public ExceptionPopupView disallowSendErrorReport() {
-        this.allowReport = false;
-        return this;
+        this.longMessage = longMessage;
     }
 
     public void show() {
@@ -60,24 +54,14 @@ public class ExceptionPopupView {
 
         alert.getButtonTypes().clear();
 
-        if (allowReport)
-            alert.getButtonTypes().add(new ButtonType("Send Error Report", ButtonBar.ButtonData.HELP));
-
         alert.getButtonTypes().add(ButtonType.OK);
 
-        alert.setTitle("An exception has occurred");
+        alert.setTitle(message.toString());
         alert.setHeaderText(null);
         alert.setContentText(message.name());
         alert.initOwner(stage);
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        cause.printStackTrace(pw);
-        String exceptionText = sw.toString();
-
-        Label label = new Label("The exception stacktrace was:");
-
-        TextArea textArea = new TextArea(exceptionText);
+        TextArea textArea = new TextArea(longMessage);
         textArea.setEditable(false);
         textArea.setWrapText(true);
 
@@ -88,8 +72,7 @@ public class ExceptionPopupView {
 
         GridPane expContent = new GridPane();
         expContent.setMaxWidth(Double.MAX_VALUE);
-        expContent.add(label, 0, 0);
-        expContent.add(textArea, 0, 1);
+        expContent.add(textArea, 0, 0);
 
         alert.getDialogPane().setExpandableContent(expContent);
 

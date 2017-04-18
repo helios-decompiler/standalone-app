@@ -16,42 +16,152 @@
 
 package com.heliosdecompiler.helios.gui.view.editors;
 
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.heliosdecompiler.helios.Settings;
+import com.heliosdecompiler.helios.controller.ProcessController;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
+import com.heliosdecompiler.helios.gui.controller.BackgroundTaskController;
+import com.heliosdecompiler.helios.gui.model.CommonError;
+import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.ui.MessageHandler;
+import com.heliosdecompiler.transformerapi.StandardTransformers;
+import com.heliosdecompiler.transformerapi.TransformationException;
+import com.heliosdecompiler.transformerapi.TransformationResult;
+import com.heliosdecompiler.transformerapi.assemblers.krakatau.KrakatauAssemblerSettings;
+import com.heliosdecompiler.transformerapi.common.krakatau.KrakatauException;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.input.ScrollEvent;
+import org.apache.commons.configuration2.Configuration;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
+import java.io.File;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DisassemblerView extends EditorView {
 
+    @Inject
+    private Configuration configuration;
+
+    @Inject
+    private ProcessController processController;
+
+    @Inject
+    private BackgroundTaskHelper backgroundTaskHelper;
+
+    @Inject
+    private MessageHandler messageHandler;
+
     private DisassemblerController<?> controller;
 
-    public DisassemblerView(DisassemblerController<?> controller) {
+    @Inject
+    public DisassemblerView(
+            @Assisted(value = "controller") DisassemblerController<?> controller
+    ) {
         this.controller = controller;
+        this.configuration = configuration;
+        this.backgroundTaskHelper = backgroundTaskHelper;
+        this.processController = processController;
     }
 
     @Override
-    public Node createView(OpenedFile file, String path) {
+    public boolean canSave() {
+        return controller instanceof KrakatauDisassemblerController;
+    }
+
+    @Override
+    public CompletableFuture<byte[]> save(Node node) {
+        if (!(node instanceof CodeArea)) {
+            return CompletableFuture.completedFuture(new byte[0]);
+        }
+
+        String assembledCode = ((CodeArea) node).getText();
+
+        CompletableFuture<byte[]> future = new CompletableFuture<>();
+
+        backgroundTaskHelper.submit(new BackgroundTask("Assemble " + node.getProperties().get("path"), true, () -> {
+            if (controller instanceof KrakatauDisassemblerController) {
+                KrakatauAssemblerSettings settings = new KrakatauAssemblerSettings();
+                settings.setPythonExecutable(new File(configuration.getString(Settings.PYTHON2_KEY)));
+                settings.setProcessCreator(processController::launchProcess);
+
+                try {
+                    TransformationResult<byte[]> result = StandardTransformers.Assemblers.KRAKATAU.assemble(assembledCode, settings);
+                    if (result.getDecompiledResult().size() == 1) {
+                        future.complete(result.getDecompiledResult().values().iterator().next());
+                    } else {
+                        future.completeExceptionally(new KrakatauException(KrakatauException.Reason.UNKNOWN, result.getStdout(), result.getStderr()));
+                    }
+                } catch (TransformationException e) {
+                    future.completeExceptionally(e);
+                }
+            } else {
+                future.complete(new byte[0]);
+            }
+        }));
+
+        return future;
+    }
+
+    @Override
+    protected Node createView0(OpenedFile file, String path) {
         CodeArea codeArea = new CodeArea();
+
+        if (controller instanceof KrakatauDisassemblerController) {
+            ContextMenu contextMenu = new ContextMenu();
+
+            MenuItem save = new MenuItem("Assemble");
+            save.setOnAction(e -> {
+                save(codeArea).whenComplete((res, err) -> {
+                    if (err != null) {
+                        if (err instanceof KrakatauException) {
+                            StringBuilder message = new StringBuilder();
+                            message.append("stdout:\r\n").append(((KrakatauException) err).getStdout())
+                                    .append("\r\n\r\nstderr:\r\n").append(((KrakatauException) err).getStderr());
+
+                            messageHandler.handleLongMessage(Message.FAILED_TO_ASSEMBLE_KRAKATAU, message.toString());
+                        } else {
+                            messageHandler.handleException(Message.UNKNOWN_ERROR, err);
+                        }
+                    } else {
+                        file.putContent(path, res);
+                        messageHandler.handleMessage(CommonError.ASSEMBLED.format());
+                    }
+                });
+            });
+
+            contextMenu.getItems().add(save);
+            codeArea.setContextMenu(contextMenu);
+        }
 
         codeArea.setStyle("-fx-font-size: 1em");
         codeArea.getProperties().put("fontSize", 1);
 
-        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
+        codeArea.setParagraphGraphicFactory(line -> {
+            Node label = LineNumberFactory.get(codeArea, (digits) -> "%1$" + digits + "d").apply(line);
+            label.styleProperty().bind(codeArea.styleProperty());
+            return label;
+        });
         codeArea.replaceText("Disassembling... this may take a while");
         codeArea.getUndoManager().forgetHistory();
 
@@ -72,7 +182,7 @@ public class DisassemblerView extends EditorView {
         codeArea.getStylesheets().add(getClass().getResource("/java-keywords.css").toExternalForm());
 
         codeArea.addEventFilter(ScrollEvent.SCROLL, e -> {
-            if (e.isControlDown()) {
+            if (e.isShortcutDown()) {
                 if (e.getDeltaY() > 0) {
                     int size = (int) codeArea.getProperties().get("fontSize") + 1;
                     codeArea.setStyle("-fx-font-size: " + size + "em");

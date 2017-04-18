@@ -24,7 +24,7 @@ import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
 import com.heliosdecompiler.helios.controller.transformers.TransformerType;
 import com.heliosdecompiler.transformerapi.ClassData;
-import com.heliosdecompiler.transformerapi.Result;
+import com.heliosdecompiler.transformerapi.TransformationResult;
 import com.heliosdecompiler.transformerapi.decompilers.Decompiler;
 import org.apache.commons.lang3.StringEscapeUtils;
 
@@ -60,9 +60,9 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
                     byte[] data = file.getContent(path);
                     ClassData cd = ClassData.construct(data);
 
-                    Result result = decompiler.decompile(Collections.singleton(cd), createSettings(), getClasspath(file));
+                    TransformationResult<String> transformationResult = decompiler.decompile(Collections.singleton(cd), createSettings(), getClasspath(file));
 
-                    Map<String, String> results = result.getDecompiledResult();
+                    Map<String, String> results = transformationResult.getDecompiledResult();
 
                     System.out.println("Results: " + results.keySet());
                     System.out.println("Looking for: " + StringEscapeUtils.escapeJava(cd.getInternalName()));
@@ -74,9 +74,9 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
                         output.append("An error has occurred while decompiling this file.\r\n")
                                 .append("If you have not tried another decompiler, try that. Otherwise, you're out of luck.\r\n\r\n")
                                 .append("stdout:\r\n")
-                                .append(result.getStdout())
+                                .append(transformationResult.getStdout())
                                 .append("\r\nstderr:\r\n")
-                                .append(result.getStderr());
+                                .append(transformationResult.getStderr());
                         consumer.accept(false, output.toString());
                     }
                 }

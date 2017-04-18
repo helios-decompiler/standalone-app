@@ -23,7 +23,7 @@ import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
 import com.heliosdecompiler.helios.controller.transformers.TransformerType;
 import com.heliosdecompiler.transformerapi.ClassData;
-import com.heliosdecompiler.transformerapi.Result;
+import com.heliosdecompiler.transformerapi.TransformationResult;
 import com.heliosdecompiler.transformerapi.disassemblers.Disassembler;
 
 import java.io.PrintWriter;
@@ -51,9 +51,9 @@ public abstract class DisassemblerController<SettingObject> extends BaseTransfor
                 byte[] data = file.getContent(path);
                 ClassData cd = ClassData.construct(data);
                 if (cd != null) {
-                    Result result = disassembler.disassemble(cd, createSettings());
+                    TransformationResult<String> transformationResult = disassembler.disassemble(cd, createSettings());
 
-                    Map<String, String> results = result.getDecompiledResult();
+                    Map<String, String> results = transformationResult.getDecompiledResult();
                     if (results.containsKey(cd.getInternalName())) {
                         consumer.accept(true, results.get(cd.getInternalName()));
                     } else {
@@ -61,9 +61,9 @@ public abstract class DisassemblerController<SettingObject> extends BaseTransfor
                         output.append("An error has occurred while disassembling this file.\r\n")
                                 .append("If you have not tried another disassembler, try that. Otherwise, you're out of luck.\r\n\r\n")
                                 .append("stdout:\r\n")
-                                .append(result.getStdout())
+                                .append(transformationResult.getStdout())
                                 .append("\r\nstderr:\r\n")
-                                .append(result.getStderr());
+                                .append(transformationResult.getStderr());
                         consumer.accept(false, output.toString());
                     }
                 } else {

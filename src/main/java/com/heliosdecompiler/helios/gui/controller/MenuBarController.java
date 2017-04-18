@@ -28,6 +28,7 @@ import com.heliosdecompiler.helios.gui.model.CommonError;
 import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
+import com.heliosdecompiler.helios.utils.OSUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuBar;
@@ -76,12 +77,12 @@ public class MenuBarController extends NestedController<MainViewController> {
     @FXML
     private void initialize() {
         stage.get().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-            if (event.isControlDown() && event.getCode() == KeyCode.O) {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.O) {
                 onOpen();
             }
         });
         stage.get().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-            if (event.isControlDown() && event.getCode() == KeyCode.N) {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.N) {
                 onReset();
             }
         });
@@ -103,6 +104,9 @@ public class MenuBarController extends NestedController<MainViewController> {
         } catch (IOException ex) {
             messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
         }
+
+        // for mac (and maybe linux once java supports it)
+        root.setUseSystemMenuBar(true);
     }
 
     @FXML

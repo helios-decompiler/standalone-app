@@ -65,6 +65,7 @@ public class OpenedFile {
     public void reset() {
         this.root = new TreeNode(this.target.getFileName().toString());
         this.root.setFlag(IS_ROOT_FILE, true);
+        this.root.getMetadata().put(OPENED_FILE, this);
 
         readQuick();
 
@@ -137,5 +138,9 @@ public class OpenedFile {
 
     public Map<String, byte[]> getContents() {
         return this.fileContents;
+    }
+
+    public void putContent(String path, byte[] data) {
+        this.fileContents.put(path, data);
     }
 }

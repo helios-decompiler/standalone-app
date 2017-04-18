@@ -18,10 +18,29 @@ package com.heliosdecompiler.helios.gui.view.editors;
 
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+
+import java.util.concurrent.CompletableFuture;
 
 public abstract class EditorView {
 
-    public abstract Node createView(OpenedFile file, String path);
+    public final Node createView(OpenedFile file, String path) {
+        Node node = createView0(file, path);
+        node.getProperties().put("editor", this);
+        node.getProperties().put("file", file); // probably a memory leak
+        node.getProperties().put("path", path);
+        return node;
+    }
+
+    protected abstract Node createView0(OpenedFile file, String path);
+
+    public boolean canSave() {
+        return true;
+    }
+
+    public CompletableFuture<byte[]> save(Node node) {
+        return CompletableFuture.completedFuture(new byte[0]);
+    }
 
     public abstract String getDisplayName();
 }

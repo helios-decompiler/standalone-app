@@ -19,18 +19,14 @@ package com.heliosdecompiler.helios.gui.controller;
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.heliosdecompiler.helios.controller.editors.EditorController;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
+import com.heliosdecompiler.helios.gui.controller.editors.EditorController;
 import com.heliosdecompiler.helios.gui.model.FileTabProperties;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.gui.view.editors.EditorView;
 import com.heliosdecompiler.helios.gui.view.editors.StandardEditors;
 import com.sun.javafx.scene.control.behavior.TabPaneBehavior;
 import com.sun.javafx.scene.control.skin.TabPaneSkin;
-import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -40,7 +36,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.util.HashMap;
@@ -69,7 +64,7 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
     @FXML
     public void initialize() {
         stage.get().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.isControlDown() && event.getCode() == KeyCode.T) {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.T) {
                 if (!isMenuOpen) {
                     isMenuOpen = true;
                     openOpenNewTabMenu();
@@ -77,7 +72,7 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
             }
         });
         stage.get().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.isControlDown() && event.getCode() == KeyCode.W) {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.W) {
                 if (event.isShiftDown()) {
                     Tab fileTab = root.getSelectionModel().getSelectedItem();
                     if (fileTab != null) {
@@ -93,24 +88,6 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
                         TabPaneBehavior behavior = ((TabPaneSkin) root.getSkin()).getBehavior();
                         behavior.closeTab(fileTab);
                     }
-                }
-            }
-        });
-        root.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>() {
-            @Override
-            public void changed(ObservableValue<? extends Tab> observable, Tab oldValue, Tab newValue) {
-                if (newValue != null) {
-                    TabPane tabPane = (TabPane) newValue.getContent();
-                    Tab tab = tabPane.getSelectionModel().getSelectedItem();
-                    if (tab != null)
-                        if (tab.getContent() instanceof SwingNode) {
-                            Platform.runLater(() -> {
-                                SwingNode node = (SwingNode) tab.getContent();
-                                SwingUtilities.invokeLater(() -> {
-                                    node.getContent().repaint();
-                                });
-                            });
-                        }
                 }
             }
         });
@@ -180,23 +157,6 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
         try {
             GuiceFXMLLoader.Result tabResult = loader.load(getClass().getResource("/views/fileViewer.fxml"));
             TabPane fileTabPane = tabResult.getRoot();
-
-            fileTabPane.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>() {
-                @Override
-                public void changed(ObservableValue<? extends Tab> observable, Tab oldValue, Tab tab) {
-                    if (tab != null) {
-                        if (tab.getContent() instanceof SwingNode) {
-                            Platform.runLater(() -> {
-                                SwingNode node = (SwingNode) tab.getContent();
-                                SwingUtilities.invokeLater(() -> {
-                                    node.getContent().repaint();
-                                });
-                            });
-                        }
-                    }
-                }
-            });
-
             Tab allFilesTab = new Tab(node.getDisplayName());
             allFilesTab.setContent(fileTabPane);
             allFilesTab.setUserData(new FileTabProperties(file, (String) node.getMetadata().get(OpenedFile.FULL_PATH_KEY)));

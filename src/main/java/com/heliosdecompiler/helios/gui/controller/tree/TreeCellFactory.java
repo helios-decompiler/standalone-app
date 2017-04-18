@@ -14,16 +14,29 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.gui.controller;
+package com.heliosdecompiler.helios.gui.controller.tree;
 
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeView;
 import javafx.util.Callback;
 
+import java.util.function.Function;
+
 public class TreeCellFactory<T> implements Callback<TreeView<T>, TreeCell<T>> {
+
+    private final Function<T, ContextMenu> contextMenuFunction;
+
+    public TreeCellFactory() {
+        this(null);
+    }
+
+    public TreeCellFactory(Function<T, ContextMenu> contextMenuFunction) {
+        this.contextMenuFunction = contextMenuFunction;
+    }
 
     @Override
     public TreeCell<T> call(TreeView<T> param) {
-        return new DefaultTreeCell<>();
+        return new DefaultTreeCell<>(contextMenuFunction);
     }
 }

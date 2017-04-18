@@ -33,6 +33,7 @@ import javafx.stage.Stage;
 import javax.management.MBeanServer;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -186,9 +187,31 @@ public class JavaFXMessageHandler implements MessageHandler {
         return new JavaFXFileChooserView(stage.get());
     }
 
+    @Override
+    public CompletableFuture<Void> handleLongMessage(Message shortMessage, String longMessage) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        if (Platform.isFxApplicationThread()) {
+            new LongMessagePopupView(stage.get(), shortMessage, longMessage).show();
+            future.complete(null);
+        } else {
+            Platform.runLater(() -> {
+                new LongMessagePopupView(stage.get(), shortMessage, longMessage).show();
+                future.complete(null);
+            });
+        }
+
+        return future;
+    }
+
     public void handleException(Message message, Throwable e) {
         e.printStackTrace();
-        new ExceptionPopupView(stage.get(), message, e).show();
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> {
+                new ExceptionPopupView(stage.get(), message, e).show();
+            });
+        } else {
+            new ExceptionPopupView(stage.get(), message, e).show();
+        }
     }
 
     public void handleWarning(CommonError.FormattedMessage message, boolean wait) {

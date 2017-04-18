@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.gui.controller;
+package com.heliosdecompiler.helios.gui.controller.tree;
 
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.WeakInvalidationListener;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.layout.HBox;
 
 import java.lang.ref.WeakReference;
+import java.util.function.Function;
 
 public class DefaultTreeCell<T> extends TreeCell<T> {
 
@@ -56,12 +59,16 @@ public class DefaultTreeCell<T> extends TreeCell<T> {
     private WeakInvalidationListener weakTreeItemListener =
             new WeakInvalidationListener(treeItemListener);
 
-    public DefaultTreeCell() {
+    private Function<T, ContextMenu> contextMenuFunction;
+
+    public DefaultTreeCell(Function<T, ContextMenu> contextMenuFunction) {
         treeItemProperty().addListener(weakTreeItemListener);
 
         if (getTreeItem() != null) {
             getTreeItem().graphicProperty().addListener(weakTreeItemGraphicListener);
         }
+
+        this.contextMenuFunction = contextMenuFunction;
     }
 
     void updateDisplay(T item, boolean empty) {
@@ -106,5 +113,9 @@ public class DefaultTreeCell<T> extends TreeCell<T> {
     public void updateItem(T item, boolean empty) {
         super.updateItem(item, empty);
         updateDisplay(item, empty);
+
+        if (item != null && contextMenuFunction != null) {
+            setContextMenu(contextMenuFunction.apply(item));
+        }
     }
 }

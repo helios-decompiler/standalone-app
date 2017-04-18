@@ -18,13 +18,22 @@ package com.heliosdecompiler.helios.gui.controller;
 
 import com.google.inject.Inject;
 import com.heliosdecompiler.helios.controller.RecentFileController;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
+import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
+import com.heliosdecompiler.helios.gui.controller.tree.TreeCellFactory;
+import com.heliosdecompiler.helios.gui.model.CommonError;
+import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.ui.MessageHandler;
+import com.heliosdecompiler.helios.ui.views.file.FileFilter;
 import com.heliosdecompiler.helios.utils.Utils;
+import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -32,8 +41,14 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class FileTreeController extends NestedController<MainViewController> {
 
@@ -49,6 +64,9 @@ public class FileTreeController extends NestedController<MainViewController> {
     private OpenedFileController openedFileController;
 
     @Inject
+    private BackgroundTaskHelper backgroundTaskHelper;
+
+    @Inject
     private RecentFileController recentFileController;
     private Map<TreeNode, TreeItem<TreeNode>> itemMap = new HashMap<>();
 
@@ -56,7 +74,52 @@ public class FileTreeController extends NestedController<MainViewController> {
     public void initialize() {
         this.rootItem = new TreeItem<>(new TreeNode("[root]"));
         this.root.setRoot(this.rootItem);
-        this.root.setCellFactory(new TreeCellFactory<>());
+        this.root.setCellFactory(new TreeCellFactory<>(node -> {
+            if (node.getParent() == null) {
+                ContextMenu export = new ContextMenu();
+
+                MenuItem exportItem = new MenuItem("Export");
+
+                export.setOnAction(e -> {
+                    File file = messageHandler.chooseFile()
+                            .withInitialDirectory(new File("."))
+                            .withTitle("Choose location to export JAR")
+                            .withExtensionFilter(new FileFilter("Java Archive", "*.jar"), true)
+                            .promptSave();
+
+                    OpenedFile openedFile = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
+
+                    Map<String, byte[]> clone = new HashMap<>(openedFile.getContents());
+
+                    backgroundTaskHelper.submit(new BackgroundTask("Saving " + node.getDisplayName(), true, () -> {
+                        try {
+                            if (!file.exists()) {
+                                if (!file.createNewFile()) {
+                                    throw new IOException("Could not create export file");
+                                }
+                            }
+
+                            try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+                                for (Map.Entry<String, byte[]> ent : clone.entrySet()) {
+                                    ZipEntry zipEntry = new ZipEntry(ent.getKey());
+                                    zipOutputStream.putNextEntry(zipEntry);
+                                    zipOutputStream.write(ent.getValue());
+                                    zipOutputStream.closeEntry();
+                                }
+                            }
+
+                            messageHandler.handleMessage(CommonError.EXPORTED.format());
+                        } catch (IOException ex) {
+                            messageHandler.handleException(Message.IOEXCEPTION_OCCURRED, ex);
+                        }
+                    }));
+                });
+
+                export.getItems().add(exportItem);
+                return export;
+            }
+            return null;
+        }));
 
         root.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -87,7 +150,7 @@ public class FileTreeController extends NestedController<MainViewController> {
         if (event.getClickCount() == 2) {
             TreeItem<TreeNode> selectedItem = this.root.getSelectionModel().getSelectedItem();
             if (selectedItem != null) {
-                if (getParentController().getAllFilesViewerController().handleClick(selectedItem.getValue())){
+                if (getParentController().getAllFilesViewerController().handleClick(selectedItem.getValue())) {
                     event.consume();
                 }
             }
@@ -146,6 +209,7 @@ public class FileTreeController extends NestedController<MainViewController> {
 
     public void updateTree(List<TreeNode> add, List<TreeNode> remove) {
         Set<TreeItem<TreeNode>> updated = new HashSet<>();
+
         ArrayDeque<TreeNode> queue = new ArrayDeque<>();
         queue.addAll(add);
 
@@ -169,21 +233,44 @@ public class FileTreeController extends NestedController<MainViewController> {
                 }
             });
             thisItem.setGraphic(new ImageView(new Image(getIconForTreeItem(thisNode))));
-            parent.getChildren().add(thisItem);
-            parent.getChildren().sort((a, b) -> {
-                int ac = a.getValue().getChildren().size();
-                int bc = b.getValue().getChildren().size();
-
-                if (ac == 0 && bc != 0)
-                    return 1;
-                else if (ac != 0 && bc == 0)
-                    return -1;
-                return a.getValue().getDisplayName().compareTo(b.getValue().getDisplayName());
+            FutureTask<Void> call = new FutureTask<>(() -> {
+                parent.getChildren().add(thisItem);
+                return null;
             });
+            Platform.runLater(call);
+            try {
+                call.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
 
             itemMap.put(thisNode, thisItem);
 
             queue.addAll(thisNode.getChildren());
+        }
+
+        for (TreeItem<TreeNode> parent : updated) {
+            if (parent.getChildren().size() > 1) {
+                FutureTask<Void> call = new FutureTask<>(() -> {
+                    parent.getChildren().sort((a, b) -> {
+                        int ac = a.getValue().getChildren().size();
+                        int bc = b.getValue().getChildren().size();
+
+                        if (ac == 0 && bc != 0)
+                            return 1;
+                        else if (ac != 0 && bc == 0)
+                            return -1;
+                        return a.getValue().getDisplayName().compareTo(b.getValue().getDisplayName());
+                    });
+                    return null;
+                });
+                Platform.runLater(call);
+                try {
+                    call.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         queue.addAll(remove);

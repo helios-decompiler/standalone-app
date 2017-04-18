@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.utils;
+package com.heliosdecompiler.helios.gui.controller.editors;
 
-import org.apache.commons.io.IOUtils;
+import com.google.inject.assistedinject.Assisted;
+import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
+import com.heliosdecompiler.helios.gui.view.editors.DisassemblerView;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Iterator;
-
-public class Utils {
-    public static <T> T find(T needle, Collection<T> haystack) {
-        for (Iterator<T> iter = haystack.iterator(); iter.hasNext(); ) {
-            T next = iter.next();
-            if (next.equals(needle)) {
-                return next;
-            }
-        }
-        return null;
-    }
+public interface DisassemblerViewFactory {
+    DisassemblerView createDisassemblerView(
+            @Assisted(value="controller") DisassemblerController<?> controller
+    );
 }
