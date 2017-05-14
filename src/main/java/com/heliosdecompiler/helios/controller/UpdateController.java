@@ -129,22 +129,27 @@ public class UpdateController {
                 if (latestVersion.greaterThan(thisVersion)) {
                     messageHandler.prompt(Message.UPDATER_UPDATE_FOUND.format(latestVersion.toString(), changelog), result -> {
                         if (result) {
+                            String urlToUse = DOWNLOAD_URL;
+                            String extensionToUse = ".jar";
+                            if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
+                                urlToUse = DOWNLOAD_URL_WINDOWS;
+                                extensionToUse = ".exe";
+                            } else if (OSUtils.getOS() == OSUtils.OS.MAC) {
+                                urlToUse = DOWNLOAD_URL_OSX;
+                                extensionToUse = ".dmg";
+                            }
+
+                            String downloadUrlStr = urlToUse;
+
                             File target = messageHandler.chooseFile()
                                     .withTitle(Message.UPDATER_SELECT_SAVE_LOCATION.format())
-                                    .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), ".jar"), true)
+                                    .withExtensionFilter(new FileFilter(Message.FILETYPE_ANY.format(), extensionToUse), true)
                                     .promptSave();
 
                             if (target != null) {
                                 backgroundTaskHelper.submit(new BackgroundTask(Message.UPDATER_DOWNLOADING_HELIOS.format(), true, () -> {
                                     try {
-                                        String urlToUse = DOWNLOAD_URL;
-                                        if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
-                                            urlToUse = DOWNLOAD_URL_WINDOWS;
-                                        } else if (OSUtils.getOS() == OSUtils.OS.MAC) {
-                                            urlToUse = DOWNLOAD_URL_OSX;
-                                        }
-                                        
-                                        URL downloadurl = new URL(urlToUse);
+                                        URL downloadurl = new URL(downloadUrlStr);
                                         HttpURLConnection downloadconnection = (HttpURLConnection) downloadurl.openConnection();
                                         downloadconnection.addRequestProperty("User-Agent", "Helios Standalone App");
                                         try (InputStream downloadStream = downloadconnection.getInputStream();
