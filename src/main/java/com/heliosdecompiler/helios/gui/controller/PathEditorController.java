@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.gui.controller;
 
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.api.events.PathUpdatedEvent;
 import com.heliosdecompiler.helios.controller.PathController;
@@ -129,7 +130,7 @@ public class PathEditorController {
 
             File newFile = new JavaFXFileChooserView(this.stage)
                     .withInitialFile(file)
-                    .withTitle("Browse")
+                    .withTitle(Message.GENERIC_OPEN.format())
                     .promptSingle();
 
             if (newFile != null) {

@@ -16,6 +16,8 @@
 
 package com.heliosdecompiler.helios.controller.backgroundtask;
 
+import com.heliosdecompiler.helios.Message;
+
 import java.util.concurrent.Future;
 
 public class BackgroundTask implements Runnable {
@@ -27,13 +29,13 @@ public class BackgroundTask implements Runnable {
     private boolean cancelled = false;
     private Future<?> future;
 
-    public BackgroundTask(String displayName, boolean show, Runnable action) {
+    public BackgroundTask(Message.FormattedMessage displayName, boolean show, Runnable action) {
         this(displayName, show, action, () -> {
         });
     }
 
-    public BackgroundTask(String displayName, boolean show, Runnable action, Runnable onCancel) {
-        this.displayName = displayName;
+    public BackgroundTask(Message.FormattedMessage displayName, boolean show, Runnable action, Runnable onCancel) {
+        this.displayName = displayName.getText();
         this.show = show;
         this.action = action;
         this.onCancel = onCancel;

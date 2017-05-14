@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.controller.files;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.RecentFileController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
@@ -49,7 +50,7 @@ public class OpenedFileController {
 
     public void openFile(File selectedFile) {
         recentFileController.addRecentFile(selectedFile);
-        backgroundTaskHelper.submit(new BackgroundTask("Loading " + selectedFile.getName(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_LOADING_FILE.format(selectedFile.getName()), true, () -> {
             this.loadedFiles.put(selectedFile.getName(), new OpenedFile(messageHandler, selectedFile));
         }));
     }
@@ -63,7 +64,7 @@ public class OpenedFileController {
     }
 
     public void reload(FileTreeController controller) {
-        backgroundTaskHelper.submit(new BackgroundTask("Reloading files", true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_RELOADING_FILES.format(), true, () -> {
             for (OpenedFile openedFile : this.loadedFiles.values()) {
                 openedFile.reset();
             }

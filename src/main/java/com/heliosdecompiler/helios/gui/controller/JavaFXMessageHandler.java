@@ -19,8 +19,7 @@ package com.heliosdecompiler.helios.gui.controller;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.view.*;
 import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.ui.MessageHandler;
@@ -32,17 +31,15 @@ import javafx.stage.Stage;
 
 import javax.management.MBeanServer;
 import java.lang.management.ManagementFactory;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 @Singleton
 public class JavaFXMessageHandler implements MessageHandler {
 
-    @Inject
+    @Inject(optional = true)
     @Named(value = "mainStage")
-    private AtomicReference<Stage> stage;
+    private Stage stage;
 
     @FXML
     public void initialize() {
@@ -54,7 +51,7 @@ public class JavaFXMessageHandler implements MessageHandler {
 
             @Override
             public void accept(Throwable exception) {
-                handleException(Message.UNKNOWN_ERROR, exception);
+                handleException(Message.ERROR_UNKNOWN_ERROR.format(), exception);
             }
 
 //            private void sendErrorReport(Throwable throwable) {
@@ -141,12 +138,9 @@ public class JavaFXMessageHandler implements MessageHandler {
     }
 
     @Override
-    public void handleError(CommonError.FormattedMessage message, Runnable after) {
-        // In the future, this will be internationalized
-        String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
-
+    public void handleError(Message.FormattedMessage message, Runnable after) {
         Platform.runLater(() -> {
-            ErrorPopupView view = new ErrorPopupView(stage.get()).withMessage(formatted);
+            ErrorPopupView view = new ErrorPopupView(stage).withMessage(message.getText());
             if (after != null) {
                 view.showAndWait();
                 after.run();
@@ -157,12 +151,9 @@ public class JavaFXMessageHandler implements MessageHandler {
     }
 
     @Override
-    public void handleMessage(CommonError.FormattedMessage message, Runnable after) {
-        // In the future, this will be internationalized
-        String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
-
+    public void handleMessage(Message.FormattedMessage message, Runnable after) {
         Platform.runLater(() -> {
-            InfoPopupView view = new InfoPopupView(stage.get()).withMessage(formatted);
+            InfoPopupView view = new InfoPopupView(stage).withMessage(message.getText());
             if (after != null) {
                 view.showAndWait();
                 after.run();
@@ -173,29 +164,26 @@ public class JavaFXMessageHandler implements MessageHandler {
     }
 
     @Override
-    public void prompt(CommonError.FormattedMessage message, Consumer<Boolean> consumer) {
-        // In the future, this will be internationalized
-        String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
-
+    public void prompt(Message.FormattedMessage message, Consumer<Boolean> consumer) {
         Platform.runLater(() -> {
-            consumer.accept(new PromptView(stage.get()).withMessage(formatted).show());
+            consumer.accept(new PromptView(stage).withMessage(message.getText()).show());
         });
     }
 
     @Override
     public FileChooserView chooseFile() {
-        return new JavaFXFileChooserView(stage.get());
+        return new JavaFXFileChooserView(stage);
     }
 
     @Override
     public CompletableFuture<Void> handleLongMessage(Message shortMessage, String longMessage) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         if (Platform.isFxApplicationThread()) {
-            new LongMessagePopupView(stage.get(), shortMessage, longMessage).show();
+            new LongMessagePopupView(stage, shortMessage, longMessage).show();
             future.complete(null);
         } else {
             Platform.runLater(() -> {
-                new LongMessagePopupView(stage.get(), shortMessage, longMessage).show();
+                new LongMessagePopupView(stage, shortMessage, longMessage).show();
                 future.complete(null);
             });
         }
@@ -203,21 +191,18 @@ public class JavaFXMessageHandler implements MessageHandler {
         return future;
     }
 
-    public void handleException(Message message, Throwable e) {
+    public void handleException(Message.FormattedMessage message, Throwable e) {
         e.printStackTrace();
         if (!Platform.isFxApplicationThread()) {
             Platform.runLater(() -> {
-                new ExceptionPopupView(stage.get(), message, e).show();
+                new ExceptionPopupView(stage, message.getText(), e).show();
             });
         } else {
-            new ExceptionPopupView(stage.get(), message, e).show();
+            new ExceptionPopupView(stage, message.getText(), e).show();
         }
     }
 
-    public void handleWarning(CommonError.FormattedMessage message, boolean wait) {
-        // In the future, this will be internationalized
-        String formatted = message.getError() + " " + Arrays.toString(message.getArgs());
-
-        new WarningPopupView(stage.get()).withMessage(formatted).show();
+    public void handleWarning(Message.FormattedMessage message, boolean wait) {
+        new WarningPopupView(stage).withMessage(message.getText()).show();
     }
 }

@@ -20,9 +20,9 @@ import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
@@ -84,7 +84,7 @@ public class BackgroundTaskController {
                                 BackgroundTaskController.this.root.requestLayout();
                             });
                         } catch (IOException e) {
-                            messageHandler.handleException(Message.UNKNOWN_ERROR, e);
+                            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), e);
                         }
                     }
                 }

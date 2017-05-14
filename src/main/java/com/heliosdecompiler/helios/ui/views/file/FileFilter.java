@@ -16,6 +16,8 @@
 
 package com.heliosdecompiler.helios.ui.views.file;
 
+import com.heliosdecompiler.helios.Message;
+
 /**
  * Represents a filter
  */
@@ -23,8 +25,8 @@ public class FileFilter {
     private String name;
     private String[] filters;
 
-    public FileFilter(String name, String... filters) {
-        this.name = name;
+    public FileFilter(Message.FormattedMessage message, String... filters) {
+        this.name = message.getText();
         this.filters = filters;
     }
 

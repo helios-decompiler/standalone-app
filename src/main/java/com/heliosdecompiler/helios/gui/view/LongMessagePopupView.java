@@ -16,15 +16,12 @@
 
 package com.heliosdecompiler.helios.gui.view;
 
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.helper.DialogHelper;
-import com.heliosdecompiler.helios.gui.model.Message;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 public class LongMessagePopupView {
 

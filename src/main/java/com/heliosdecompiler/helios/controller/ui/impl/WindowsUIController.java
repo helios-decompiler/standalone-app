@@ -20,8 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
 import com.heliosdecompiler.helios.utils.OSUtils;
@@ -38,6 +37,11 @@ public class WindowsUIController implements UserInterfaceController {
 
     @Inject
     private UpdateController updateController;
+
+    @Override
+    public void initialize() {
+
+    }
 
     public void registerInContextMenu() {
         try {
@@ -59,35 +63,35 @@ public class WindowsUIController implements UserInterfaceController {
                                                 process1 = Runtime.getRuntime().exec("reg add HKCU\\Software\\Classes\\*\\shell\\helios\\command /ve /d \"\\\"" + javaw.getAbsolutePath() + "\\\" -jar \\\"" + currentJarLocation.getAbsolutePath() + "\\\" --open \\\"%1\\\"\" /f");
                                                 process1.waitFor();
                                                 if (process1.exitValue() == 0) {
-                                                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_SUCCESSFUL.format());
+                                                    messageHandler.handleMessage(Message.CONTEXT_MENU_SUCCESSFUL.format());
                                                 } else {
-                                                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("6"));
+                                                    messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("6"));
                                                 }
                                             } else {
-                                                messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("5"));
+                                                messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("5"));
                                             }
                                         } else {
-                                            messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("4"));
+                                            messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("4"));
                                         }
                                     } catch (Throwable t) {
-                                        messageHandler.handleException(Message.UNKNOWN_ERROR, t);
+                                        messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), t);
                                     }
                                 });
                             } else {
-                                messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("3"));
+                                messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("3"));
                             }
                         });
                     } else {
-                        messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("2"));
+                        messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("2"));
                     }
                 } else {
-                    messageHandler.handleMessage(CommonError.CONTEXT_MENU_FAILED.format("1"));
+                    messageHandler.handleMessage(Message.CONTEXT_MENU_FAILED.format("1"));
                 }
             } else {
-                messageHandler.handleMessage(CommonError.WINDOWS_ONLY.format());
+                messageHandler.handleMessage(Message.GENERIC_WINDOWS_ONLY.format());
             }
         } catch (Throwable t) {
-            messageHandler.handleException(Message.UNKNOWN_ERROR, t);
+            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), t);
         }
     }
 
@@ -140,11 +144,11 @@ public class WindowsUIController implements UserInterfaceController {
             return;
         }
 
-        messageHandler.handleMessage(CommonError.COULD_NOTE_LOCATE_HELIOS.format(), () -> {
+        messageHandler.handleMessage(Message.COULD_NOTE_LOCATE_HELIOS.format(), () -> {
             file.accept(messageHandler.chooseFile()
                     .withInitialDirectory(new File("."))
-                    .withTitle("Choose location of Helios bootstrapper")
-                    .withExtensionFilter(new FileFilter("Java Archive", "*.jar"), true)
+                    .withTitle(Message.GENERIC_SELECT_FILE.format("Helios"))
+                    .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), "*.jar"), true)
                     .promptSingle());
         });
     }
@@ -168,11 +172,11 @@ public class WindowsUIController implements UserInterfaceController {
         }
 
         String fname = name;
-        messageHandler.handleMessage(CommonError.COULD_NOT_LOCATE_JAVA.format(name), () -> {
+        messageHandler.handleMessage(Message.COULD_NOT_LOCATE_JAVA.format(name), () -> {
             consumer.accept(messageHandler.chooseFile()
                     .withInitialDirectory(new File("."))
-                    .withTitle("Choose location of " + fname)
-                    .withExtensionFilter(new FileFilter("Executable", "*"), true)
+                    .withTitle(Message.GENERIC_SELECT_FILE.format(fname))
+                    .withExtensionFilter(new FileFilter(Message.FILETYPE_ANY.format(), "*"), true)
                     .promptSingle());
         });
     }

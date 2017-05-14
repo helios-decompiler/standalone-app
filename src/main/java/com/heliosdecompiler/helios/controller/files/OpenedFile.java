@@ -17,8 +17,7 @@
 package com.heliosdecompiler.helios.controller.files;
 
 import com.google.common.base.Joiner;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import org.apache.commons.io.IOUtils;
@@ -96,21 +95,12 @@ public class OpenedFile {
     }
 
     private void readQuick() {
-        if (!Files.exists(this.target)) {
-            this.messageHandler.handleError(CommonError.DOES_NOT_EXIST.format(this.target.toString()));
-            return;
-        }
-        if (!Files.isReadable(this.target)) {
-            this.messageHandler.handleError(CommonError.NO_READ_PERMISSIONS.format(this.target.toString()));
-            return;
-        }
-
         byte[] fileData;
 
         try {
             fileData = Files.readAllBytes(this.target);
         } catch (IOException e) {
-            this.messageHandler.handleException(Message.IOEXCEPTION_OCCURRED, e);
+            this.messageHandler.handleException(Message.ERROR_IOEXCEPTION_OCCURRED.format(), e);
             return;
         }
 
@@ -126,7 +116,7 @@ public class OpenedFile {
                 }
             }
         } catch (Exception ex) {
-            this.messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
+            this.messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), ex);
             return;
         }
 

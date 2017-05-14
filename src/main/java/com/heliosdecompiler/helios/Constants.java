@@ -23,18 +23,14 @@ public class Constants {
     public static final String REPO_NAME = "Helios";
     public static final String REPO_VERSION = "unknown";
 
-    public static final String KRAKATAU_VERSION = "3eff49fe480efeca8a728936f6452ec6853cdc88";
     public static final String ENJARIFY_VERSION = "82d72ee92730e858b6ec3615d6dc74c9331e56e8";
 
     public static final int MB = 1024 * 1024;
     public static final File DATA_DIR = new File(
             System.getProperty("user.home") + File.separator + "." + Constants.REPO_NAME.toLowerCase());
-    public static final File KRAKATAU_DIR =  new File(DATA_DIR,
-            "Krakatau" + File.separator + Constants.KRAKATAU_VERSION);
     public static final File ENJARIFY_DIR = new File(DATA_DIR,
             "enjarify" + File.separator + Constants.ENJARIFY_VERSION);
     public static final File ADDONS_DIR = new File(DATA_DIR, "addons");
-    public static final File SETTINGS_FILE = new File(DATA_DIR, "settings.json");
     public static final File SETTINGS_FILE_XML = new File(DATA_DIR, "settings.xml");
     public static final String NEWLINE = System.lineSeparator();
     private static final Runtime RUNTIME = Runtime.getRuntime();

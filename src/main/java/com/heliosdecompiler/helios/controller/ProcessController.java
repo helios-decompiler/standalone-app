@@ -18,14 +18,18 @@ package com.heliosdecompiler.helios.controller;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 @Singleton
 public class ProcessController {
@@ -43,7 +47,7 @@ public class ProcessController {
         } finally {
             lock.unlock();
         }
-        backgroundTaskHelper.submit(new BackgroundTask("Process " + launch.command(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_LAUNCH_PROCESS.format(launch.command().stream().collect(Collectors.joining(" "))), true, () -> {
             try {
                 process.waitFor();
                 if (!process.isAlive()) {

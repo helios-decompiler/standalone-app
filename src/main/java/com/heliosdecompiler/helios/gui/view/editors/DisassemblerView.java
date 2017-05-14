@@ -25,8 +25,7 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.TransformationException;
@@ -97,7 +96,7 @@ public class DisassemblerView extends EditorView {
 
         CompletableFuture<byte[]> future = new CompletableFuture<>();
 
-        backgroundTaskHelper.submit(new BackgroundTask("Assemble " + node.getProperties().get("path"), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_ASSEMBLE_FILE.format(node.getProperties().get("path").toString()), true, () -> {
             if (controller instanceof KrakatauDisassemblerController) {
                 KrakatauAssemblerSettings settings = new KrakatauAssemblerSettings();
                 settings.setPythonExecutable(new File(configuration.getString(Settings.PYTHON2_KEY)));
@@ -137,13 +136,13 @@ public class DisassemblerView extends EditorView {
                             message.append("stdout:\r\n").append(((KrakatauException) err).getStdout())
                                     .append("\r\n\r\nstderr:\r\n").append(((KrakatauException) err).getStderr());
 
-                            messageHandler.handleLongMessage(Message.FAILED_TO_ASSEMBLE_KRAKATAU, message.toString());
+                            messageHandler.handleLongMessage(Message.ERROR_FAILED_TO_ASSEMBLE_KRAKATAU, message.toString());
                         } else {
-                            messageHandler.handleException(Message.UNKNOWN_ERROR, err);
+                            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), err);
                         }
                     } else {
                         file.putContent(path, res);
-                        messageHandler.handleMessage(CommonError.ASSEMBLED.format());
+                        messageHandler.handleMessage(Message.GENERIC_ASSEMBLED.format());
                     }
                 });
             });

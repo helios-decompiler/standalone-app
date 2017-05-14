@@ -25,8 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
 import org.apache.commons.io.IOUtils;
@@ -125,22 +124,15 @@ public class UpdateController {
 
             if (changelog != null && latestVersion != null) {
                 if (latestVersion.greaterThan(thisVersion)) {
-//                        String message = "Update available!\r\n";
-//                        message += "\r\n";
-//                        message += "New version: " + latestVersion.toString() + "\r\n";
-//                        message += "\r\n";
-//                        message += "Changelog:\r\n";
-//                        message += changelog;
-
-                    messageHandler.prompt(CommonError.UPDATE_FOUND.format(latestVersion.toString(), changelog), result -> {
+                    messageHandler.prompt(Message.UPDATER_UPDATE_FOUND.format(latestVersion.toString(), changelog), result -> {
                         if (result) {
                             File target = messageHandler.chooseFile()
-                                    .withTitle("Select location to save Helios")
-                                    .withExtensionFilter(new FileFilter("Java Archive", ".jar"), true)
+                                    .withTitle(Message.UPDATER_SELECT_SAVE_LOCATION.format())
+                                    .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), ".jar"), true)
                                     .promptSave();
 
                             if (target != null) {
-                                backgroundTaskHelper.submit(new BackgroundTask("Downloading Helios", true, () -> {
+                                backgroundTaskHelper.submit(new BackgroundTask(Message.UPDATER_DOWNLOADING_HELIOS.format(), true, () -> {
                                     try {
                                         URL downloadurl = new URL(DOWNLOAD_URL);
                                         HttpURLConnection downloadconnection = (HttpURLConnection) downloadurl.openConnection();
@@ -150,9 +142,9 @@ public class UpdateController {
                                             IOUtils.copy(downloadStream, outputStream);
                                         }
 
-                                        messageHandler.handleMessage(CommonError.UPDATED.format());
+                                        messageHandler.handleMessage(Message.UPDATER_UPDATE_SUCCESSFUL.format());
                                     } catch (Throwable t) {
-                                        messageHandler.handleException(Message.UPDATING, t);
+                                        messageHandler.handleException(Message.ERROR_UNEXPECTED_ERROR.format(Message.UPDATER_UPDATE_TASK_NAME.getText()), t);
                                     }
                                 }));
                             }

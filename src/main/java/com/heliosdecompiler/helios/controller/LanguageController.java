@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package com.heliosdecompiler.helios.controller.ui.impl;
+package com.heliosdecompiler.helios.controller;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.Message;
-import com.heliosdecompiler.helios.ui.MessageHandler;
+
+import java.util.Arrays;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 @Singleton
-public class UnsupportedUIController implements UserInterfaceController {
+public class LanguageController {
 
-    @Inject
-    private MessageHandler messageHandler;
+    private ResourceBundle lang;
 
-    @Override
-    public void initialize() {
-
+    public LanguageController() {
+        lang = ResourceBundle.getBundle("HeliosStandaloneLang");
     }
 
-    @Override
-    public void registerInContextMenu() {
-        messageHandler.handleMessage(Message.GENERIC_WINDOWS_ONLY.format());
+    public String getLang(Message.FormattedMessage formattedMessage) {
+        try {
+            return String.format(lang.getString(formattedMessage.getError().getMessageKey()), (Object[]) formattedMessage.getArgs());
+        } catch (MissingResourceException e) {
+            return formattedMessage.getError().getMessageKey() + " " + Arrays.toString(formattedMessage.getArgs());
+        }
     }
 }

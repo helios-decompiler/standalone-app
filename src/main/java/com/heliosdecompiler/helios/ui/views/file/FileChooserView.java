@@ -16,6 +16,8 @@
 
 package com.heliosdecompiler.helios.ui.views.file;
 
+import com.heliosdecompiler.helios.Message;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +30,8 @@ public abstract class FileChooserView {
 
     private String initialFile;
 
-    public FileChooserView withTitle(String title) {
-        this.title = title;
+    public FileChooserView withTitle(Message.FormattedMessage message) {
+        this.title = message.getText();
         return this;
     }
 

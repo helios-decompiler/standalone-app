@@ -26,7 +26,9 @@ import com.heliosdecompiler.helios.controller.transformers.decompilers.ProcyonDe
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.JavapDisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.ProcyonDisassemblerController;
-import com.heliosdecompiler.helios.gui.view.editors.*;
+import com.heliosdecompiler.helios.gui.view.editors.DecompilerView;
+import com.heliosdecompiler.helios.gui.view.editors.EditorView;
+import com.heliosdecompiler.helios.gui.view.editors.StandardEditors;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;

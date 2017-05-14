@@ -6,10 +6,11 @@
 
     <groupId>com.heliosdecompiler</groupId>
     <artifactId>standalone-app</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <winVersion>1.0.5.0</winVersion>
     </properties>
 
     <build>
@@ -50,6 +51,27 @@
                         </replacement>
                     </replacements>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>sh.tak.appbundler</groupId>
+                <artifactId>appbundle-maven-plugin</artifactId>
+                <version>1.2.0</version>
+                <configuration>
+                    <buildDirectory>${project.build.directory}</buildDirectory>
+                    <mainClass>com.heliosdecompiler.helios.Helios</mainClass>
+                    <bundleName>Helios Decompiler</bundleName>
+                    <iconFile>standalone-app.icns</iconFile>
+                    <generateDiskImageFile>true</generateDiskImageFile>
+                    <diskImageFile>${project.build.directory}/helios-standalone.dmg</diskImageFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -94,6 +116,51 @@
                                 </filter>
                             </filters>
                             <minimizeJar>true</minimizeJar>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.akathist.maven.plugins.launch4j</groupId>
+                <artifactId>launch4j-maven-plugin</artifactId>
+                <version>1.7.17</version>
+                <executions>
+                    <execution>
+                        <id>l4j-clui</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>launch4j</goal>
+                        </goals>
+                        <configuration>
+                            <headerType>gui</headerType>
+                            <jar>${project.build.directory}/helios-standalone.jar</jar>
+                            <outfile>${project.build.directory}/helios-standalone.exe</outfile>
+                            <downloadUrl>http://java.com/download</downloadUrl>
+                            <errTitle>Helios Decompiler</errTitle>
+                            <classPath>
+                                <mainClass>com.heliosdecompiler.helios.Helios</mainClass>
+                            </classPath>
+                            <customProcName>true</customProcName>
+                            <icon>standalone-app.ico</icon>
+                            <jre>
+                                <minVersion>1.8.0</minVersion>
+                                <jdkPreference>preferJre</jdkPreference>
+                                <opts>
+                                    <opt>-Dfile.encoding=UTF-8</opt>
+                                </opts>
+                            </jre>
+                            <versionInfo>
+                                <fileVersion>${winVersion}</fileVersion>
+                                <txtFileVersion>${project.version}</txtFileVersion>
+                                <fileDescription>${project.name}</fileDescription>
+                                <copyright>2017 samczsun</copyright>
+                                <productName>${project.name}</productName>
+                                <productVersion>${winVersion}</productVersion>
+                                <txtProductVersion>${project.version}</txtProductVersion>
+                                <companyName>samczsun.com</companyName>
+                                <internalName>helios-standalone</internalName>
+                                <originalFilename>helios-standalone.exe</originalFilename>
+                            </versionInfo>
                         </configuration>
                     </execution>
                 </executions>

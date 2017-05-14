@@ -40,7 +40,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class AllFilesViewerController extends NestedController<MainViewController> {
 
@@ -59,11 +58,11 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
 
     @Inject
     @Named(value = "mainStage")
-    private AtomicReference<Stage> stage;
+    private Stage stage;
 
     @FXML
     public void initialize() {
-        stage.get().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+        stage.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.T) {
                 if (!isMenuOpen) {
                     isMenuOpen = true;
@@ -71,7 +70,7 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
                 }
             }
         });
-        stage.get().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+        stage.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.W) {
                 if (event.isShiftDown()) {
                     Tab fileTab = root.getSelectionModel().getSelectedItem();

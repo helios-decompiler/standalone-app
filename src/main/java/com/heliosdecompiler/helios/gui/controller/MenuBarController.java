@@ -24,11 +24,9 @@ import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
-import com.heliosdecompiler.helios.utils.OSUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuBar;
@@ -39,7 +37,6 @@ import org.apache.commons.configuration2.Configuration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class MenuBarController extends NestedController<MainViewController> {
 
@@ -72,21 +69,21 @@ public class MenuBarController extends NestedController<MainViewController> {
 
     @Inject
     @Named(value = "mainStage")
-    private AtomicReference<Stage> stage;
+    private Stage stage;
 
     @FXML
     private void initialize() {
-        stage.get().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+        stage.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.O) {
                 onOpen();
             }
         });
-        stage.get().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+        stage.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.N) {
                 onReset();
             }
         });
-        stage.get().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+        stage.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
             if (event.getCode() == KeyCode.F5) {
                 getParentController().getFileTreeController().reload();
             }
@@ -96,16 +93,17 @@ public class MenuBarController extends NestedController<MainViewController> {
             GuiceFXMLLoader.Result result = loader.load(getClass().getResource("/views/pathEditor.fxml"));
             pathEditorController = result.getController();
         } catch (IOException ex) {
-            messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
+            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), ex);
         }
         try {
             GuiceFXMLLoader.Result result = loader.load(getClass().getResource("/views/transformerSettings.fxml"));
             transformerSettingsController = result.getController();
         } catch (IOException ex) {
-            messageHandler.handleException(Message.UNKNOWN_ERROR, ex);
+            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), ex);
         }
 
         // for mac (and maybe linux once java supports it)
+        // todo refactor into UIController
         root.setUseSystemMenuBar(true);
     }
 
@@ -119,7 +117,7 @@ public class MenuBarController extends NestedController<MainViewController> {
         File original = new File(configuration.getString(Settings.PYTHON2_KEY, "."));
 
         File selectedFile = messageHandler.chooseFile()
-                .withTitle("Select Python 2.x Executable")
+                .withTitle(Message.GENERIC_SELECT_FILE.format("Python 2.x"))
                 .withInitialDirectory(original.isFile() ? original.getParentFile() : null)
                 .promptSingle();
 
@@ -147,8 +145,8 @@ public class MenuBarController extends NestedController<MainViewController> {
         File lastDir = new File(configuration.getString(Settings.LAST_DIR_KEY, "."));
 
         File selectedFile = messageHandler.chooseFile()
-                .withTitle("Open")
-                .withExtensionFilter(new FileFilter("Java Archives, Class Files", "*.jar", "*.class"), true)
+                .withTitle(Message.GENERIC_OPEN.format())
+                .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE_CLASS_FILE.format(), "*.jar", "*.class"), true)
                 .withInitialDirectory(lastDir)
                 .promptSingle();
 
@@ -160,7 +158,7 @@ public class MenuBarController extends NestedController<MainViewController> {
     }
 
     public void onReset() {
-        messageHandler.prompt(CommonError.RESET_WORKSPACE.format(), result -> {
+        messageHandler.prompt(Message.PROMPT_RESET_WORKSPACE.format(), result -> {
             if (result) {
                 openedFileController.clear();
                 processController.clear();

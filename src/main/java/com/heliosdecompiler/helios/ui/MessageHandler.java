@@ -16,8 +16,7 @@
 
 package com.heliosdecompiler.helios.ui;
 
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.views.file.FileChooserView;
 
 import java.util.concurrent.CompletableFuture;
@@ -26,21 +25,21 @@ import java.util.function.Consumer;
 public interface MessageHandler {
     CompletableFuture<Void> handleLongMessage(Message shortMessage, String longMessage);
 
-    void handleException(Message message, Throwable exception);
+    void handleException(Message.FormattedMessage message, Throwable exception);
 
-    default void handleError(CommonError.FormattedMessage message) {
+    default void handleError(Message.FormattedMessage message) {
         handleError(message, null);
     }
 
-    void handleError(CommonError.FormattedMessage message, Runnable after);
+    void handleError(Message.FormattedMessage message, Runnable after);
 
-    default void handleMessage(CommonError.FormattedMessage message) {
+    default void handleMessage(Message.FormattedMessage message) {
         handleMessage(message, null);
     }
 
-    void handleMessage(CommonError.FormattedMessage message, Runnable after);
+    void handleMessage(Message.FormattedMessage message, Runnable after);
 
-    void prompt(CommonError.FormattedMessage format, Consumer<Boolean> result);
+    void prompt(Message.FormattedMessage format, Consumer<Boolean> result);
 
     FileChooserView chooseFile();
 }

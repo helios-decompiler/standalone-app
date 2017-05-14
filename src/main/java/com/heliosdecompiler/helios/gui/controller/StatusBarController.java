@@ -18,11 +18,10 @@ package com.heliosdecompiler.helios.gui.controller;
 
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.heliosdecompiler.helios.Constants;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
@@ -30,7 +29,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.MouseEvent;
-import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 
 import java.io.IOException;
@@ -84,7 +82,7 @@ public class StatusBarController extends NestedController<MainViewController> {
         try {
             backgroundTaskController = loader.load(getClass().getResource("/views/backgroundTasks.fxml")).getController();
         } catch (IOException e) {
-            messageHandler.handleException(Message.UNKNOWN_ERROR, e);
+            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), e);
         }
     }
 

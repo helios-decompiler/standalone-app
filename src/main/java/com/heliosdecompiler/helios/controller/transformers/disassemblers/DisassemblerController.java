@@ -17,6 +17,7 @@
 package com.heliosdecompiler.helios.controller.transformers.disassemblers;
 
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
@@ -46,7 +47,7 @@ public abstract class DisassemblerController<SettingObject> extends BaseTransfor
     }
 
     public void disassemble(OpenedFile file, String path, BiConsumer<Boolean, String> consumer) {
-        backgroundTaskHelper.submit(new BackgroundTask("Disassembling " + path + " with " + getDisplayName(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_DISASSEMBLE_FILE.format(path, getDisplayName()), true, () -> {
             try {
                 byte[] data = file.getContent(path);
                 ClassData cd = ClassData.construct(data);

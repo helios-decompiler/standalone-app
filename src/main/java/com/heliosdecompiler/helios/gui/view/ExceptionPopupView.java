@@ -16,8 +16,8 @@
 
 package com.heliosdecompiler.helios.gui.view;
 
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.helper.DialogHelper;
-import com.heliosdecompiler.helios.gui.model.Message;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -28,13 +28,13 @@ import java.io.StringWriter;
 
 public class ExceptionPopupView {
 
-    private final Message message;
+    private final String message;
     private final Throwable cause;
     private final Stage stage;
 
     private boolean allowReport = true;
 
-    public ExceptionPopupView(Stage stage, Message message, Throwable cause) {
+    public ExceptionPopupView(Stage stage, String message, Throwable cause) {
         this.stage = stage;
         this.message = message;
         this.cause = cause;
@@ -67,7 +67,7 @@ public class ExceptionPopupView {
 
         alert.setTitle("An exception has occurred");
         alert.setHeaderText(null);
-        alert.setContentText(message.name());
+        alert.setContentText(message);
         alert.initOwner(stage);
 
         StringWriter sw = new StringWriter();

@@ -23,8 +23,7 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.gui.controller.tree.TreeCellFactory;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
@@ -83,15 +82,15 @@ public class FileTreeController extends NestedController<MainViewController> {
                 export.setOnAction(e -> {
                     File file = messageHandler.chooseFile()
                             .withInitialDirectory(new File("."))
-                            .withTitle("Choose location to export JAR")
-                            .withExtensionFilter(new FileFilter("Java Archive", "*.jar"), true)
+                            .withTitle(Message.GENERIC_CHOOSE_EXPORT_LOCATION_JAR.format())
+                            .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), "*.jar"), true)
                             .promptSave();
 
                     OpenedFile openedFile = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
 
                     Map<String, byte[]> clone = new HashMap<>(openedFile.getContents());
 
-                    backgroundTaskHelper.submit(new BackgroundTask("Saving " + node.getDisplayName(), true, () -> {
+                    backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_SAVING_FILE.format(node.getDisplayName()), true, () -> {
                         try {
                             if (!file.exists()) {
                                 if (!file.createNewFile()) {
@@ -108,9 +107,9 @@ public class FileTreeController extends NestedController<MainViewController> {
                                 }
                             }
 
-                            messageHandler.handleMessage(CommonError.EXPORTED.format());
+                            messageHandler.handleMessage(Message.GENERIC_EXPORTED.format());
                         } catch (IOException ex) {
-                            messageHandler.handleException(Message.IOEXCEPTION_OCCURRED, ex);
+                            messageHandler.handleException(Message.ERROR_IOEXCEPTION_OCCURRED.format(), ex);
                         }
                     }));
                 });

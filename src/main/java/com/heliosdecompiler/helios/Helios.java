@@ -16,24 +16,20 @@
 
 package com.heliosdecompiler.helios;
 
-import com.google.common.collect.Iterables;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.heliosdecompiler.helios.controller.LanguageController;
 import com.heliosdecompiler.helios.controller.PathController;
-import com.heliosdecompiler.helios.controller.RecentFileController;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.ui.impl.UnsupportedUIController;
-import com.heliosdecompiler.helios.gui.JavaFXGuiLauncher;
-import com.heliosdecompiler.helios.gui.model.Message;
-import com.heliosdecompiler.helios.ui.GuiLauncher;
+import com.heliosdecompiler.helios.ui.GraphicsProvider;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.utils.OSUtils;
-import com.heliosdecompiler.transformerapi.PackagedLibraryHelper;
 import org.apache.commons.cli.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.XMLConfiguration;
@@ -51,110 +47,70 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
 public class Helios {
-    private static LocalSocket socket;
-
     public static void main(String[] args) {
-        System.setProperty("file.encoding", "UTF-8");
-
         try {
+            LanguageController languageController = new LanguageController(); // blehhhhhh
+            Message.init(languageController);
+
+            GraphicsProvider launcher = getGraphicsProvider().newInstance();
+
+            launcher.startSplash();
+            launcher.updateSplash(Message.STARTUP_PREPARING_ENVIRONMENT);
+
             Field defaultCharset = Charset.class.getDeclaredField("defaultCharset");
             defaultCharset.setAccessible(true);
-            defaultCharset.set(null, null);
-
+            defaultCharset.set(null, StandardCharsets.UTF_8);
             if (!Charset.defaultCharset().equals(StandardCharsets.UTF_8))
-                throw new RuntimeException("Charset");
+                throw new RuntimeException("Charset: " + Charset.defaultCharset());
             if (!Constants.DATA_DIR.exists() && !Constants.DATA_DIR.mkdirs())
                 throw new RuntimeException("Could not create data directory");
             if (!Constants.ADDONS_DIR.exists() && !Constants.ADDONS_DIR.mkdirs())
                 throw new RuntimeException("Could not create addons directory");
-            if (!Constants.SETTINGS_FILE.exists() && !Constants.SETTINGS_FILE.createNewFile())
-                throw new RuntimeException("Could not create settings file");
             if (Constants.DATA_DIR.isFile())
                 throw new RuntimeException("Data directory is file");
             if (Constants.ADDONS_DIR.isFile())
                 throw new RuntimeException("Addons directory is file");
-            if (Constants.SETTINGS_FILE.isDirectory())
-                throw new RuntimeException("Settings file is directory");
-
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-            Splash splashScreen = new Splash();
-            splashScreen.updateState(BootSequence.CHECKING_LIBRARIES);
-            PackagedLibraryHelper.checkPackagedLibrary("enjarify", Constants.ENJARIFY_VERSION);
-
-            splashScreen.updateState(BootSequence.CLEANING_UPDATES);
-
-            String thisVersion = "helios-dev.jar";
-
-            for (File file : Constants.DATA_DIR.listFiles()) {
-                if (file.getName().startsWith("helios-") && !file.getName().equals(thisVersion)) {
-                    file.delete();
-                }
-            }
-
-            splashScreen.updateState(BootSequence.LOADING_SETTINGS);
-            Configuration configuration = loadConfiguration();
-            splashScreen.updateState(BootSequence.LOADING_ADDONS);
-//        AddonHandler.registerPreloadedAddons();
-//        for (File file : Constants.ADDONS_DIR.listFiles()) {
-//            AddonHandler
-//                    .getAllHandlers()
-//                    .stream()
-//                    .filter(handler -> handler.accept(file))
-//                    .findFirst()
-//                    .ifPresent(handler -> {
-//                        handler.run(file);
-//                    });
-//        }
-            try {
-                socket = new LocalSocket();
-            } catch (IOException e) { // Maybe allow the user to force open a second instance?
-//            ExceptionHandler.handle(e);
-            }
-
-            splashScreen.updateState(BootSequence.COMPLETE);
 
             EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
 
-            GuiLauncher launcher = new JavaFXGuiLauncher();
-
-            Class<? extends UserInterfaceController> uiController = UnsupportedUIController.class;
-
-            if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
-                uiController = (Class<? extends UserInterfaceController>) Class.forName("com.heliosdecompiler.helios.controller.ui.impl.WindowsUIController");
-            }
-
-            Class<? extends UserInterfaceController> uiControllerFinal = uiController;
+            Configuration configuration = loadConfiguration();
+            Class<? extends UserInterfaceController> uiController = getUIControllerImpl();
 
             Injector mainInjector = Guice.createInjector(
-                    Iterables.concat(
-                            launcher.getModules(),
-                            Collections.singleton(new AbstractModule() {
-                                @Override
-                                protected void configure() {
-                                    bind(UserInterfaceController.class).to(uiControllerFinal);
-                                    bind(RecentFileController.class);
-                                    bind(PathController.class);
-                                    bind(Configuration.class).toInstance(configuration);
-                                    bind(EventBus.class).toInstance(eventBus);
-                                }
-                            })
-                    )
+                    new AbstractModule() {
+                        @Override
+                        protected void configure() {
+                            bind(MessageHandler.class).to(launcher.getMessageHandlerImpl());
+                            bind(UserInterfaceController.class).to(uiController);
+                            bind(Configuration.class).toInstance(configuration);
+                            bind(EventBus.class).toInstance(eventBus);
+                        }
+                    }
             );
-            launcher.start(mainInjector, () -> {
-                mainInjector.getInstance(PathController.class).reload();
-                mainInjector.getInstance(UpdateController.class).doUpdate();
-                handleCommandLine(args, mainInjector);
-            });
+
+            mainInjector.getInstance(UserInterfaceController.class).initialize();
+
+            launcher.updateSplash(Message.STARTUP_LOADING_GRAPHICS);
+            launcher.prepare(mainInjector);
+
+            launcher.updateSplash(Message.STARTUP_DONE);
+            launcher.start();
+
+            mainInjector.getInstance(PathController.class).reload();
+            mainInjector.getInstance(UpdateController.class).doUpdate();
+            handleCommandLine(args, mainInjector);
         } catch (Throwable t) {
             displayError(t);
             System.exit(1);
         }
+    }
+
+    public static Class<? extends GraphicsProvider> getGraphicsProvider() throws ClassNotFoundException {
+        return Class.forName(System.getProperty("com.heliosdecompiler.standaloneapp.GraphicsProvider", "com.heliosdecompiler.helios.gui.JavaFXGraphicsProvider")).asSubclass(GraphicsProvider.class);
     }
 
     public static void displayError(Throwable t) {
@@ -163,6 +119,14 @@ public class Helios {
         t.printStackTrace(new PrintWriter(writer));
         JOptionPane.showMessageDialog(null, writer.toString(), t.getClass().getSimpleName(),
                 JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public static Class<? extends UserInterfaceController> getUIControllerImpl() throws ClassNotFoundException {
+        if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
+            return Class.forName("com.heliosdecompiler.helios.controller.ui.impl.WindowsUIController").asSubclass(UserInterfaceController.class);
+        }
+
+        return UnsupportedUIController.class;
     }
 
     private static Configuration loadConfiguration() throws IOException, ConfigurationException {
@@ -201,8 +165,9 @@ public class Helios {
 
             for (File file : open)
                 injector.getInstance(OpenedFileController.class).openFile(file);
+
         } catch (ParseException e) {
-            injector.getInstance(MessageHandler.class).handleException(Message.UNKNOWN_ERROR, e);
+            injector.getInstance(MessageHandler.class).handleException(Message.ERROR_UNKNOWN_ERROR.format(), e);
         }
     }
 }

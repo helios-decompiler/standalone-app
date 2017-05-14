@@ -26,8 +26,8 @@ public class TreeNode {
 
     private final String displayName;
     private final TreeNode parent;
-    private final Map<String, TreeNode> children = new HashMap<>();
-    private final Map<String, Object> metadata = new HashMap<>();
+    private final Map<String, TreeNode> children = new HashMap<>(0);
+    private final Map<String, Object> metadata = new HashMap<>(0);
 
     public TreeNode(String displayName) {
         this.parent = null;

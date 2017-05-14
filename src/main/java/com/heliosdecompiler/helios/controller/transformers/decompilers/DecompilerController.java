@@ -17,6 +17,7 @@
 package com.heliosdecompiler.helios.controller.transformers.decompilers;
 
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
@@ -51,7 +52,7 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
     }
 
     public void decompile(OpenedFile file, String path, BiConsumer<Boolean, String> consumer) {
-        backgroundTaskHelper.submit(new BackgroundTask("Decompiling " + path + " with " + getDisplayName(), true, () -> {
+        backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_DECOMPILE_FILE.format(path, getDisplayName()), true, () -> {
             try {
                 String pre = preDecompile(file, path);
                 if (pre != null) {

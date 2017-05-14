@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.controller;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
@@ -48,7 +49,7 @@ public class PathController {
     private MessageHandler messageHandler;
 
     public void reload() {
-        tasks.submit(new BackgroundTask("Reloading path", true, () -> {
+        tasks.submit(new BackgroundTask(Message.TASK_RELOADING_PATH.format(), true, () -> {
             List<OpenedFile> reloaded = new ArrayList<>();
             List<File> reloadedFiles = new ArrayList<>();
             List<String> path = configuration.getList(String.class, Settings.PATH_KEY, Collections.emptyList());

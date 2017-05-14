@@ -18,35 +18,37 @@ package com.heliosdecompiler.helios.gui;
 
 import com.cathive.fx.guice.GuiceApplication;
 import com.cathive.fx.guice.GuiceFXMLLoader;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.TypeLiteral;
+import com.google.inject.*;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
-import com.heliosdecompiler.helios.gui.controller.JavaFXMessageHandler;
+import com.heliosdecompiler.helios.gui.controller.AllFilesViewerController;
+import com.heliosdecompiler.helios.gui.controller.MenuBarController;
 import com.heliosdecompiler.helios.gui.controller.editors.DisassemblerViewFactory;
+import com.heliosdecompiler.helios.gui.controller.editors.EditorController;
 import com.heliosdecompiler.helios.gui.view.editors.DisassemblerView;
 import com.heliosdecompiler.helios.ui.MessageHandler;
+import com.sun.glass.ui.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class JavaFXApplication extends GuiceApplication {
-    static volatile Injector rootInjector;
-    static volatile Runnable runAfter;
-    private static AtomicReference<Stage> primaryStage = new AtomicReference<>();
+    public static final CompletableFuture<Void> FINISHED_STARTUP_FUTURE = new CompletableFuture<>();
+    public static final CompletableFuture<Void> FINISHED_SHOWING_FUTURE = new CompletableFuture<>();
+    public static final AtomicReference<JavaFXApplication> INSTANCE= new AtomicReference<>();
+
+    /*public*/ static final AtomicReference<Injector> ROOT_INJECTOR = new AtomicReference<>();
+    private static final AtomicReference<Stage> PRIMARY_STAGE = new AtomicReference<>();
 
     @Inject
     private GuiceFXMLLoader loader;
@@ -54,22 +56,16 @@ public class JavaFXApplication extends GuiceApplication {
     @Inject
     private UpdateController updateController;
 
-    static List<Module> getModules() {
-        return Arrays.asList(
-                binder -> binder.bind(new TypeLiteral<AtomicReference<Stage>>() {
-                }).annotatedWith(Names.named("mainStage")).toInstance(primaryStage),
-                binder -> binder.bind(MessageHandler.class).to(JavaFXMessageHandler.class),
-                new FactoryModuleBuilder()
-                        .implement(DisassemblerView.class, DisassemblerView.class)
-                        .build(DisassemblerViewFactory.class)
-        );
+    public void show() {
+        PRIMARY_STAGE.get().show();
+        FINISHED_SHOWING_FUTURE.complete(null);
     }
 
     @Override
     public void start(Stage primaryStage) {
         try {
             // note: at this point everything in this class has been injected
-            JavaFXApplication.primaryStage.set(primaryStage);
+            JavaFXApplication.PRIMARY_STAGE.set(primaryStage);
             primaryStage.setOnCloseRequest(event -> {
                 Platform.exit();
                 System.exit(0);
@@ -79,13 +75,12 @@ public class JavaFXApplication extends GuiceApplication {
             primaryStage.getIcons().add(new Image("/res/icon.png"));
 
             primaryStage.setScene(new Scene(loader.load(getClass().getResource("/views/main.fxml")).getRoot()));
-            primaryStage.show();
 
-            if (runAfter != null) {
-                getInjector().getInstance(BackgroundTaskHelper.class).submit(new BackgroundTask("After", false, () -> {
-                    runAfter.run();
-                }));
-            }
+            // Special case
+            getInjector().injectMembers(getInjector().getInstance(MessageHandler.class));
+
+            INSTANCE.set(this);
+            FINISHED_STARTUP_FUTURE.complete(null);
         } catch (Throwable t) {
             Helios.displayError(t);
             System.exit(1);
@@ -94,10 +89,23 @@ public class JavaFXApplication extends GuiceApplication {
 
     @Override
     public void init(List<Module> list) throws Exception {
+        list.add(
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(Stage.class).annotatedWith(Names.named("mainStage")).toProvider(PRIMARY_STAGE::get);
+                        bind(EditorController.class);
+                    }
+                }
+        );
+        list.add(new FactoryModuleBuilder()
+                .implement(DisassemblerView.class, DisassemblerView.class)
+                .build(DisassemblerViewFactory.class)
+        );
     }
 
     @Override
     protected Injector createInjector(Set<Module> modules) {
-        return rootInjector.createChildInjector(modules);
+        return ROOT_INJECTOR.get().createChildInjector(modules);
     }
 }

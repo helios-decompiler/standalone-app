@@ -17,10 +17,7 @@
 package com.heliosdecompiler.helios.gui.view.editors;
 
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
-import com.heliosdecompiler.helios.gui.model.CommonError;
-import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.hexeditor.HexArea;
-import com.heliosdecompiler.transformerapi.common.krakatau.KrakatauException;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;

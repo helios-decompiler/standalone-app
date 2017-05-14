@@ -18,8 +18,8 @@ package com.heliosdecompiler.helios.controller;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.Settings;
-import com.heliosdecompiler.helios.gui.model.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import org.apache.commons.configuration2.Configuration;
 
@@ -55,7 +55,7 @@ public class RecentFileController {
 
             configuration.setProperty(Settings.RECENT_FILES_KEY, recentFiles);
         } catch (IOException e) {
-            messageHandler.handleException(Message.UNKNOWN_ERROR, e);
+            messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), e);
         }
     }
 
