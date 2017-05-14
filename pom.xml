@@ -57,7 +57,6 @@
                 <artifactId>appbundle-maven-plugin</artifactId>
                 <version>1.2.0</version>
                 <configuration>
-                    <buildDirectory>${project.build.directory}</buildDirectory>
                     <mainClass>com.heliosdecompiler.helios.Helios</mainClass>
                     <bundleName>Helios Decompiler</bundleName>
                     <iconFile>standalone-app.icns</iconFile>
