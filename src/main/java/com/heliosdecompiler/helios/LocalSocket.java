@@ -16,8 +16,6 @@
 
 package com.heliosdecompiler.helios;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -34,7 +32,7 @@ public class LocalSocket extends ServerSocket implements Runnable {
             try {
                 Socket socket = this.accept();
             } catch (Throwable e) {
-                ExceptionHandler.handle(e);
+//                ExceptionHandler.handle(e);
             }
         }
     }

@@ -17,13 +17,13 @@
 package com.heliosdecompiler.helios.gui.controller;
 
 import com.google.inject.Inject;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.RecentFileController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.gui.controller.tree.TreeCellFactory;
-import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;

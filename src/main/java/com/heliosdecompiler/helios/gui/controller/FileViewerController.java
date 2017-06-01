@@ -16,5 +16,25 @@
 
 package com.heliosdecompiler.helios.gui.controller;
 
+import com.google.inject.Inject;
+import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.TabPane;
+
 public class FileViewerController {
+
+    @Inject
+    private AllFilesViewerController allFilesViewerController;
+
+    @FXML
+    private TabPane root;
+
+    @FXML
+    public void initialize() {
+        root.setOnContextMenuRequested(event -> {
+            ContextMenu menu = allFilesViewerController.doOpenMenu(root);
+            menu.show(root.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+    }
 }

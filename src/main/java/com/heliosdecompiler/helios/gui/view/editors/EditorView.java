@@ -18,7 +18,6 @@ package com.heliosdecompiler.helios.gui.view.editors;
 
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import javafx.scene.Node;
-import javafx.scene.control.ContextMenu;
 
 import java.util.concurrent.CompletableFuture;
 

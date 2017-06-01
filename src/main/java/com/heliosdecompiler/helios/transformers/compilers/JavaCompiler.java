@@ -16,7 +16,6 @@
 
 package com.heliosdecompiler.helios.transformers.compilers;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.sun.tools.javac.main.Main;
 import org.apache.commons.io.FileUtils;
 
@@ -68,7 +67,7 @@ public class JavaCompiler extends Compiler {
                 return FileUtils.readFileToByteArray(classFile);
             }
         } catch (Exception e) {
-            ExceptionHandler.handle(e);
+//            ExceptionHandler.handle(e);
         } finally {
             FileUtils.deleteQuietly(javaFile);
             FileUtils.deleteQuietly(classFile);

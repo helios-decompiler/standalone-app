@@ -16,8 +16,6 @@
 
 package com.heliosdecompiler.helios.api.events;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
-
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -56,7 +54,7 @@ public class Events {
                             try {
                                 method.invoke(listener, consume);
                             } catch (Throwable e) {
-                                ExceptionHandler.handle(e);
+//                                ExceptionHandler.handle(e);
                             }
                         }
                     }
@@ -64,7 +62,7 @@ public class Events {
                     throw new IllegalArgumentException("Unknown event " + consume.getClass());
                 }
             } catch (Exception e) {
-                ExceptionHandler.handle(e);
+//                ExceptionHandler.handle(e);
             }
         });
     }

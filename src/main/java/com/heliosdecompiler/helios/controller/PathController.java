@@ -50,25 +50,29 @@ public class PathController {
 
     public void reload() {
         tasks.submit(new BackgroundTask(Message.TASK_RELOADING_PATH.format(), true, () -> {
-            List<OpenedFile> reloaded = new ArrayList<>();
-            List<File> reloadedFiles = new ArrayList<>();
-            List<String> path = configuration.getList(String.class, Settings.PATH_KEY, Collections.emptyList());
-            for (String filepath : path) {
-                File file = new File(filepath);
-                if (file.exists()) {
-                    reloaded.add(new OpenedFile(messageHandler, file));
-                    reloadedFiles.add(file);
-                }
-            }
-
-            lock.lock();
-            try {
-                pathOpenedFiles = reloaded;
-                pathFiles = reloadedFiles;
-            } finally {
-                lock.unlock();
-            }
+            reloadSync();
         }));
+    }
+
+    public void reloadSync() {
+        List<OpenedFile> reloaded = new ArrayList<>();
+        List<File> reloadedFiles = new ArrayList<>();
+        List<String> path = configuration.getList(String.class, Settings.PATH_KEY, Collections.emptyList());
+        for (String filepath : path) {
+            File file = new File(filepath);
+            if (file.exists()) {
+                reloaded.add(new OpenedFile(messageHandler, file));
+                reloadedFiles.add(file);
+            }
+        }
+
+        lock.lock();
+        try {
+            pathOpenedFiles = reloaded;
+            pathFiles = reloadedFiles;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public List<File> getFiles() {

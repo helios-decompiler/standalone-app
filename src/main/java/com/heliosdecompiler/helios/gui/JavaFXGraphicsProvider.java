@@ -18,13 +18,17 @@ package com.heliosdecompiler.helios.gui;
 
 import com.google.inject.Injector;
 import com.heliosdecompiler.helios.gui.controller.JavaFXMessageHandler;
+import com.heliosdecompiler.helios.gui.view.ErrorPopupView;
+import com.heliosdecompiler.helios.gui.view.ExceptionPopupView;
 import com.heliosdecompiler.helios.ui.GraphicsProvider;
 import com.heliosdecompiler.helios.ui.MessageHandler;
-import com.sun.javafx.application.LauncherImpl;
 import com.sun.javafx.application.PlatformImpl;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
+
+import javax.swing.*;
+import java.util.concurrent.CountDownLatch;
 
 public class JavaFXGraphicsProvider extends GraphicsProvider {
 
@@ -73,5 +77,44 @@ public class JavaFXGraphicsProvider extends GraphicsProvider {
     @Override
     public Class<? extends MessageHandler> getMessageHandlerImpl() {
         return JavaFXMessageHandler.class;
+    }
+
+    @Override
+    protected void handleStartupError0(String message, Throwable error) {
+        if (!isJavaFXInitialized()) {
+            forceInitializeJavaFX();
+        }
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            if (error != null) {
+                new ExceptionPopupView(null, message, error).setAllowReport(true).showAndWait();
+            } else {
+                new ErrorPopupView(null).withMessage(message).showAndWait();
+            }
+            countDownLatch.countDown();
+        });
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    private void forceInitializeJavaFX() {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        new Thread(() -> PlatformImpl.startup(countDownLatch::countDown)).start();
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    private boolean isJavaFXInitialized() {
+        try {
+            PlatformImpl.runLater(() -> {
+            });
+            return true;
+        } catch (IllegalStateException ignored) {
+            return false;
+        }
     }
 }

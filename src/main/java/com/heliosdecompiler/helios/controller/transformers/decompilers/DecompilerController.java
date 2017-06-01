@@ -31,7 +31,9 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 public abstract class DecompilerController<SettingObject> extends BaseTransformerController<SettingObject> {

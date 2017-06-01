@@ -18,125 +18,130 @@ package com.heliosdecompiler.helios;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.heliosdecompiler.helios.controller.LanguageController;
+import com.google.inject.Module;
 import com.heliosdecompiler.helios.controller.PathController;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.controller.ui.impl.UnsupportedUIController;
+import com.heliosdecompiler.helios.controller.ui.impl.WindowsUIController;
+import com.heliosdecompiler.helios.gui.JavaFXGraphicsProvider;
 import com.heliosdecompiler.helios.ui.GraphicsProvider;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.utils.OSUtils;
 import org.apache.commons.cli.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.XMLConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedBuilderParametersImpl;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Field;
+import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class Helios {
     public static void main(String[] args) {
-        try {
-            LanguageController languageController = new LanguageController(); // blehhhhhh
-            Message.init(languageController);
+        GraphicsProvider launcher = getGraphicsProvider();
 
-            GraphicsProvider launcher = getGraphicsProvider().newInstance();
+        try {
+            Configuration configuration;
+            try {
+                configuration = loadConfiguration();
+            } catch (ConfigurationException ex) {
+                launcher.handleStartupError(Message.STARTUP_FAILED_TO_LOAD_CONFIGURATION, ex);
+                System.exit(1);
+                return;
+            }
 
             launcher.startSplash();
             launcher.updateSplash(Message.STARTUP_PREPARING_ENVIRONMENT);
 
-            Field defaultCharset = Charset.class.getDeclaredField("defaultCharset");
-            defaultCharset.setAccessible(true);
-            defaultCharset.set(null, StandardCharsets.UTF_8);
-            if (!Charset.defaultCharset().equals(StandardCharsets.UTF_8))
-                throw new RuntimeException("Charset: " + Charset.defaultCharset());
+            // Force UTF-8 as charset if not already
+            if (!Charset.defaultCharset().equals(StandardCharsets.UTF_8)) {
+                try {
+                    Field defaultCharset = Charset.class.getDeclaredField("defaultCharset");
+                    defaultCharset.setAccessible(true);
+                    defaultCharset.set(null, StandardCharsets.UTF_8);
+                } catch (ReflectiveOperationException ex) {
+                    launcher.handleStartupError(Message.STARTUP_BAD_CHARSET, ex);
+                    System.exit(1);
+                    return;
+                }
+                if (!Charset.defaultCharset().equals(StandardCharsets.UTF_8)) {
+                    launcher.handleStartupError(Message.STARTUP_BAD_CHARSET, null);
+                    System.exit(1);
+                    return;
+                }
+            }
+
             if (!Constants.DATA_DIR.exists() && !Constants.DATA_DIR.mkdirs())
                 throw new RuntimeException("Could not create data directory");
-            if (!Constants.ADDONS_DIR.exists() && !Constants.ADDONS_DIR.mkdirs())
-                throw new RuntimeException("Could not create addons directory");
-            if (Constants.DATA_DIR.isFile())
-                throw new RuntimeException("Data directory is file");
-            if (Constants.ADDONS_DIR.isFile())
-                throw new RuntimeException("Addons directory is file");
 
-            EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
-
-            Configuration configuration = loadConfiguration();
-            Class<? extends UserInterfaceController> uiController = getUIControllerImpl();
-
-            Injector mainInjector = Guice.createInjector(
-                    new AbstractModule() {
-                        @Override
-                        protected void configure() {
-                            bind(MessageHandler.class).to(launcher.getMessageHandlerImpl());
-                            bind(UserInterfaceController.class).to(uiController);
-                            bind(Configuration.class).toInstance(configuration);
-                            bind(EventBus.class).toInstance(eventBus);
-                        }
-                    }
-            );
-
-            mainInjector.getInstance(UserInterfaceController.class).initialize();
+            Injector mainInjector = Guice.createInjector((Module) binder -> {
+                binder.bind(MessageHandler.class).to(launcher.getMessageHandlerImpl());
+                binder.bind(UserInterfaceController.class).to(getUIControllerImpl());
+                binder.bind(Configuration.class).toInstance(configuration);
+                binder.bind(EventBus.class).toInstance(new AsyncEventBus(Executors.newCachedThreadPool()));
+            });
 
             launcher.updateSplash(Message.STARTUP_LOADING_GRAPHICS);
             launcher.prepare(mainInjector);
 
+            launcher.updateSplash(Message.STARTUP_HANDLING_COMMANDLINE);
+            handleCommandLine(args, mainInjector);
+
+            launcher.updateSplash(Message.STARTUP_LOADING_PATH);
+            mainInjector.getInstance(PathController.class).reloadSync();
+
             launcher.updateSplash(Message.STARTUP_DONE);
             launcher.start();
 
-            mainInjector.getInstance(PathController.class).reload();
             mainInjector.getInstance(UpdateController.class).doUpdate();
-            handleCommandLine(args, mainInjector);
         } catch (Throwable t) {
-            displayError(t);
+            launcher.handleStartupError(Message.STARTUP_UNEXPECTED_ERROR, t);
             System.exit(1);
+            return;
         }
     }
 
-    public static Class<? extends GraphicsProvider> getGraphicsProvider() throws ClassNotFoundException {
-        return Class.forName(System.getProperty("com.heliosdecompiler.standaloneapp.GraphicsProvider", "com.heliosdecompiler.helios.gui.JavaFXGraphicsProvider")).asSubclass(GraphicsProvider.class);
-    }
-
-    public static void displayError(Throwable t) {
-        t.printStackTrace();
-        StringWriter writer = new StringWriter();
-        t.printStackTrace(new PrintWriter(writer));
-        JOptionPane.showMessageDialog(null, writer.toString(), t.getClass().getSimpleName(),
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    public static Class<? extends UserInterfaceController> getUIControllerImpl() throws ClassNotFoundException {
+    public static Class<? extends UserInterfaceController> getUIControllerImpl() {
         if (OSUtils.getOS() == OSUtils.OS.WINDOWS) {
-            return Class.forName("com.heliosdecompiler.helios.controller.ui.impl.WindowsUIController").asSubclass(UserInterfaceController.class);
+            return WindowsUIController.class;
         }
 
         return UnsupportedUIController.class;
     }
 
-    private static Configuration loadConfiguration() throws IOException, ConfigurationException {
-        Configurations configurations = new Configurations();
-        File file = Constants.SETTINGS_FILE_XML;
-        if (!file.exists()) {
-            XMLConfiguration tempConfiguration = new XMLConfiguration();
-            new FileHandler(tempConfiguration).save(file);
+    public static GraphicsProvider getGraphicsProvider() {
+        if (System.getProperty("com.heliosdecompiler.standaloneapp.GraphicsProvider") != null) {
+            try {
+                return Class.forName(System.getProperty("com.heliosdecompiler.standaloneapp.GraphicsProvider")).asSubclass(GraphicsProvider.class).newInstance();
+            } catch (Throwable ignored) {
+            }
         }
-        FileBasedConfigurationBuilder<XMLConfiguration> builder = configurations.xmlBuilder(file);
+
+        return new JavaFXGraphicsProvider();
+    }
+
+    private static Configuration loadConfiguration() throws ConfigurationException {
+        if (!Constants.SETTINGS_FILE_XML.exists()) {
+            new FileHandler(new XMLConfiguration()).save(Constants.SETTINGS_FILE_XML);
+        }
+        FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<>(XMLConfiguration.class).configure(new Parameters().xml().setFile(Constants.SETTINGS_FILE_XML));
         builder.setAutoSave(true);
         return builder.getConfiguration();
     }
@@ -164,7 +169,7 @@ public class Helios {
             }
 
             for (File file : open)
-                injector.getInstance(OpenedFileController.class).openFile(file);
+                injector.getInstance(OpenedFileController.class).openFileSync(file);
 
         } catch (ParseException e) {
             injector.getInstance(MessageHandler.class).handleException(Message.ERROR_UNKNOWN_ERROR.format(), e);

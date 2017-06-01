@@ -17,7 +17,5 @@
 package com.heliosdecompiler.helios.controller.ui;
 
 public interface UserInterfaceController {
-    void initialize();
-
     void registerInContextMenu();
 }

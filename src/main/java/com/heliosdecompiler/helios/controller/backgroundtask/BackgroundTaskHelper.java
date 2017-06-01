@@ -16,8 +16,10 @@
 
 package com.heliosdecompiler.helios.controller.backgroundtask;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
+import com.heliosdecompiler.helios.Message;
+import com.heliosdecompiler.helios.ui.MessageHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -38,6 +40,9 @@ public class BackgroundTaskHelper {
     private volatile int runningTasks = 0;
     private volatile long currentTaskId = 0;
 
+    @Inject
+    private MessageHandler messageHandler;
+
     @SuppressWarnings("deprecated")
     public Future<?> submit(BackgroundTask runnable) {
         Future<?> future = executor.submit(() -> {
@@ -48,7 +53,7 @@ public class BackgroundTaskHelper {
             runningTasks++;
 //            System.out.println("BEGIN EXECUTING " + System.identityHashCode(runnable));
             Thread thread = new Thread(runnable, System.identityHashCode(runnable) + " - " + currentTaskId++);
-            thread.setUncaughtExceptionHandler((t, e) -> ExceptionHandler.handle(e));
+            thread.setUncaughtExceptionHandler((t, e) -> messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), e));
             thread.start();
             try {
 //                System.out.println("JOINING " + System.identityHashCode(runnable));
@@ -61,7 +66,7 @@ public class BackgroundTaskHelper {
                     // Don't care
                 }
             } catch (Throwable t) {
-                ExceptionHandler.handle(t);
+                messageHandler.handleException(Message.ERROR_UNKNOWN_ERROR.format(), t);
             }
 //            System.out.println("DONE EXECUTING " + System.identityHashCode(runnable));
 //            while (thread.isAlive()) {

@@ -16,85 +16,72 @@
 
 package com.heliosdecompiler.helios.transformers.assemblers;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
-import com.heliosdecompiler.helios.utils.Either;
-import com.heliosdecompiler.helios.utils.Result;
-import org.apache.commons.io.FileUtils;
+public class SmaliAssembler {
 
-import java.io.File;
-import java.nio.file.Files;
-
-public class SmaliAssembler extends Assembler {
-
-    public SmaliAssembler() {
-        super("smali", "Smali");
-    }
-
-    @Override
-    public Either<Result, byte[]> assemble(String name, String contents) {
-        File tempDir = null;
-        File tempSmaliFolder = null;
-        File tempSmali = null;
-        File tempDex = null;
-        File tempJar = null;
-        File tempJarFolder = null;
-        try {
-            tempDir = Files.createTempDirectory("smali").toFile();
-            tempSmaliFolder = new File(tempDir, "smalifolder");
-            tempSmaliFolder.mkdir();
-
-            tempSmali = new File(tempDir, "temp.smali");
-            tempDex = new File(tempDir, "temp.dex");
-            tempJar = new File(tempDir, "temp.jar");
-            tempJarFolder = new File(tempDir, "temp-jar");
-
-            FileUtils.write(tempSmali, contents, "UTF-8", false);
+//    public Either<Result, byte[]> assemble(String name, String contents) {
+//        File tempDir = null;
+//        File tempSmaliFolder = null;
+//        File tempSmali = null;
+//        File tempDex = null;
+//        File tempJar = null;
+//        File tempJarFolder = null;
+//        try {
+//            tempDir = Files.createTempDirectory("smali").toFile();
+//            tempSmaliFolder = new File(tempDir, "smalifolder");
+//            tempSmaliFolder.mkdir();
+//
+//            tempSmali = new File(tempDir, "temp.smali");
+//            tempDex = new File(tempDir, "temp.dex");
+//            tempJar = new File(tempDir, "temp.jar");
+//            tempJarFolder = new File(tempDir, "temp-jar");
+//
+//            FileUtils.write(tempSmali, contents, "UTF-8", false);
+////            try {
+////                SmaliOptions smaliOptions = new SmaliOptions();
+////                smaliOptions.outputDexFile = tempDex.getAbsolutePath();
+////                org.jf.smali.main.run(smaliOptions, tempSmaliFolder.getAbsolutePath());
+////            } catch (Exception e) {
+////                ExceptionHandler.handle(e);
+////            }
+//
+//
+////            if (Settings.APK_CONVERSION.get().asString().equals(Converter.ENJARIFY.getId())) {
+////                Converter.ENJARIFY.convert(tempDex, tempJar);
+////            } else if (Settings.APK_CONVERSION.get().asString().equals(Converter.DEX2JAR.getId())) {
+////                Converter.DEX2JAR.convert(tempDex, tempJar);
+////            }
+//            //todo yeah
+////            ZipUtil.unpack(tempJar, tempJarFolder);
+//
+//            File outputClass = null;
+//            boolean found = false;
+//            File current = tempJarFolder;
 //            try {
-//                SmaliOptions smaliOptions = new SmaliOptions();
-//                smaliOptions.outputDexFile = tempDex.getAbsolutePath();
-//                org.jf.smali.main.run(smaliOptions, tempSmaliFolder.getAbsolutePath());
-//            } catch (Exception e) {
-//                ExceptionHandler.handle(e);
+//                while (!found) {
+//                    File f = current.listFiles()[0];
+//                    if (f.isDirectory()) current = f;
+//                    else {
+//                        outputClass = f;
+//                        found = true;
+//                    }
+//
+//                }
+//
+//                return Either.right(org.apache.commons.io.FileUtils.readFileToByteArray(outputClass));
+//            } catch (java.lang.NullPointerException e) {
+//
 //            }
-
-
-//            if (Settings.APK_CONVERSION.get().asString().equals(Converter.ENJARIFY.getId())) {
-//                Converter.ENJARIFY.convert(tempDex, tempJar);
-//            } else if (Settings.APK_CONVERSION.get().asString().equals(Converter.DEX2JAR.getId())) {
-//                Converter.DEX2JAR.convert(tempDex, tempJar);
-//            }
-            //todo yeah
-//            ZipUtil.unpack(tempJar, tempJarFolder);
-
-            File outputClass = null;
-            boolean found = false;
-            File current = tempJarFolder;
-            try {
-                while (!found) {
-                    File f = current.listFiles()[0];
-                    if (f.isDirectory()) current = f;
-                    else {
-                        outputClass = f;
-                        found = true;
-                    }
-
-                }
-
-                return Either.right(org.apache.commons.io.FileUtils.readFileToByteArray(outputClass));
-            } catch (java.lang.NullPointerException e) {
-
-            }
-        } catch (Exception e) {
-            ExceptionHandler.handle(e);
-        } finally {
-            FileUtils.deleteQuietly(tempDir);
-            FileUtils.deleteQuietly(tempSmaliFolder);
-            FileUtils.deleteQuietly(tempSmali);
-            FileUtils.deleteQuietly(tempDex);
-            FileUtils.deleteQuietly(tempJar);
-            FileUtils.deleteQuietly(tempJarFolder);
-        }
-        // todo fixme
-        return Either.left(null);
-    }
+//        } catch (Exception e) {
+////            ExceptionHandler.handle(e);
+//        } finally {
+//            FileUtils.deleteQuietly(tempDir);
+//            FileUtils.deleteQuietly(tempSmaliFolder);
+//            FileUtils.deleteQuietly(tempSmali);
+//            FileUtils.deleteQuietly(tempDex);
+//            FileUtils.deleteQuietly(tempJar);
+//            FileUtils.deleteQuietly(tempJarFolder);
+//        }
+//        // todo fixme
+//        return Either.left(null);
+//    }
 }

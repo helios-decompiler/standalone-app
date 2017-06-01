@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.gui.controller;
 
 import com.cathive.fx.guice.GuiceFXMLLoader;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.gui.controller.editors.EditorController;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Singleton
 public class AllFilesViewerController extends NestedController<MainViewController> {
 
     @FXML
@@ -65,7 +67,6 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
         stage.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.T) {
                 if (!isMenuOpen) {
-                    isMenuOpen = true;
                     openOpenNewTabMenu();
                 }
             }
@@ -95,20 +96,26 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
     public void openOpenNewTabMenu() {
         if (root.getSelectionModel().getSelectedItem() != null) {
             Tab selectedFile = root.getSelectionModel().getSelectedItem();
-            ContextMenu contextMenu = new ContextMenu();
-            for (EditorView ev : editorController.getRegisteredEditors()) {
-                MenuItem item = new MenuItem(ev.getDisplayName());
-                item.setOnAction(event -> {
-                    openNewEditor(selectedFile, ev);
-                });
-                contextMenu.getItems().add(item);
-            }
-            contextMenu.setOnHidden(event -> {
-                isMenuOpen = false;
-            });
+            ContextMenu contextMenu = doOpenMenu((TabPane) selectedFile.getContent());
             Point p = MouseInfo.getPointerInfo().getLocation();
             contextMenu.show(root.getScene().getWindow(), p.x, p.y);
         }
+    }
+
+    public ContextMenu doOpenMenu(TabPane target) {
+        isMenuOpen = true;
+        ContextMenu contextMenu = new ContextMenu();
+        for (EditorView ev : editorController.getRegisteredEditors()) {
+            MenuItem item = new MenuItem(ev.getDisplayName());
+            item.setOnAction(event -> {
+                openNewEditor(target, ev);
+            });
+            contextMenu.getItems().add(item);
+        }
+        contextMenu.setOnHidden(event -> {
+            isMenuOpen = false;
+        });
+        return contextMenu;
     }
 
     public boolean handleClick(TreeNode value) {
@@ -156,9 +163,9 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
         try {
             GuiceFXMLLoader.Result tabResult = loader.load(getClass().getResource("/views/fileViewer.fxml"));
             TabPane fileTabPane = tabResult.getRoot();
+            fileTabPane.setUserData(new FileTabProperties(file, (String) node.getMetadata().get(OpenedFile.FULL_PATH_KEY)));
             Tab allFilesTab = new Tab(node.getDisplayName());
             allFilesTab.setContent(fileTabPane);
-            allFilesTab.setUserData(new FileTabProperties(file, (String) node.getMetadata().get(OpenedFile.FULL_PATH_KEY)));
             allFilesTab.setOnClosed(event -> {
                 fileTabs.remove(uniqueKey);
             });
@@ -168,15 +175,14 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
             root.getTabs().add(allFilesTab);
             root.getSelectionModel().select(allFilesTab);
 
-            openNewEditor(allFilesTab, defaultTransformer);
+            openNewEditor(fileTabPane, defaultTransformer);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void openNewEditor(Tab fileTab, EditorView editor) {
-        FileTabProperties properties = (FileTabProperties) fileTab.getUserData();
-        TabPane filePane = (TabPane) fileTab.getContent();
+    private void openNewEditor(TabPane filePane, EditorView editor) {
+        FileTabProperties properties = (FileTabProperties) filePane.getUserData();
         if (properties.getOpenedEditors().containsKey(editor.getDisplayName())) {
             Tab tab = properties.getOpenedEditors().get(editor.getDisplayName());
             filePane.getSelectionModel().select(tab);

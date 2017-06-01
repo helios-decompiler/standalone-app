@@ -18,6 +18,7 @@ package com.heliosdecompiler.helios.gui.view.editors;
 
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.Settings;
 import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
@@ -25,7 +26,6 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
-import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.TransformationException;

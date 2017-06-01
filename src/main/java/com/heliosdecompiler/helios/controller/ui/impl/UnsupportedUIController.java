@@ -18,8 +18,8 @@ package com.heliosdecompiler.helios.controller.ui.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.Message;
+import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 
 @Singleton
@@ -27,11 +27,6 @@ public class UnsupportedUIController implements UserInterfaceController {
 
     @Inject
     private MessageHandler messageHandler;
-
-    @Override
-    public void initialize() {
-
-    }
 
     @Override
     public void registerInContextMenu() {

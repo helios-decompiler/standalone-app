@@ -16,7 +16,6 @@
 
 package com.heliosdecompiler.helios.gui.view;
 
-import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.gui.helper.DialogHelper;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -94,5 +93,10 @@ public class ExceptionPopupView {
         alert.getDialogPane().setExpandableContent(expContent);
 
         return alert;
+    }
+
+    public ExceptionPopupView setAllowReport(boolean allowReport) {
+        this.allowReport = allowReport;
+        return this;
     }
 }

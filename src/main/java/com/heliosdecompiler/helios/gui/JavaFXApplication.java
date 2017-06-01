@@ -18,20 +18,19 @@ package com.heliosdecompiler.helios.gui;
 
 import com.cathive.fx.guice.GuiceApplication;
 import com.cathive.fx.guice.GuiceFXMLLoader;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import com.heliosdecompiler.helios.Helios;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.UpdateController;
-import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
-import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
-import com.heliosdecompiler.helios.gui.controller.AllFilesViewerController;
-import com.heliosdecompiler.helios.gui.controller.MenuBarController;
 import com.heliosdecompiler.helios.gui.controller.editors.DisassemblerViewFactory;
 import com.heliosdecompiler.helios.gui.controller.editors.EditorController;
 import com.heliosdecompiler.helios.gui.view.editors.DisassemblerView;
 import com.heliosdecompiler.helios.ui.MessageHandler;
-import com.sun.glass.ui.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -82,7 +81,7 @@ public class JavaFXApplication extends GuiceApplication {
             INSTANCE.set(this);
             FINISHED_STARTUP_FUTURE.complete(null);
         } catch (Throwable t) {
-            Helios.displayError(t);
+            getInjector().getInstance(MessageHandler.class).handleException(Message.ERROR_UNKNOWN_ERROR.format(), t);
             System.exit(1);
         }
     }

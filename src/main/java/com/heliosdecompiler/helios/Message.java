@@ -16,13 +16,21 @@
 
 package com.heliosdecompiler.helios;
 
-import com.heliosdecompiler.helios.controller.LanguageController;
+import java.util.Arrays;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 public enum Message {
     // Startup
     STARTUP_PREPARING_ENVIRONMENT("startup.preparing-environment"),
     STARTUP_LOADING_GRAPHICS("startup.loading-graphics"),
+    STARTUP_HANDLING_COMMANDLINE("startup.handling-commandline"),
+    STARTUP_LOADING_PATH("startup.loading-path"),
     STARTUP_DONE("startup.done"),
+
+    STARTUP_FAILED_TO_LOAD_CONFIGURATION("startup.failed-to-load-configuration"),
+    STARTUP_BAD_CHARSET("startup.bad-charset"),
+    STARTUP_UNEXPECTED_ERROR("startup.unexpected-error"),
 
     // Updater
     UPDATER_UPDATE_FOUND("updater.update-found", 2),
@@ -71,14 +79,7 @@ public enum Message {
     COULD_NOT_LOCATE_JAVA("could-not-locate-java", 1),
     ;
 
-    private static LanguageController languageController;
-
-    public static void init(LanguageController languageController) {
-        if (Message.languageController != null) {
-            throw new IllegalArgumentException("Already initialized");
-        }
-        Message.languageController = languageController;
-    }
+    private static ResourceBundle bundle = ResourceBundle.getBundle("HeliosStandaloneLang");
 
     private String messageKey;
     private int args;
@@ -101,7 +102,7 @@ public enum Message {
     }
 
     public String getText() {
-        return format("").getText();
+        return format().getText();
     }
 
     public String getMessageKey() {
@@ -127,7 +128,11 @@ public enum Message {
         }
 
         public String getText() {
-            return languageController.getLang(this);
+            try {
+                return String.format(bundle.getString(getError().getMessageKey()), (Object[]) getArgs());
+            } catch (MissingResourceException e) {
+                return getError().getMessageKey() + " " + Arrays.toString(getArgs());
+            }
         }
     }
 }

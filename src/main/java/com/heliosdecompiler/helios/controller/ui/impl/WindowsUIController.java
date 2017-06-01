@@ -18,9 +18,9 @@ package com.heliosdecompiler.helios.controller.ui.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.controller.UpdateController;
 import com.heliosdecompiler.helios.controller.ui.UserInterfaceController;
-import com.heliosdecompiler.helios.Message;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
 import com.heliosdecompiler.helios.utils.OSUtils;
@@ -37,11 +37,6 @@ public class WindowsUIController implements UserInterfaceController {
 
     @Inject
     private UpdateController updateController;
-
-    @Override
-    public void initialize() {
-
-    }
 
     public void registerInContextMenu() {
         try {

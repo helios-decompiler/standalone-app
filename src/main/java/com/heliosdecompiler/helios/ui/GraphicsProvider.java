@@ -47,4 +47,10 @@ public abstract class GraphicsProvider {
     public abstract void start();
 
     public abstract Class<? extends MessageHandler> getMessageHandlerImpl();
+
+    public void handleStartupError(Message message, Throwable error) {
+        handleStartupError0(message.getText(), error);
+    }
+
+    protected abstract void handleStartupError0(String message, Throwable error);
 }

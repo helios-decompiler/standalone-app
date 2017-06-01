@@ -16,7 +16,6 @@
 
 package com.heliosdecompiler.helios;
 
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import javafx.scene.image.Image;
 import org.apache.commons.io.IOUtils;
 
@@ -53,7 +52,7 @@ public enum Resources {
             try {
                 resources.data = IOUtils.toByteArray(Resources.class.getResourceAsStream(resources.filePath));
             } catch (IOException exception) {
-                ExceptionHandler.handle(exception);
+//                ExceptionHandler.handle(exception);
             }
         }
     }

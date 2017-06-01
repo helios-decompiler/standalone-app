@@ -20,7 +20,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.heliosdecompiler.helios.Helios;
 import com.heliosdecompiler.helios.api.Addon;
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -66,7 +65,7 @@ public class JarLauncher extends AddonHandler {
                 throw new IllegalArgumentException("No addon.json found");
             }
         } catch (Exception e) {
-            ExceptionHandler.handle(e);
+//            ExceptionHandler.handle(e);
         } finally {
             IOUtils.closeQuietly(jarFile);
             IOUtils.closeQuietly(inputStream);

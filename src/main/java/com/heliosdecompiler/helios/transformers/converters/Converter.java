@@ -18,7 +18,6 @@ package com.heliosdecompiler.helios.transformers.converters;
 
 import com.heliosdecompiler.helios.Constants;
 import com.heliosdecompiler.helios.controller.ProcessController;
-import com.heliosdecompiler.helios.handler.ExceptionHandler;
 import com.heliosdecompiler.helios.transformers.Transformer;
 
 import java.io.File;
@@ -44,7 +43,7 @@ public abstract class Converter extends Transformer {
                 Process process = ((ProcessController) null).launchProcess(pb);
                 process.waitFor();
             } catch (Exception e) {
-                ExceptionHandler.handle(e);
+//                ExceptionHandler.handle(e);
             }
         }
     };
@@ -55,7 +54,7 @@ public abstract class Converter extends Transformer {
                 com.googlecode.dex2jar.tools.Dex2jarCmd.main("-o", "-n", out.getAbsolutePath(), "--force",
                         in.getAbsolutePath());
             } catch (Exception e) {
-                ExceptionHandler.handle(e);
+//                ExceptionHandler.handle(e);
             }
         }
     };

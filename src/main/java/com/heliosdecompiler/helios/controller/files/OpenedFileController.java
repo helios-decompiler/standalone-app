@@ -49,10 +49,14 @@ public class OpenedFileController {
     }
 
     public void openFile(File selectedFile) {
-        recentFileController.addRecentFile(selectedFile);
         backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_LOADING_FILE.format(selectedFile.getName()), true, () -> {
-            this.loadedFiles.put(selectedFile.getName(), new OpenedFile(messageHandler, selectedFile));
+            openFileSync(selectedFile);
         }));
+    }
+
+    public void openFileSync(File selectedFile) {
+        recentFileController.addRecentFile(selectedFile);
+        this.loadedFiles.put(selectedFile.getName(), new OpenedFile(messageHandler, selectedFile));
     }
 
     public ObservableMap<String, OpenedFile> loadedFiles() {
