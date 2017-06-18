@@ -3,7 +3,7 @@
 
 Helios is an all-in-one Java reverse engineering tool. It features integration with the latest up-to-date decompilers.
 
-If you want to download the latest version, check out the FAQ down below
+If you want to download the latest version, check out [the CI server](https://ci.samczsun.com/job/helios-decompiler/job/Standalone%20App/) 
 
 There are several keybinds that can be used. To open a new file, simply use `Ctrl-O`. Arrow keys can be used to
 navigate the file tree. Enter or clicking a file will open that file into the editor view.
