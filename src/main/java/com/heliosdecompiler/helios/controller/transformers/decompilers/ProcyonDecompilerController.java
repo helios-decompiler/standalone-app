@@ -39,7 +39,7 @@ public class ProcyonDecompilerController extends DecompilerController<Decompiler
     @Override
     protected void registerSettings() {
         registerSetting(Boolean.class, new RawBooleanSetting("includelinenumbers", "Include line numbers in raw bytecode mode", true, DecompilerSettings::setIncludeLineNumbersInBytecode));
-        registerSetting(Boolean.class, new RawBooleanSetting("showsyntheticmembers", "Show synthetic (compiler-generated) members.", false, DecompilerSettings::setShowSyntheticMembers));
+        registerSetting(Boolean.class, new RawBooleanSetting("showsyntheticmembers", "Show synthetic (compiler-generated) members.", true, DecompilerSettings::setShowSyntheticMembers));
         registerSetting(Boolean.class, new RawBooleanSetting("genexforcatch", "Always generate exception variables for catch blocks", true, DecompilerSettings::setAlwaysGenerateExceptionVariableForCatchBlocks));
         registerSetting(Boolean.class, new RawBooleanSetting("forceexplicitimports", "[DEPRECATED] Explicit imports are now enabled by default.  This option will be removed in a future release.", false, DecompilerSettings::setForceExplicitImports));
         registerSetting(Boolean.class, new RawBooleanSetting("forceexplicittypeargs", "Always print type arguments to generic methods.", false, DecompilerSettings::setForceExplicitTypeArguments));

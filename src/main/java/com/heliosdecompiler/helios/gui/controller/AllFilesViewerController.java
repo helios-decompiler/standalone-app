@@ -139,7 +139,7 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
 
         OpenedFile file = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
 
-        EditorView defaultTransformer = StandardEditors.HEX;
+        EditorView defaultTransformer = StandardEditors.TEXT;
 
 //        String extension = node.getDisplayName();
 //        if (extension.lastIndexOf('.') != -1) {
@@ -175,7 +175,7 @@ public class AllFilesViewerController extends NestedController<MainViewControlle
             root.getTabs().add(allFilesTab);
             root.getSelectionModel().select(allFilesTab);
 
-            openNewEditor(fileTabPane, defaultTransformer);
+//            openNewEditor(fileTabPane, defaultTransformer);
         } catch (IOException e) {
             e.printStackTrace();
         }

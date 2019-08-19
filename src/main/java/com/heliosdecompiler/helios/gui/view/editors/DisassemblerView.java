@@ -27,6 +27,7 @@ import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.DisassemblerController;
 import com.heliosdecompiler.helios.controller.transformers.disassemblers.KrakatauDisassemblerController;
 import com.heliosdecompiler.helios.ui.MessageHandler;
+import com.heliosdecompiler.transformerapi.FileContents;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.TransformationException;
 import com.heliosdecompiler.transformerapi.TransformationResult;
@@ -103,7 +104,7 @@ public class DisassemblerView extends EditorView {
                 settings.setProcessCreator(processController::launchProcess);
 
                 try {
-                    TransformationResult<byte[]> result = StandardTransformers.Assemblers.KRAKATAU.assemble(assembledCode, settings);
+                    TransformationResult<byte[]> result = StandardTransformers.Assemblers.KRAKATAU.assemble(FileContents.construct("source.j", assembledCode), settings);
                     if (result.getTransformationData().size() == 1) {
                         future.complete(result.getTransformationData().values().iterator().next());
                     } else {

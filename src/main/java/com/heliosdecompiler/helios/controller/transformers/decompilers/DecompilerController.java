@@ -24,7 +24,7 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
 import com.heliosdecompiler.helios.controller.transformers.TransformerType;
-import com.heliosdecompiler.transformerapi.ClassData;
+import com.heliosdecompiler.transformerapi.FileContents;
 import com.heliosdecompiler.transformerapi.TransformationResult;
 import com.heliosdecompiler.transformerapi.decompilers.Decompiler;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -61,17 +61,17 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
                     consumer.accept(false, pre);
                 } else {
                     byte[] data = file.getContent(path);
-                    ClassData cd = ClassData.construct(data);
+                    FileContents cd = FileContents.fromClass(data);
 
                     TransformationResult<String> transformationResult = decompiler.decompile(Collections.singleton(cd), createSettings(), getClasspath(file));
 
                     Map<String, String> results = transformationResult.getTransformationData();
 
                     System.out.println("Results: " + results.keySet());
-                    System.out.println("Looking for: " + StringEscapeUtils.escapeJava(cd.getInternalName()));
+                    System.out.println("Looking for: " + StringEscapeUtils.escapeJava(cd.getName()));
 
-                    if (results.containsKey(cd.getInternalName())) {
-                        consumer.accept(true, results.get(cd.getInternalName()));
+                    if (results.containsKey(cd.getName())) {
+                        consumer.accept(true, results.get(cd.getName()));
                     } else {
                         StringBuilder output = new StringBuilder();
                         output.append("An error has occurred while decompiling this file.\r\n")
@@ -99,21 +99,21 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
         }));
     }
 
-    protected Map<String, ClassData> getClasspath(OpenedFile thisFile) {
-        Map<String, ClassData> map = new HashMap<>();
+    protected Map<String, FileContents> getClasspath(OpenedFile thisFile) {
+        Map<String, FileContents> map = new HashMap<>();
 
         for (Map.Entry<String, byte[]> ent : thisFile.getContents().entrySet()) {
-            ClassData data = ClassData.construct(ent.getValue());
-            if (data != null && !map.containsKey(data.getInternalName())) {
-                map.put(data.getInternalName(), data);
+            FileContents data = FileContents.fromClass(ent.getValue());
+            if (data != null && !map.containsKey(data.getName())) {
+                map.put(data.getName(), data);
             }
         }
 
         for (OpenedFile file : pathController.getOpenedFiles()) {
             for (Map.Entry<String, byte[]> ent : file.getContents().entrySet()) {
-                ClassData data = ClassData.construct(ent.getValue());
-                if (data != null && !map.containsKey(data.getInternalName())) {
-                    map.put(data.getInternalName(), data);
+                FileContents data = FileContents.fromClass(ent.getValue());
+                if (data != null && !map.containsKey(data.getName())) {
+                    map.put(data.getName(), data);
                 }
             }
         }
@@ -122,7 +122,7 @@ public abstract class DecompilerController<SettingObject> extends BaseTransforme
     }
     protected String preDecompile(OpenedFile file, String path) {
         byte[] data = file.getContent(path);
-        ClassData cd = ClassData.construct(data);
+        FileContents cd = FileContents.fromClass(data);
         return cd == null ? "Could not decompile - are you sure that's a class file?" : null;
     }
 

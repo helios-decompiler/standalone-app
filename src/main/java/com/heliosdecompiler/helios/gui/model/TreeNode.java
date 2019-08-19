@@ -24,17 +24,22 @@ import java.util.Map;
 
 public class TreeNode {
 
+    private final String name;
     private final String displayName;
     private final TreeNode parent;
     private final Map<String, TreeNode> children = new HashMap<>(0);
     private final Map<String, Object> metadata = new HashMap<>(0);
 
-    public TreeNode(String displayName) {
-        this.parent = null;
-        this.displayName = displayName;
+    public TreeNode(String name) {
+        this(null, name);
     }
 
-    public TreeNode(TreeNode parent, String displayName) {
+    public TreeNode(TreeNode parent, String name) {
+        this(parent, name, name);
+    }
+
+    public TreeNode(TreeNode parent, String name, String displayName) {
+        this.name = name;
         this.displayName = displayName;
         this.parent = parent;
     }
@@ -51,8 +56,8 @@ public class TreeNode {
         return children.values();
     }
 
-    public TreeNode getChild(String displayName) {
-        return this.children.get(displayName);
+    public TreeNode getChild(String name) {
+        return this.children.get(name);
     }
 
     public Map<String, Object> getMetadata() {
@@ -67,9 +72,13 @@ public class TreeNode {
         return this.metadata.containsKey(key) && this.metadata.get(key) instanceof Boolean && (Boolean) this.metadata.get(key);
     }
 
-    public TreeNode createChild(String displayName) {
-        TreeNode child = new TreeNode(this, displayName);
-        this.children.put(displayName, child);
+    public TreeNode createChild(String name) {
+        return createChild(name, name);
+    }
+
+    public TreeNode createChild(String name, String displayName) {
+        TreeNode child = new TreeNode(this, name, displayName);
+        this.children.put(name, child);
         return child;
     }
 
@@ -78,12 +87,12 @@ public class TreeNode {
         if (this == o) return true;
         if (!(o instanceof TreeNode)) return false;
         TreeNode treeNode = (TreeNode) o;
-        return Objects.equal(displayName, treeNode.displayName) &&
+        return Objects.equal(name, treeNode.name) &&
                 Objects.equal(parent, treeNode.parent);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(displayName, parent);
+        return Objects.hashCode(name, parent);
     }
 }

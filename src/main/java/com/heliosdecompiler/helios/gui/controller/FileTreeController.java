@@ -23,7 +23,7 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTask;
 import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelper;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.files.OpenedFileController;
-import com.heliosdecompiler.helios.gui.controller.tree.TreeCellFactory;
+import com.heliosdecompiler.helios.gui.controller.tree.DefaultTreeCell;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import com.heliosdecompiler.helios.ui.MessageHandler;
 import com.heliosdecompiler.helios.ui.views.file.FileFilter;
@@ -36,12 +36,11 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -69,56 +68,112 @@ public class FileTreeController extends NestedController<MainViewController> {
     private RecentFileController recentFileController;
     private Map<TreeNode, TreeItem<TreeNode>> itemMap = new HashMap<>();
 
+    private ContextMenu getContextMenu(TreeNode node) {
+        if (node.getParent() == null) {
+            ContextMenu export = new ContextMenu();
+
+            MenuItem exportItem = new MenuItem("Export as Archive");
+
+            export.setOnAction(e -> {
+                File file = messageHandler.chooseFile()
+                        .withInitialDirectory(new File("."))
+                        .withTitle(Message.GENERIC_CHOOSE_EXPORT_LOCATION_JAR.format())
+                        .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), "*.jar"), true)
+                        .promptSave();
+
+                OpenedFile openedFile = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
+
+                Map<String, byte[]> clone = new HashMap<>(openedFile.getContents());
+
+                backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_SAVING_FILE.format(node.getDisplayName()), true, () -> {
+                    try {
+                        if (!file.exists()) {
+                            if (!file.createNewFile()) {
+                                throw new IOException("Could not create export file");
+                            }
+                        }
+
+                        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
+                            for (Map.Entry<String, byte[]> ent : clone.entrySet()) {
+                                ZipEntry zipEntry = new ZipEntry(ent.getKey());
+                                zipOutputStream.putNextEntry(zipEntry);
+                                zipOutputStream.write(ent.getValue());
+                                zipOutputStream.closeEntry();
+                            }
+                        }
+
+                        messageHandler.handleMessage(Message.GENERIC_EXPORTED.format());
+                    } catch (IOException ex) {
+                        messageHandler.handleException(Message.ERROR_IOEXCEPTION_OCCURRED.format(), ex);
+                    }
+                }));
+            });
+
+            export.getItems().add(exportItem);
+            return export;
+        } else if (node.testFlag(OpenedFile.IS_LEAF)) {
+            ContextMenu export = new ContextMenu();
+
+            MenuItem exportItem = new MenuItem("Export as File");
+
+            export.setOnAction(e -> {
+                File file = messageHandler.chooseFile()
+                        .withInitialDirectory(new File("."))
+                        .withTitle(Message.GENERIC_CHOOSE_EXPORT_LOCATION_JAR.format())
+                        .withExtensionFilter(new FileFilter(Message.FILETYPE_ANY.format(), "*.*"), true)
+                        .promptSave();
+
+                OpenedFile openedFile = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
+
+                backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_SAVING_FILE.format(node.getDisplayName()), true, () -> {
+                    try {
+                        if (!file.exists()) {
+                            if (!file.createNewFile()) {
+                                throw new IOException("Could not create export file");
+                            }
+                        }
+
+                        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+                            outputStream.write(openedFile.getContent((String) node.getMetadata().get(OpenedFile.FULL_PATH_KEY)));
+                        }
+
+                        messageHandler.handleMessage(Message.GENERIC_EXPORTED.format());
+                    } catch (IOException ex) {
+                        messageHandler.handleException(Message.ERROR_IOEXCEPTION_OCCURRED.format(), ex);
+                    }
+                }));
+            });
+
+            export.getItems().add(exportItem);
+            return export;
+        }
+        return null;
+    }
+
     @FXML
     public void initialize() {
         this.rootItem = new TreeItem<>(new TreeNode("[root]"));
         this.root.setRoot(this.rootItem);
-        this.root.setCellFactory(new TreeCellFactory<>(node -> {
-            if (node.getParent() == null) {
-                ContextMenu export = new ContextMenu();
+        this.root.setCellFactory(node -> {
+            Tooltip tooltip = new Tooltip();
+            return new DefaultTreeCell<TreeNode>(FileTreeController.this::getContextMenu) {
+                @Override
+                public void updateItem(TreeNode item, boolean empty) {
+                    super.updateItem(item, empty);
 
-                MenuItem exportItem = new MenuItem("Export");
-
-                export.setOnAction(e -> {
-                    File file = messageHandler.chooseFile()
-                            .withInitialDirectory(new File("."))
-                            .withTitle(Message.GENERIC_CHOOSE_EXPORT_LOCATION_JAR.format())
-                            .withExtensionFilter(new FileFilter(Message.FILETYPE_JAVA_ARCHIVE.format(), "*.jar"), true)
-                            .promptSave();
-
-                    OpenedFile openedFile = (OpenedFile) node.getMetadata().get(OpenedFile.OPENED_FILE);
-
-                    Map<String, byte[]> clone = new HashMap<>(openedFile.getContents());
-
-                    backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_SAVING_FILE.format(node.getDisplayName()), true, () -> {
-                        try {
-                            if (!file.exists()) {
-                                if (!file.createNewFile()) {
-                                    throw new IOException("Could not create export file");
-                                }
-                            }
-
-                            try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file))) {
-                                for (Map.Entry<String, byte[]> ent : clone.entrySet()) {
-                                    ZipEntry zipEntry = new ZipEntry(ent.getKey());
-                                    zipOutputStream.putNextEntry(zipEntry);
-                                    zipOutputStream.write(ent.getValue());
-                                    zipOutputStream.closeEntry();
-                                }
-                            }
-
-                            messageHandler.handleMessage(Message.GENERIC_EXPORTED.format());
-                        } catch (IOException ex) {
-                            messageHandler.handleException(Message.ERROR_IOEXCEPTION_OCCURRED.format(), ex);
+                    if (empty) {
+                        setTooltip(null);
+                    } else {
+                        String escaped = StringEscapeUtils.escapeJava(item.getDisplayName());
+                        if (!escaped.equals(item.getDisplayName())) {
+                            setText(escaped);
+                            tooltip.setText(item.getDisplayName());
+                            setTooltip(tooltip);
                         }
-                    }));
-                });
-
-                export.getItems().add(exportItem);
-                return export;
-            }
-            return null;
-        }));
+                    }
+                }
+            };
+        });
 
         root.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -260,20 +315,39 @@ public class FileTreeController extends NestedController<MainViewController> {
         event.consume();
     }
 
-    public InputStream getIconForTreeItem(TreeNode node) {
+    private static Map<String, Image> CACHED_RESOURCES = new HashMap<>();
+
+    static {
+        try {
+            loadResource("/res/jar.png");
+            loadResource("/res/file.png");
+            loadResource("/res/package.png");
+            loadResource("/res/class.png");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void loadResource(String name) throws IOException {
+        InputStream inputStream = FileTreeController.class.getResourceAsStream(name);
+        byte[] data = IOUtils.toByteArray(inputStream);
+        CACHED_RESOURCES.put(name, new Image(new ByteArrayInputStream(data)));
+    }
+
+    public Image getIconForTreeItem(TreeNode node) {
         if (node.testFlag(OpenedFile.IS_ROOT_FILE)) {
             if (node.getDisplayName().endsWith(".jar")) {
-                return getClass().getResourceAsStream("/res/jar.png");
+                return CACHED_RESOURCES.get("/res/jar.png");
             } else {
-                return getClass().getResourceAsStream("/res/file.png");
+                return CACHED_RESOURCES.get("/res/file.png");
             }
         } else {
             if (node.getChildren().size() > 0) {
-                return getClass().getResourceAsStream("/res/package.png");
+                return CACHED_RESOURCES.get("/res/package.png");
             } else if (node.getDisplayName().endsWith(".class")) {
-                return getClass().getResourceAsStream("/res/class.png");
+                return CACHED_RESOURCES.get("/res/class.png");
             } else {
-                return getClass().getResourceAsStream("/res/file.png");
+                return CACHED_RESOURCES.get("/res/file.png");
             }
         }
     }
@@ -292,6 +366,7 @@ public class FileTreeController extends NestedController<MainViewController> {
         ArrayDeque<TreeNode> queue = new ArrayDeque<>();
         queue.addAll(add);
 
+        List<FutureTask<Void>> callables = new ArrayList<>();
         while (!queue.isEmpty()) {
             TreeNode thisNode = queue.pop();
 
@@ -311,17 +386,13 @@ public class FileTreeController extends NestedController<MainViewController> {
                     thisItem.getChildren().get(0).setExpanded(true);
                 }
             });
-            thisItem.setGraphic(new ImageView(new Image(getIconForTreeItem(thisNode))));
+            thisItem.setGraphic(new ImageView(getIconForTreeItem(thisNode)));
             FutureTask<Void> call = new FutureTask<>(() -> {
                 parent.getChildren().add(thisItem);
                 return null;
             });
             Platform.runLater(call);
-            try {
-                call.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
+            callables.add(call);
 
             itemMap.put(thisNode, thisItem);
 
@@ -344,13 +415,17 @@ public class FileTreeController extends NestedController<MainViewController> {
                     return null;
                 });
                 Platform.runLater(call);
-                try {
-                    call.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
+                callables.add(call);
             }
         }
+
+        callables.forEach(call -> {
+            try {
+                call.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
 
         queue.addAll(remove);
 

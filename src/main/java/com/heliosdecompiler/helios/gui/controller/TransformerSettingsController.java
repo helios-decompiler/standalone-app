@@ -23,7 +23,7 @@ import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.helios.controller.configuration.Troolean;
 import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
 import com.heliosdecompiler.helios.controller.transformers.TransformerController;
-import com.heliosdecompiler.helios.gui.controller.tree.TreeCellFactory;
+import com.heliosdecompiler.helios.gui.controller.tree.DefaultTreeCell;
 import com.heliosdecompiler.helios.gui.model.TreeNode;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -78,7 +78,7 @@ public class TransformerSettingsController {
 
         rootNode = new TreeItem<>(new TreeNode("[root]"));
         treeView.setRoot(rootNode);
-        treeView.setCellFactory(new TreeCellFactory<>());
+        treeView.setCellFactory(node -> new DefaultTreeCell<>(null));
 
         transformerController.getTransformerControllers().forEach((type, classes) ->
         {

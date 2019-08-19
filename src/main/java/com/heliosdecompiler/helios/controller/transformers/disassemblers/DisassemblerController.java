@@ -23,7 +23,7 @@ import com.heliosdecompiler.helios.controller.backgroundtask.BackgroundTaskHelpe
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
 import com.heliosdecompiler.helios.controller.transformers.BaseTransformerController;
 import com.heliosdecompiler.helios.controller.transformers.TransformerType;
-import com.heliosdecompiler.transformerapi.ClassData;
+import com.heliosdecompiler.transformerapi.FileContents;
 import com.heliosdecompiler.transformerapi.TransformationResult;
 import com.heliosdecompiler.transformerapi.disassemblers.Disassembler;
 
@@ -50,13 +50,13 @@ public abstract class DisassemblerController<SettingObject> extends BaseTransfor
         backgroundTaskHelper.submit(new BackgroundTask(Message.TASK_DISASSEMBLE_FILE.format(path, getDisplayName()), true, () -> {
             try {
                 byte[] data = file.getContent(path);
-                ClassData cd = ClassData.construct(data);
+                FileContents cd = FileContents.fromClass(data);
                 if (cd != null) {
                     TransformationResult<String> transformationResult = disassembler.disassemble(cd, createSettings());
 
                     Map<String, String> results = transformationResult.getTransformationData();
-                    if (results.containsKey(cd.getInternalName())) {
-                        consumer.accept(true, results.get(cd.getInternalName()));
+                    if (results.containsKey(cd.getName())) {
+                        consumer.accept(true, results.get(cd.getName()));
                     } else {
                         StringBuilder output = new StringBuilder();
                         output.append("An error has occurred while disassembling this file.\r\n")

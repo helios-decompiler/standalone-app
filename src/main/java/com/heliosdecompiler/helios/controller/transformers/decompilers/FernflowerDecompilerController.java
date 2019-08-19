@@ -37,7 +37,7 @@ public class FernflowerDecompilerController extends DecompilerController<Fernflo
 
     @Override
     protected void registerSettings() {
-        registerSetting(Boolean.class, new RawBooleanSetting("rbr", "Hide bridge methods", true));
+        registerSetting(Boolean.class, new RawBooleanSetting("rbr", "Hide bridge methods", false));
         registerSetting(Boolean.class, new RawBooleanSetting("rsy", "Hide synthetic class members", false));
         registerSetting(Boolean.class, new RawBooleanSetting("din", "Decompile inner classes", true));
         registerSetting(Boolean.class, new RawBooleanSetting("dc4", "Collapse 1.4 class references", true));

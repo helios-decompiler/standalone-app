@@ -24,7 +24,7 @@ import com.heliosdecompiler.helios.controller.ProcessController;
 import com.heliosdecompiler.helios.controller.configuration.ConfigurationSerializer;
 import com.heliosdecompiler.helios.controller.configuration.Setting;
 import com.heliosdecompiler.helios.controller.files.OpenedFile;
-import com.heliosdecompiler.transformerapi.ClassData;
+import com.heliosdecompiler.transformerapi.FileContents;
 import com.heliosdecompiler.transformerapi.StandardTransformers;
 import com.heliosdecompiler.transformerapi.decompilers.krakatau.KrakatauDecompilerSettings;
 import org.apache.commons.configuration2.Configuration;
@@ -85,13 +85,13 @@ public class KrakatauDecompilerController extends DecompilerController<KrakatauD
     }
 
     @Override
-    protected Map<String, ClassData> getClasspath(OpenedFile thisFile) {
-        Map<String, ClassData> map = new HashMap<>();
+    protected Map<String, FileContents> getClasspath(OpenedFile thisFile) {
+        Map<String, FileContents> map = new HashMap<>();
 
         for (Map.Entry<String, byte[]> ent : thisFile.getContents().entrySet()) {
-            ClassData data = ClassData.construct(ent.getValue());
-            if (data != null && !map.containsKey(data.getInternalName())) {
-                map.put(data.getInternalName(), data);
+            FileContents data = FileContents.fromClass(ent.getValue());
+            if (data != null && !map.containsKey(data.getName())) {
+                map.put(data.getName(), data);
             }
         }
 
